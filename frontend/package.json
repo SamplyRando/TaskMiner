@@ -1,0 +1,14 @@
+{
+  "name": "taskminer-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "vite": "8.1.5"
+  }
+}
