@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import CurrentUserDep, ProjectServiceDep
 from app.models.project import Project
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.project import (
     ProjectCreate,
     ProjectListParams,
@@ -17,17 +18,13 @@ from app.services.project import ProjectNotFoundError
 router = APIRouter()
 
 
-@router.get("", response_model=list[ProjectRead])
+@router.get("", response_model=PaginatedResponse[ProjectRead])
 def list_projects(
     current_user: CurrentUserDep,
     service: ProjectServiceDep,
-    pagination: Annotated[ProjectListParams, Query()],
-) -> list[Project]:
-    return service.list_projects(
-        current_user,
-        offset=pagination.offset,
-        limit=pagination.limit,
-    )
+    params: Annotated[ProjectListParams, Query()],
+) -> PaginatedResponse[ProjectRead]:
+    return service.list_projects(current_user, params)
 
 
 @router.post(

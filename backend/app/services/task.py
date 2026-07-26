@@ -5,7 +5,8 @@ from app.models.task import Task
 from app.models.user import User
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 
 
 class TaskProjectNotFoundError(Exception):
@@ -36,9 +37,22 @@ class TaskService:
         project = self._get_owned_project(owner, project_id)
         return self.repository.create(project, data)
 
-    def list_tasks(self, owner: User, project_id: UUID) -> list[Task]:
+    def list_project_tasks(self, owner: User, project_id: UUID) -> list[Task]:
         project = self._get_owned_project(owner, project_id)
         return self.repository.list_by_project(project)
+
+    def list_tasks(
+        self,
+        owner: User,
+        params: TaskListParams,
+    ) -> PaginatedResponse[TaskRead]:
+        tasks, total = self.repository.list_by_owner(owner, params)
+        return PaginatedResponse[TaskRead](
+            items=[TaskRead.model_validate(task) for task in tasks],
+            total=total,
+            skip=params.skip,
+            limit=params.limit,
+        )
 
     def get_task(self, owner: User, task_id: UUID) -> Task:
         task = self.repository.get_by_id_for_owner(task_id, owner)

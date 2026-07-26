@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Self
+from typing import Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -33,6 +33,25 @@ class TaskUpdate(BaseModel):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
+
+
+class TaskListParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    skip: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1, le=100)
+    search: str | None = Field(default=None, min_length=1, max_length=255)
+    status: TaskStatus | None = None
+    priority: TaskPriority | None = None
+    project_id: UUID | None = None
+    sort: Literal[
+        "created_at",
+        "updated_at",
+        "title",
+        "-created_at",
+        "-updated_at",
+        "-title",
+    ] = "-created_at"
 
 
 class TaskRead(BaseModel):

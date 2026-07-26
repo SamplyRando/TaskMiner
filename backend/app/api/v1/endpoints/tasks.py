@@ -1,10 +1,12 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import CurrentUserDep, TaskServiceDep
 from app.models.task import Task
-from app.schemas.task import TaskCreate, TaskRead, TaskUpdate
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 from app.services.task import TaskNotFoundError, TaskProjectNotFoundError
 
 
@@ -12,9 +14,13 @@ router = APIRouter()
 project_router = APIRouter()
 
 
-@router.get("")
-def list_tasks_placeholder() -> dict[str, str]:
-    return {"message": "Not implemented yet"}
+@router.get("", response_model=PaginatedResponse[TaskRead])
+def list_tasks(
+    current_user: CurrentUserDep,
+    service: TaskServiceDep,
+    params: Annotated[TaskListParams, Query()],
+) -> PaginatedResponse[TaskRead]:
+    return service.list_tasks(current_user, params)
 
 
 @project_router.post(
@@ -44,7 +50,7 @@ def list_project_tasks(
     service: TaskServiceDep,
 ) -> list[Task]:
     try:
-        return service.list_tasks(current_user, project_id)
+        return service.list_project_tasks(current_user, project_id)
     except TaskProjectNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

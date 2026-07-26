@@ -3,7 +3,13 @@ from uuid import UUID
 from app.models.project import Project
 from app.models.user import User
 from app.repositories.project import ProjectRepository
-from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectListParams,
+    ProjectRead,
+    ProjectUpdate,
+)
 
 
 class ProjectNotFoundError(Exception):
@@ -22,13 +28,14 @@ class ProjectService:
     def list_projects(
         self,
         owner: User,
-        offset: int = 0,
-        limit: int = 100,
-    ) -> list[Project]:
-        return self.repository.list_by_owner(
-            owner,
-            offset=offset,
-            limit=limit,
+        params: ProjectListParams,
+    ) -> PaginatedResponse[ProjectRead]:
+        projects, total = self.repository.list_by_owner(owner, params)
+        return PaginatedResponse[ProjectRead](
+            items=[ProjectRead.model_validate(project) for project in projects],
+            total=total,
+            skip=params.skip,
+            limit=params.limit,
         )
 
     def get_project(self, owner: User, project_id: UUID) -> Project:

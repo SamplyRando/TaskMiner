@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,8 +22,17 @@ class ProjectUpdate(BaseModel):
 class ProjectListParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=100, ge=1, le=100)
+    skip: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1, le=100)
+    search: str | None = Field(default=None, min_length=1, max_length=255)
+    sort: Literal[
+        "created_at",
+        "updated_at",
+        "name",
+        "-created_at",
+        "-updated_at",
+        "-name",
+    ] = "-created_at"
 
 
 class ProjectRead(BaseModel):

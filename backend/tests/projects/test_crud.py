@@ -35,8 +35,12 @@ def test_list_only_current_user_projects(
     response = client.get("/api/v1/projects", headers=user.headers)
 
     assert response.status_code == 200
-    project_ids = {UUID(project["id"]) for project in response.json()}
+    data = response.json()
+    project_ids = {UUID(project["id"]) for project in data["items"]}
     assert project_ids == {first.id, second.id}
+    assert data["total"] == 2
+    assert data["skip"] == 0
+    assert data["limit"] == 20
 
 
 def test_read_project(
@@ -99,18 +103,24 @@ def test_project_list_pagination(
     first_page = client.get(
         "/api/v1/projects",
         headers=user.headers,
-        params={"offset": 0, "limit": 2},
+        params={"skip": 0, "limit": 2},
     )
     second_page = client.get(
         "/api/v1/projects",
         headers=user.headers,
-        params={"offset": 2, "limit": 2},
+        params={"skip": 2, "limit": 2},
     )
 
     assert first_page.status_code == 200
     assert second_page.status_code == 200
-    assert len(first_page.json()) == 2
-    assert len(second_page.json()) == 1
-    assert {item["id"] for item in first_page.json()}.isdisjoint(
-        {item["id"] for item in second_page.json()}
+    first_data = first_page.json()
+    second_data = second_page.json()
+    assert len(first_data["items"]) == 2
+    assert len(second_data["items"]) == 1
+    assert first_data["total"] == second_data["total"] == 3
+    assert first_data["skip"] == 0
+    assert second_data["skip"] == 2
+    assert first_data["limit"] == second_data["limit"] == 2
+    assert {item["id"] for item in first_data["items"]}.isdisjoint(
+        {item["id"] for item in second_data["items"]}
     )

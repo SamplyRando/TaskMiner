@@ -1,13 +1,14 @@
 from collections.abc import Sequence
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.schemas.project import ProjectCreate, ProjectListParams, ProjectUpdate
 
 
 class ProjectRepository:
@@ -50,18 +51,41 @@ class ProjectRepository:
     def list_by_owner(
         self,
         owner: User,
-        *,
-        offset: int = 0,
-        limit: int = 100,
-    ) -> list[Project]:
+        params: ProjectListParams,
+    ) -> tuple[list[Project], int]:
+        filters = [Project.owner_id == owner.id]
+        if params.search is not None:
+            pattern = f"%{params.search}%"
+            filters.append(
+                or_(
+                    Project.name.ilike(pattern),
+                    Project.description.ilike(pattern),
+                )
+            )
+
+        total_statement = select(func.count(Project.id)).where(*filters)
+        total = int(self.session.scalar(total_statement) or 0)
+
+        sort_columns: dict[str, Any] = {
+            "created_at": Project.created_at,
+            "updated_at": Project.updated_at,
+            "name": Project.name,
+        }
+        sort_field = params.sort.removeprefix("-")
+        sort_column = sort_columns[sort_field]
+        sort_expression = (
+            sort_column.desc() if params.sort.startswith("-") else sort_column.asc()
+        )
+
         statement = (
             select(Project)
-            .where(Project.owner_id == owner.id)
-            .order_by(Project.created_at.desc())
-            .offset(offset)
-            .limit(limit)
+            .where(*filters)
+            .order_by(sort_expression, Project.id.asc())
+            .offset(params.skip)
+            .limit(params.limit)
         )
-        return list(self.session.scalars(statement).all())
+        projects = list(self.session.scalars(statement).all())
+        return projects, total
 
     def list(self, *, offset: int = 0, limit: int = 100) -> Sequence[Project]:
         raise NotImplementedError
