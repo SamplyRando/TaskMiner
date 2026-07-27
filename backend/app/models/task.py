@@ -11,9 +11,10 @@ from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.attachment import Attachment
     from app.models.project import Project
 
 
@@ -34,7 +35,7 @@ def enum_values(enum_class: type[Enum]) -> list[str]:
     return [str(member.value) for member in enum_class]
 
 
-class Task(TimestampMixin, Base):
+class Task(SoftDeleteMixin, TimestampMixin, Base):
     """Work item belonging to exactly one project."""
 
     __tablename__ = "tasks"
@@ -83,3 +84,8 @@ class Task(TimestampMixin, Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="tasks")
+    attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

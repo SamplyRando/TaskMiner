@@ -1,5 +1,6 @@
 """Pydantic request and response schemas."""
 
+from app.schemas.attachment import AttachmentRead
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.project import (
@@ -12,6 +13,7 @@ from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 __all__ = [
+    "AttachmentRead",
     "LoginRequest",
     "PaginatedResponse",
     "ProjectCreate",

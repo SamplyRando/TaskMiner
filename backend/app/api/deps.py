@@ -7,11 +7,14 @@ from jose import JWTError
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
+from app.core.config import settings
 from app.database.database import get_db
 from app.models.user import User
+from app.repositories.attachment import AttachmentRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
+from app.services.attachment import AttachmentService
 from app.services.project import ProjectService
 from app.services.task import TaskService
 from app.services.user import UserService
@@ -78,3 +81,14 @@ def get_task_service(session: SessionDep) -> TaskService:
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
+
+
+def get_attachment_service(session: SessionDep) -> AttachmentService:
+    return AttachmentService(
+        AttachmentRepository(session),
+        TaskRepository(session),
+        settings.storage_path,
+    )
+
+
+AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]

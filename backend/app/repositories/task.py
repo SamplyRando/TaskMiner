@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -48,6 +49,8 @@ class TaskRepository:
             .where(
                 Task.id == task_id,
                 Project.owner_id == owner.id,
+                Task.deleted_at.is_(None),
+                Project.deleted_at.is_(None),
             )
         )
         return self.session.scalar(statement)
@@ -55,7 +58,10 @@ class TaskRepository:
     def list_by_project(self, project: Project) -> list[Task]:
         statement = (
             select(Task)
-            .where(Task.project_id == project.id)
+            .where(
+                Task.project_id == project.id,
+                Task.deleted_at.is_(None),
+            )
             .order_by(Task.created_at.desc())
         )
         return list(self.session.scalars(statement).all())
@@ -65,7 +71,11 @@ class TaskRepository:
         owner: User,
         params: TaskListParams,
     ) -> tuple[list[Task], int]:
-        filters = [Project.owner_id == owner.id]
+        filters = [
+            Project.owner_id == owner.id,
+            Project.deleted_at.is_(None),
+            Task.deleted_at.is_(None),
+        ]
         if params.search is not None:
             pattern = f"%{params.search}%"
             filters.append(
@@ -126,9 +136,10 @@ class TaskRepository:
         return task
 
     def delete(self, task: Task) -> None:
+        task.deleted_at = datetime.now(timezone.utc)
         try:
-            self.session.delete(task)
             self.session.commit()
+            self.session.refresh(task)
         except SQLAlchemyError:
             self.session.rollback()
             raise

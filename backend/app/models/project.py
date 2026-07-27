@@ -8,14 +8,14 @@ from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.database import Base
-from app.models.mixins import TimestampMixin
+from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.task import Task
     from app.models.user import User
 
 
-class Project(TimestampMixin, Base):
+class Project(SoftDeleteMixin, TimestampMixin, Base):
     """Collection of tasks owned by one user."""
 
     __tablename__ = "projects"

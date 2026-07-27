@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -45,6 +46,7 @@ class ProjectRepository:
         statement = select(Project).where(
             Project.id == project_id,
             Project.owner_id == owner.id,
+            Project.deleted_at.is_(None),
         )
         return self.session.scalar(statement)
 
@@ -53,7 +55,10 @@ class ProjectRepository:
         owner: User,
         params: ProjectListParams,
     ) -> tuple[list[Project], int]:
-        filters = [Project.owner_id == owner.id]
+        filters = [
+            Project.owner_id == owner.id,
+            Project.deleted_at.is_(None),
+        ]
         if params.search is not None:
             pattern = f"%{params.search}%"
             filters.append(
@@ -106,9 +111,10 @@ class ProjectRepository:
         return project
 
     def delete(self, project: Project) -> None:
+        project.deleted_at = datetime.now(timezone.utc)
         try:
-            self.session.delete(project)
             self.session.commit()
+            self.session.refresh(project)
         except SQLAlchemyError:
             self.session.rollback()
             raise

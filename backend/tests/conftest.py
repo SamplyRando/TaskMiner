@@ -1,5 +1,8 @@
 from collections.abc import Generator
 import os
+from pathlib import Path
+import shutil
+import tempfile
 
 from fastapi.testclient import TestClient
 import pytest
@@ -24,10 +27,16 @@ os.environ["SECRET_KEY"] = "taskminer-tests-only-secret-key-at-least-32-characte
 os.environ["ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["TASKMINER_LOG_LEVEL"] = "WARNING"
+TEST_STORAGE_PATH = Path(tempfile.gettempdir()) / (
+    f"taskminer-tests-storage-{os.getpid()}"
+)
+os.environ["STORAGE_PATH"] = str(TEST_STORAGE_PATH)
 
 from app.database.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from tests.factories import (  # noqa: E402
+    AttachmentFactory,
+    CreatedAttachment,
     CreatedProject,
     CreatedTask,
     ProjectFactory,
@@ -39,11 +48,13 @@ from tests.factories import (  # noqa: E402
 
 @pytest.fixture(scope="session", autouse=True)
 def test_database_schema() -> Generator[None, None, None]:
+    _reset_storage()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
+    shutil.rmtree(TEST_STORAGE_PATH, ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)
@@ -52,14 +63,21 @@ def clean_database(
 ) -> Generator[None, None, None]:
     del test_database_schema
     _delete_all_rows()
+    _reset_storage()
     yield
     _delete_all_rows()
+    _reset_storage()
 
 
 def _delete_all_rows() -> None:
     with engine.begin() as connection:
         for table in reversed(Base.metadata.sorted_tables):
             connection.execute(table.delete())
+
+
+def _reset_storage() -> None:
+    shutil.rmtree(TEST_STORAGE_PATH, ignore_errors=True)
+    TEST_STORAGE_PATH.mkdir(parents=True)
 
 
 @pytest.fixture
@@ -84,6 +102,11 @@ def task_factory(client: TestClient) -> TaskFactory:
 
 
 @pytest.fixture
+def attachment_factory(client: TestClient) -> AttachmentFactory:
+    return AttachmentFactory(client)
+
+
+@pytest.fixture
 def user(user_factory: UserFactory) -> RegisteredUser:
     return user_factory.create()
 
@@ -104,6 +127,14 @@ def project(
 @pytest.fixture
 def task(task_factory: TaskFactory, project: CreatedProject) -> CreatedTask:
     return task_factory.create(project)
+
+
+@pytest.fixture
+def attachment(
+    attachment_factory: AttachmentFactory,
+    task: CreatedTask,
+) -> CreatedAttachment:
+    return attachment_factory.create(task)
 
 
 @pytest.fixture

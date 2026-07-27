@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
     algorithm: Literal["HS256"] | None = Field(
         default=None,
         validation_alias="ALGORITHM",
+    )
+    storage_path: Path = Field(
+        default=Path("storage"),
+        validation_alias="STORAGE_PATH",
     )
 
 

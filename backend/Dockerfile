@@ -29,6 +29,7 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.t
 COPY --chown=taskminer:taskminer app ./app
 COPY --chown=taskminer:taskminer alembic ./alembic
 COPY --chown=taskminer:taskminer alembic.ini .
+RUN mkdir -p /app/storage && chown taskminer:taskminer /app/storage
 
 USER taskminer
 
