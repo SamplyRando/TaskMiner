@@ -1,5 +1,7 @@
 # TaskMiner
 
+[![Backend CI](https://github.com/SamplyRando/TaskMiner/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/SamplyRando/TaskMiner/actions/workflows/backend-ci.yml)
+
 TaskMiner s'exécute avec Docker Compose et démarre quatre services : FastAPI,
 PostgreSQL, un placeholder React et nginx.
 
