@@ -11,7 +11,9 @@ from app.database.database import Base
 from app.models.mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.comment import Comment
     from app.models.project import Project
+    from app.models.task import Task
 
 
 class User(TimestampMixin, Base):
@@ -50,5 +52,15 @@ class User(TimestampMixin, Base):
     projects: Mapped[list[Project]] = relationship(
         back_populates="owner",
         cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    comments: Mapped[list[Comment]] = relationship(
+        back_populates="author",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    assigned_tasks: Mapped[list[Task]] = relationship(
+        back_populates="assigned_user",
+        foreign_keys="Task.assigned_user_id",
         passive_deletes=True,
     )

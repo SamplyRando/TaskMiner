@@ -135,6 +135,26 @@ class TaskRepository:
 
         return task
 
+    def assign(self, task: Task, assigned_user: User) -> Task:
+        task.assigned_user_id = assigned_user.id
+        try:
+            self.session.commit()
+            self.session.refresh(task)
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+        return task
+
+    def unassign(self, task: Task) -> Task:
+        task.assigned_user_id = None
+        try:
+            self.session.commit()
+            self.session.refresh(task)
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+        return task
+
     def delete(self, task: Task) -> None:
         task.deleted_at = datetime.now(timezone.utc)
         try:

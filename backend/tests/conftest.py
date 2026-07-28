@@ -36,7 +36,9 @@ from app.database.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from tests.factories import (  # noqa: E402
     AttachmentFactory,
+    CommentFactory,
     CreatedAttachment,
+    CreatedComment,
     CreatedProject,
     CreatedTask,
     ProjectFactory,
@@ -107,6 +109,11 @@ def attachment_factory(client: TestClient) -> AttachmentFactory:
 
 
 @pytest.fixture
+def comment_factory(client: TestClient) -> CommentFactory:
+    return CommentFactory(client)
+
+
+@pytest.fixture
 def user(user_factory: UserFactory) -> RegisteredUser:
     return user_factory.create()
 
@@ -135,6 +142,14 @@ def attachment(
     task: CreatedTask,
 ) -> CreatedAttachment:
     return attachment_factory.create(task)
+
+
+@pytest.fixture
+def comment(
+    comment_factory: CommentFactory,
+    task: CreatedTask,
+) -> CreatedComment:
+    return comment_factory.create(task)
 
 
 @pytest.fixture

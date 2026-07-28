@@ -64,5 +64,6 @@ class TaskRead(BaseModel):
     priority: TaskPriority
     due_date: datetime | None
     project_id: UUID
+    assigned_user_id: UUID | None
     created_at: datetime
     updated_at: datetime

@@ -1,6 +1,14 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import attachments, auth, projects, tasks, users
+from app.api.v1.endpoints import (
+    attachments,
+    auth,
+    comments,
+    projects,
+    task_assignment,
+    tasks,
+    users,
+)
 
 
 api_router = APIRouter()
@@ -10,6 +18,11 @@ api_router.include_router(projects.router, prefix="/projects", tags=["projects"]
 api_router.include_router(tasks.project_router, prefix="/projects", tags=["tasks"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(
+    task_assignment.router,
+    prefix="/tasks",
+    tags=["task-assignment"],
+)
+api_router.include_router(
     attachments.task_router,
     prefix="/tasks",
     tags=["attachments"],
@@ -18,4 +31,14 @@ api_router.include_router(
     attachments.router,
     prefix="/attachments",
     tags=["attachments"],
+)
+api_router.include_router(
+    comments.task_router,
+    prefix="/tasks",
+    tags=["comments"],
+)
+api_router.include_router(
+    comments.router,
+    prefix="/comments",
+    tags=["comments"],
 )

@@ -2,6 +2,7 @@
 
 from app.schemas.attachment import AttachmentRead
 from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.project import (
     ProjectCreate,
@@ -10,10 +11,14 @@ from app.schemas.project import (
     ProjectUpdate,
 )
 from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
+from app.schemas.task_assignment import TaskAssignmentUpdate
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 __all__ = [
     "AttachmentRead",
+    "CommentCreate",
+    "CommentRead",
+    "CommentUpdate",
     "LoginRequest",
     "PaginatedResponse",
     "ProjectCreate",
@@ -24,6 +29,7 @@ __all__ = [
     "TaskListParams",
     "TaskRead",
     "TaskUpdate",
+    "TaskAssignmentUpdate",
     "TokenResponse",
     "UserCreate",
     "UserRead",

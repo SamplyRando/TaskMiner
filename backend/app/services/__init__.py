@@ -7,8 +7,17 @@ from app.services.attachment import (
     AttachmentTaskNotFoundError,
     AttachmentTooLargeError,
 )
+from app.services.comment import (
+    CommentNotFoundError,
+    CommentService,
+    CommentTaskNotFoundError,
+)
 from app.services.project import ProjectNotFoundError, ProjectService
 from app.services.task import TaskNotFoundError, TaskProjectNotFoundError, TaskService
+from app.services.task_assignment import (
+    TaskAssigneeNotFoundError,
+    TaskAssignmentService,
+)
 from app.services.user import (
     InvalidCredentialsError,
     UserAlreadyExistsError,
@@ -21,12 +30,17 @@ __all__ = [
     "AttachmentService",
     "AttachmentTaskNotFoundError",
     "AttachmentTooLargeError",
+    "CommentNotFoundError",
+    "CommentService",
+    "CommentTaskNotFoundError",
     "InvalidCredentialsError",
     "ProjectNotFoundError",
     "ProjectService",
     "TaskNotFoundError",
     "TaskProjectNotFoundError",
     "TaskService",
+    "TaskAssigneeNotFoundError",
+    "TaskAssignmentService",
     "UserAlreadyExistsError",
     "UserService",
 ]

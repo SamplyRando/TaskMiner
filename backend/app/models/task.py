@@ -15,7 +15,9 @@ from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.attachment import Attachment
+    from app.models.comment import Comment
     from app.models.project import Project
+    from app.models.user import User
 
 
 class TaskStatus(str, Enum):
@@ -82,9 +84,24 @@ class Task(SoftDeleteMixin, TimestampMixin, Base):
         nullable=False,
         index=True,
     )
+    assigned_user_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     project: Mapped[Project] = relationship(back_populates="tasks")
+    assigned_user: Mapped[User | None] = relationship(
+        back_populates="assigned_tasks",
+        foreign_keys=[assigned_user_id],
+    )
     attachments: Mapped[list[Attachment]] = relationship(
+        back_populates="task",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    comments: Mapped[list[Comment]] = relationship(
         back_populates="task",
         cascade="all, delete-orphan",
         passive_deletes=True,

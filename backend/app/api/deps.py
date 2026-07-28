@@ -11,12 +11,15 @@ from app.core.config import settings
 from app.database.database import get_db
 from app.models.user import User
 from app.repositories.attachment import AttachmentRepository
+from app.repositories.comment import CommentRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
 from app.services.attachment import AttachmentService
+from app.services.comment import CommentService
 from app.services.project import ProjectService
 from app.services.task import TaskService
+from app.services.task_assignment import TaskAssignmentService
 from app.services.user import UserService
 
 
@@ -92,3 +95,26 @@ def get_attachment_service(session: SessionDep) -> AttachmentService:
 
 
 AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
+
+
+def get_comment_service(session: SessionDep) -> CommentService:
+    return CommentService(
+        CommentRepository(session),
+        TaskRepository(session),
+    )
+
+
+CommentServiceDep = Annotated[CommentService, Depends(get_comment_service)]
+
+
+def get_task_assignment_service(session: SessionDep) -> TaskAssignmentService:
+    return TaskAssignmentService(
+        TaskRepository(session),
+        UserRepository(session),
+    )
+
+
+TaskAssignmentServiceDep = Annotated[
+    TaskAssignmentService,
+    Depends(get_task_assignment_service),
+]
