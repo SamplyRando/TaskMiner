@@ -11,15 +11,17 @@ from app.database.database import Base
 from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.task import Task
-    from app.models.workspace import Workspace
+    from app.models.project import Project
+    from app.models.user import User
 
 
-class Project(SoftDeleteMixin, TimestampMixin, Base):
-    """Collection of tasks belonging to exactly one workspace."""
+class Workspace(SoftDeleteMixin, TimestampMixin, Base):
+    """Private workspace owned by exactly one user."""
 
-    __tablename__ = "projects"
-    __table_args__ = (CheckConstraint("name <> ''", name="ck_projects_name_not_empty"),)
+    __tablename__ = "workspaces"
+    __table_args__ = (
+        CheckConstraint("name <> ''", name="ck_workspaces_name_not_empty"),
+    )
 
     id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True),
@@ -29,24 +31,16 @@ class Project(SoftDeleteMixin, TimestampMixin, Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    workspace_id: Mapped[UUID] = mapped_column(
+    owner_id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True),
-        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
-    workspace: Mapped[Workspace] = relationship(
-        back_populates="projects",
-        lazy="joined",
-    )
-    tasks: Mapped[list[Task]] = relationship(
-        back_populates="project",
+    owner: Mapped[User] = relationship(back_populates="workspaces")
+    projects: Mapped[list[Project]] = relationship(
+        back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-
-    @property
-    def owner_id(self) -> UUID:
-        """Expose the workspace owner for backwards-compatible API responses."""
-        return self.workspace.owner_id

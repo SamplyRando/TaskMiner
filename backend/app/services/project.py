@@ -3,6 +3,7 @@ from uuid import UUID
 from app.models.project import Project
 from app.models.user import User
 from app.repositories.project import ProjectRepository
+from app.repositories.workspace import WorkspaceRepository
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.project import (
     ProjectCreate,
@@ -10,6 +11,10 @@ from app.schemas.project import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.schemas.workspace import WorkspaceCreate
+
+
+DEFAULT_WORKSPACE_NAME = "My Workspace"
 
 
 class ProjectNotFoundError(Exception):
@@ -19,11 +24,22 @@ class ProjectNotFoundError(Exception):
 class ProjectService:
     """Application service for project-related use cases."""
 
-    def __init__(self, repository: ProjectRepository) -> None:
+    def __init__(
+        self,
+        repository: ProjectRepository,
+        workspace_repository: WorkspaceRepository,
+    ) -> None:
         self.repository = repository
+        self.workspace_repository = workspace_repository
 
     def create_project(self, owner: User, data: ProjectCreate) -> Project:
-        return self.repository.create(owner, data)
+        workspace = self.workspace_repository.get_first_active_by_owner(owner)
+        if workspace is None:
+            workspace = self.workspace_repository.create(
+                owner,
+                WorkspaceCreate(name=DEFAULT_WORKSPACE_NAME),
+            )
+        return self.repository.create(workspace, data)
 
     def list_projects(
         self,

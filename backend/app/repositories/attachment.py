@@ -9,6 +9,7 @@ from app.models.attachment import Attachment
 from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
+from app.models.workspace import Workspace
 
 
 class AttachmentRepository:
@@ -64,12 +65,14 @@ class AttachmentRepository:
             select(Attachment)
             .join(Task, Attachment.task_id == Task.id)
             .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
             .where(
                 Attachment.id == attachment_id,
-                Project.owner_id == owner.id,
+                Workspace.owner_id == owner.id,
                 Attachment.deleted_at.is_(None),
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
             )
         )
         return self.session.scalar(statement)

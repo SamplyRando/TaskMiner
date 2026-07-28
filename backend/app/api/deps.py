@@ -15,12 +15,14 @@ from app.repositories.comment import CommentRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
+from app.repositories.workspace import WorkspaceRepository
 from app.services.attachment import AttachmentService
 from app.services.comment import CommentService
 from app.services.project import ProjectService
 from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
 from app.services.user import UserService
+from app.services.workspace import WorkspaceService
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
@@ -70,7 +72,10 @@ UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
 def get_project_service(session: SessionDep) -> ProjectService:
-    return ProjectService(ProjectRepository(session))
+    return ProjectService(
+        ProjectRepository(session),
+        WorkspaceRepository(session),
+    )
 
 
 ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
@@ -118,3 +123,10 @@ TaskAssignmentServiceDep = Annotated[
     TaskAssignmentService,
     Depends(get_task_assignment_service),
 ]
+
+
+def get_workspace_service(session: SessionDep) -> WorkspaceService:
+    return WorkspaceService(WorkspaceRepository(session))
+
+
+WorkspaceServiceDep = Annotated[WorkspaceService, Depends(get_workspace_service)]

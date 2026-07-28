@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.models.project import Project
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.schemas.project import ProjectCreate, ProjectListParams, ProjectUpdate
 
 
@@ -18,11 +19,11 @@ class ProjectRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create(self, owner: User, data: ProjectCreate) -> Project:
+    def create(self, workspace: Workspace, data: ProjectCreate) -> Project:
         project = Project(
             name=data.name,
             description=data.description,
-            owner_id=owner.id,
+            workspace_id=workspace.id,
         )
         self.session.add(project)
 
@@ -43,10 +44,15 @@ class ProjectRepository:
         project_id: UUID,
         owner: User,
     ) -> Project | None:
-        statement = select(Project).where(
-            Project.id == project_id,
-            Project.owner_id == owner.id,
-            Project.deleted_at.is_(None),
+        statement = (
+            select(Project)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .where(
+                Project.id == project_id,
+                Workspace.owner_id == owner.id,
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
         )
         return self.session.scalar(statement)
 
@@ -56,8 +62,9 @@ class ProjectRepository:
         params: ProjectListParams,
     ) -> tuple[list[Project], int]:
         filters = [
-            Project.owner_id == owner.id,
+            Workspace.owner_id == owner.id,
             Project.deleted_at.is_(None),
+            Workspace.deleted_at.is_(None),
         ]
         if params.search is not None:
             pattern = f"%{params.search}%"
@@ -68,7 +75,11 @@ class ProjectRepository:
                 )
             )
 
-        total_statement = select(func.count(Project.id)).where(*filters)
+        total_statement = (
+            select(func.count(Project.id))
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .where(*filters)
+        )
         total = int(self.session.scalar(total_statement) or 0)
 
         sort_columns: dict[str, Any] = {
@@ -84,6 +95,7 @@ class ProjectRepository:
 
         statement = (
             select(Project)
+            .join(Workspace, Project.workspace_id == Workspace.id)
             .where(*filters)
             .order_by(sort_expression, Project.id.asc())
             .offset(params.skip)

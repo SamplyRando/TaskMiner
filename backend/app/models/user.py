@@ -12,8 +12,8 @@ from app.models.mixins import TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
-    from app.models.project import Project
     from app.models.task import Task
+    from app.models.workspace import Workspace
 
 
 class User(TimestampMixin, Base):
@@ -49,7 +49,7 @@ class User(TimestampMixin, Base):
         server_default=text("true"),
     )
 
-    projects: Mapped[list[Project]] = relationship(
+    workspaces: Mapped[list[Workspace]] = relationship(
         back_populates="owner",
         cascade="all, delete-orphan",
         passive_deletes=True,

@@ -41,10 +41,12 @@ from tests.factories import (  # noqa: E402
     CreatedComment,
     CreatedProject,
     CreatedTask,
+    CreatedWorkspace,
     ProjectFactory,
     RegisteredUser,
     TaskFactory,
     UserFactory,
+    WorkspaceFactory,
 )
 
 
@@ -114,6 +116,11 @@ def comment_factory(client: TestClient) -> CommentFactory:
 
 
 @pytest.fixture
+def workspace_factory(client: TestClient) -> WorkspaceFactory:
+    return WorkspaceFactory(client)
+
+
+@pytest.fixture
 def user(user_factory: UserFactory) -> RegisteredUser:
     return user_factory.create()
 
@@ -150,6 +157,14 @@ def comment(
     task: CreatedTask,
 ) -> CreatedComment:
     return comment_factory.create(task)
+
+
+@pytest.fixture
+def workspace(
+    workspace_factory: WorkspaceFactory,
+    user: RegisteredUser,
+) -> CreatedWorkspace:
+    return workspace_factory.create(user)
 
 
 @pytest.fixture

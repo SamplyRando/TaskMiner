@@ -23,6 +23,7 @@ from app.services.user import (
     UserAlreadyExistsError,
     UserService,
 )
+from app.services.workspace import WorkspaceNotFoundError, WorkspaceService
 
 __all__ = [
     "AttachmentExtensionNotAllowedError",
@@ -43,4 +44,6 @@ __all__ = [
     "TaskAssignmentService",
     "UserAlreadyExistsError",
     "UserService",
+    "WorkspaceNotFoundError",
+    "WorkspaceService",
 ]

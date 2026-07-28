@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.schemas.task import TaskCreate, TaskListParams, TaskUpdate
 
 
@@ -46,11 +47,13 @@ class TaskRepository:
         statement = (
             select(Task)
             .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
             .where(
                 Task.id == task_id,
-                Project.owner_id == owner.id,
+                Workspace.owner_id == owner.id,
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
             )
         )
         return self.session.scalar(statement)
@@ -72,7 +75,8 @@ class TaskRepository:
         params: TaskListParams,
     ) -> tuple[list[Task], int]:
         filters = [
-            Project.owner_id == owner.id,
+            Workspace.owner_id == owner.id,
+            Workspace.deleted_at.is_(None),
             Project.deleted_at.is_(None),
             Task.deleted_at.is_(None),
         ]
@@ -94,6 +98,7 @@ class TaskRepository:
         total_statement = (
             select(func.count(Task.id))
             .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
             .where(*filters)
         )
         total = int(self.session.scalar(total_statement) or 0)
@@ -112,6 +117,7 @@ class TaskRepository:
         statement = (
             select(Task)
             .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
             .where(*filters)
             .order_by(sort_expression, Task.id.asc())
             .offset(params.skip)

@@ -5,6 +5,7 @@ from tests.factories.comments import CommentFactory, CreatedComment
 from tests.factories.projects import CreatedProject, ProjectFactory
 from tests.factories.tasks import CreatedTask, TaskFactory
 from tests.factories.users import RegisteredUser, UserFactory
+from tests.factories.workspaces import CreatedWorkspace, WorkspaceFactory
 
 __all__ = [
     "AttachmentFactory",
@@ -13,8 +14,10 @@ __all__ = [
     "CreatedComment",
     "CreatedProject",
     "CreatedTask",
+    "CreatedWorkspace",
     "ProjectFactory",
     "RegisteredUser",
     "TaskFactory",
     "UserFactory",
+    "WorkspaceFactory",
 ]

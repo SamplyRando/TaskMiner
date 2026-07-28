@@ -13,6 +13,7 @@ from app.schemas.project import (
 from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 from app.schemas.task_assignment import TaskAssignmentUpdate
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate
 
 __all__ = [
     "AttachmentRead",
@@ -34,4 +35,7 @@ __all__ = [
     "UserCreate",
     "UserRead",
     "UserUpdate",
+    "WorkspaceCreate",
+    "WorkspaceRead",
+    "WorkspaceUpdate",
 ]
