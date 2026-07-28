@@ -16,6 +16,7 @@ from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
 from app.repositories.workspace import WorkspaceRepository
+from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.services.attachment import AttachmentService
 from app.services.comment import CommentService
 from app.services.project import ProjectService
@@ -23,6 +24,7 @@ from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
 from app.services.user import UserService
 from app.services.workspace import WorkspaceService
+from app.services.workspace_member import WorkspaceMemberService
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
@@ -130,3 +132,16 @@ def get_workspace_service(session: SessionDep) -> WorkspaceService:
 
 
 WorkspaceServiceDep = Annotated[WorkspaceService, Depends(get_workspace_service)]
+
+
+def get_workspace_member_service(session: SessionDep) -> WorkspaceMemberService:
+    return WorkspaceMemberService(
+        WorkspaceMemberRepository(session),
+        WorkspaceRepository(session),
+    )
+
+
+WorkspaceMemberServiceDep = Annotated[
+    WorkspaceMemberService,
+    Depends(get_workspace_member_service),
+]

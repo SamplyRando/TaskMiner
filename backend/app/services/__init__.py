@@ -24,6 +24,10 @@ from app.services.user import (
     UserService,
 )
 from app.services.workspace import WorkspaceNotFoundError, WorkspaceService
+from app.services.workspace_member import (
+    WorkspaceMemberNotFoundError,
+    WorkspaceMemberService,
+)
 
 __all__ = [
     "AttachmentExtensionNotAllowedError",
@@ -46,4 +50,6 @@ __all__ = [
     "UserService",
     "WorkspaceNotFoundError",
     "WorkspaceService",
+    "WorkspaceMemberNotFoundError",
+    "WorkspaceMemberService",
 ]

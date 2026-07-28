@@ -13,6 +13,7 @@ from app.models.mixins import SoftDeleteMixin, TimestampMixin
 if TYPE_CHECKING:
     from app.models.project import Project
     from app.models.user import User
+    from app.models.workspace_member import WorkspaceMember
 
 
 class Workspace(SoftDeleteMixin, TimestampMixin, Base):
@@ -40,6 +41,11 @@ class Workspace(SoftDeleteMixin, TimestampMixin, Base):
 
     owner: Mapped[User] = relationship(back_populates="workspaces")
     projects: Mapped[list[Project]] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    members: Mapped[list[WorkspaceMember]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,

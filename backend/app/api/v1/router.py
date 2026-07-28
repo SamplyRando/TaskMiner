@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     tasks,
     users,
     workspaces,
+    workspace_members,
 )
 
 
@@ -19,6 +20,11 @@ api_router.include_router(
     workspaces.router,
     prefix="/workspaces",
     tags=["workspaces"],
+)
+api_router.include_router(
+    workspace_members.router,
+    prefix="/workspaces",
+    tags=["workspace-members"],
 )
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 api_router.include_router(tasks.project_router, prefix="/projects", tags=["tasks"])

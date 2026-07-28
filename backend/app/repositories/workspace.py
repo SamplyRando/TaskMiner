@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
 from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate
 
 
@@ -21,6 +22,12 @@ class WorkspaceRepository:
             name=data.name,
             description=data.description,
             owner_id=owner.id,
+        )
+        workspace.members.append(
+            WorkspaceMember(
+                user_id=owner.id,
+                role=WorkspaceMemberRole.OWNER,
+            )
         )
         self.session.add(workspace)
 
