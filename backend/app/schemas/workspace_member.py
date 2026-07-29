@@ -20,3 +20,9 @@ class WorkspaceMemberList(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     items: list[WorkspaceMemberRead]
+
+
+class WorkspaceMemberRoleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: WorkspaceMemberRole

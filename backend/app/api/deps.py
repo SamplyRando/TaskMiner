@@ -6,8 +6,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token
 from app.core.config import settings
+from app.core.security import decode_access_token
 from app.database.database import get_db
 from app.models.user import User
 from app.repositories.attachment import AttachmentRepository
@@ -19,6 +19,7 @@ from app.repositories.workspace import WorkspaceRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.services.attachment import AttachmentService
 from app.services.comment import CommentService
+from app.services.permission import PermissionService
 from app.services.project import ProjectService
 from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
@@ -144,4 +145,17 @@ def get_workspace_member_service(session: SessionDep) -> WorkspaceMemberService:
 WorkspaceMemberServiceDep = Annotated[
     WorkspaceMemberService,
     Depends(get_workspace_member_service),
+]
+
+
+def get_permission_service(session: SessionDep) -> PermissionService:
+    return PermissionService(
+        WorkspaceMemberRepository(session),
+        WorkspaceRepository(session),
+    )
+
+
+PermissionServiceDep = Annotated[
+    PermissionService,
+    Depends(get_permission_service),
 ]

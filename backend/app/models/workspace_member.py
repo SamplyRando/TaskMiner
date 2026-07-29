@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 
 class WorkspaceMemberRole(str, Enum):
     OWNER = "owner"
+    ADMIN = "admin"
+    MEMBER = "member"
+    VIEWER = "viewer"
 
 
 class WorkspaceMember(Base):

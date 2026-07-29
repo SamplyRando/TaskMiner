@@ -64,6 +64,13 @@ class WorkspaceRepository:
         )
         return self.session.scalar(statement)
 
+    def get_active(self, workspace_id: UUID) -> Workspace | None:
+        statement = select(Workspace).where(
+            Workspace.id == workspace_id,
+            Workspace.deleted_at.is_(None),
+        )
+        return self.session.scalar(statement)
+
     def list_by_owner(self, owner: User) -> list[Workspace]:
         statement = (
             select(Workspace)

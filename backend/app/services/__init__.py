@@ -13,6 +13,13 @@ from app.services.comment import (
     CommentTaskNotFoundError,
 )
 from app.services.project import ProjectNotFoundError, ProjectService
+from app.services.permission import (
+    LastOwnerError,
+    OwnerAlreadyExistsError,
+    PermissionDeniedError,
+    PermissionService,
+    SelfRoleChangeError,
+)
 from app.services.task import TaskNotFoundError, TaskProjectNotFoundError, TaskService
 from app.services.task_assignment import (
     TaskAssigneeNotFoundError,
@@ -41,6 +48,11 @@ __all__ = [
     "InvalidCredentialsError",
     "ProjectNotFoundError",
     "ProjectService",
+    "LastOwnerError",
+    "OwnerAlreadyExistsError",
+    "PermissionDeniedError",
+    "PermissionService",
+    "SelfRoleChangeError",
     "TaskNotFoundError",
     "TaskProjectNotFoundError",
     "TaskService",

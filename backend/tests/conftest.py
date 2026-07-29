@@ -42,11 +42,13 @@ from tests.factories import (  # noqa: E402
     CreatedProject,
     CreatedTask,
     CreatedWorkspace,
+    CreatedWorkspaceMember,
     ProjectFactory,
     RegisteredUser,
     TaskFactory,
     UserFactory,
     WorkspaceFactory,
+    WorkspaceMemberFactory,
 )
 
 
@@ -121,6 +123,13 @@ def workspace_factory(client: TestClient) -> WorkspaceFactory:
 
 
 @pytest.fixture
+def workspace_member_factory(
+    database_session: Session,
+) -> WorkspaceMemberFactory:
+    return WorkspaceMemberFactory(database_session)
+
+
+@pytest.fixture
 def user(user_factory: UserFactory) -> RegisteredUser:
     return user_factory.create()
 
@@ -165,6 +174,15 @@ def workspace(
     user: RegisteredUser,
 ) -> CreatedWorkspace:
     return workspace_factory.create(user)
+
+
+@pytest.fixture
+def workspace_member(
+    workspace_member_factory: WorkspaceMemberFactory,
+    workspace: CreatedWorkspace,
+    other_user: RegisteredUser,
+) -> CreatedWorkspaceMember:
+    return workspace_member_factory.create(workspace, other_user)
 
 
 @pytest.fixture
