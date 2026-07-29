@@ -1,5 +1,6 @@
 """Pydantic request and response schemas."""
 
+from app.schemas.activity import ActivityFeed, ActivityListParams, ActivityRead
 from app.schemas.attachment import AttachmentRead
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.comment import CommentCreate, CommentRead, CommentUpdate
@@ -29,6 +30,9 @@ from app.schemas.workspace_member import (
 )
 
 __all__ = [
+    "ActivityFeed",
+    "ActivityListParams",
+    "ActivityRead",
     "AttachmentRead",
     "CommentCreate",
     "CommentRead",

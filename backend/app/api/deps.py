@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
 from app.models.user import User
+from app.repositories.activity import ActivityRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.project import ProjectRepository
@@ -19,6 +20,7 @@ from app.repositories.workspace import WorkspaceRepository
 from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.services.attachment import AttachmentService
+from app.services.activity import ActivityService
 from app.services.comment import CommentService
 from app.services.permission import PermissionService
 from app.services.project import ProjectService
@@ -181,4 +183,22 @@ def get_workspace_invitation_service(
 WorkspaceInvitationServiceDep = Annotated[
     WorkspaceInvitationService,
     Depends(get_workspace_invitation_service),
+]
+
+
+def get_activity_service(session: SessionDep) -> ActivityService:
+    member_repository = WorkspaceMemberRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        WorkspaceRepository(session),
+    )
+    return ActivityService(
+        ActivityRepository(session),
+        permission_service,
+    )
+
+
+ActivityServiceDep = Annotated[
+    ActivityService,
+    Depends(get_activity_service),
 ]

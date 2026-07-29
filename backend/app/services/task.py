@@ -1,5 +1,11 @@
 from uuid import UUID
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
@@ -35,7 +41,21 @@ class TaskService:
         data: TaskCreate,
     ) -> Task:
         project = self._get_owned_project(owner, project_id)
-        return self.repository.create(project, data)
+        task = self.repository.create(project, data)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.TASK_CREATED,
+                resource_type=ActivityResourceType.TASK,
+                workspace_id=project.workspace_id,
+                resource_id=task.id,
+                actor_id=owner.id,
+                metadata={
+                    "project_id": str(project.id),
+                    "title": task.title,
+                },
+            )
+        )
+        return task
 
     def list_project_tasks(self, owner: User, project_id: UUID) -> list[Task]:
         project = self._get_owned_project(owner, project_id)
@@ -69,13 +89,37 @@ class TaskService:
         task = self.repository.get_by_id_for_owner(task_id, owner)
         if task is None:
             raise TaskNotFoundError
-        return self.repository.update(task, data)
+        updated_task = self.repository.update(task, data)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.TASK_UPDATED,
+                resource_type=ActivityResourceType.TASK,
+                workspace_id=task.project.workspace_id,
+                resource_id=task.id,
+                actor_id=owner.id,
+                metadata={"fields": sorted(data.model_fields_set)},
+            )
+        )
+        return updated_task
 
     def delete_task(self, owner: User, task_id: UUID) -> None:
         task = self.repository.get_by_id_for_owner(task_id, owner)
         if task is None:
             raise TaskNotFoundError
         self.repository.delete(task)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.TASK_DELETED,
+                resource_type=ActivityResourceType.TASK,
+                workspace_id=task.project.workspace_id,
+                resource_id=task.id,
+                actor_id=owner.id,
+                metadata={
+                    "project_id": str(task.project_id),
+                    "title": task.title,
+                },
+            )
+        )
 
     def _get_owned_project(self, owner: User, project_id: UUID) -> Project:
         project = self.project_repository.get_by_id_for_owner(project_id, owner)

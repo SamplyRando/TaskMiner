@@ -2,6 +2,12 @@ from datetime import datetime, timedelta, timezone
 import secrets
 from uuid import UUID
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.user import User
 from app.models.workspace_invitation import InvitationStatus, WorkspaceInvitation
 from app.models.workspace_member import WorkspaceMemberRole
@@ -89,7 +95,7 @@ class WorkspaceInvitationService:
         expires_at = self._now() + INVITATION_LIFETIME
         for _ in range(TOKEN_GENERATION_ATTEMPTS):
             try:
-                return self.repository.create(
+                invitation = self.repository.create(
                     workspace,
                     normalized_data,
                     token=secrets.token_urlsafe(32),
@@ -97,6 +103,20 @@ class WorkspaceInvitationService:
                 )
             except InvitationTokenConflictError:
                 continue
+            publish(
+                DomainEvent(
+                    event_type=ActivityEventType.INVITATION_CREATED,
+                    resource_type=ActivityResourceType.INVITATION,
+                    workspace_id=workspace.id,
+                    resource_id=invitation.id,
+                    actor_id=actor.id,
+                    metadata={
+                        "email": invitation.email,
+                        "role": invitation.role.value,
+                    },
+                )
+            )
+            return invitation
         raise InvitationTokenGenerationError
 
     def list_invitations(
@@ -162,9 +182,27 @@ class WorkspaceInvitationService:
             raise InvitationMemberAlreadyExistsError
 
         try:
-            return self.repository.accept(invitation, actor, self._now())
+            accepted_invitation = self.repository.accept(
+                invitation,
+                actor,
+                self._now(),
+            )
         except WorkspaceMemberConflictError as exc:
             raise InvitationMemberAlreadyExistsError from exc
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.INVITATION_ACCEPTED,
+                resource_type=ActivityResourceType.INVITATION,
+                workspace_id=invitation.workspace_id,
+                resource_id=invitation.id,
+                actor_id=actor.id,
+                metadata={
+                    "email": invitation.email,
+                    "role": invitation.role.value,
+                },
+            )
+        )
+        return accepted_invitation
 
     def revoke_invitation(
         self,

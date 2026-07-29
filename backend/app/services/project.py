@@ -1,5 +1,11 @@
 from uuid import UUID
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.project import Project
 from app.models.user import User
 from app.repositories.project import ProjectRepository
@@ -39,7 +45,18 @@ class ProjectService:
                 owner,
                 WorkspaceCreate(name=DEFAULT_WORKSPACE_NAME),
             )
-        return self.repository.create(workspace, data)
+        project = self.repository.create(workspace, data)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.PROJECT_CREATED,
+                resource_type=ActivityResourceType.PROJECT,
+                workspace_id=workspace.id,
+                resource_id=project.id,
+                actor_id=owner.id,
+                metadata={"name": project.name},
+            )
+        )
+        return project
 
     def list_projects(
         self,
@@ -76,3 +93,13 @@ class ProjectService:
         if project is None:
             raise ProjectNotFoundError
         self.repository.delete(project)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.PROJECT_DELETED,
+                resource_type=ActivityResourceType.PROJECT,
+                workspace_id=project.workspace_id,
+                resource_id=project.id,
+                actor_id=owner.id,
+                metadata={"name": project.name},
+            )
+        )

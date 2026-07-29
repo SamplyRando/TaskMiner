@@ -1,5 +1,11 @@
 from uuid import UUID
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.task import Task
 from app.models.user import User
 from app.repositories.task import TaskRepository
@@ -33,7 +39,18 @@ class TaskAssignmentService:
         assigned_user = self.user_repository.get(data.assigned_user_id)
         if assigned_user is None or not assigned_user.is_active:
             raise TaskAssigneeNotFoundError
-        return self.task_repository.assign(task, assigned_user)
+        assigned_task = self.task_repository.assign(task, assigned_user)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.TASK_ASSIGNED,
+                resource_type=ActivityResourceType.TASK,
+                workspace_id=task.project.workspace_id,
+                resource_id=task.id,
+                actor_id=owner.id,
+                metadata={"assigned_user_id": str(assigned_user.id)},
+            )
+        )
+        return assigned_task
 
     def unassign_task(self, owner: User, task_id: UUID) -> None:
         task = self._get_owned_task(owner, task_id)

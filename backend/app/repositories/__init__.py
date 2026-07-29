@@ -1,5 +1,6 @@
 """Persistence contracts for TaskMiner entities."""
 
+from app.repositories.activity import ActivityRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.project import ProjectRepository
@@ -10,6 +11,7 @@ from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 
 __all__ = [
+    "ActivityRepository",
     "AttachmentRepository",
     "CommentRepository",
     "ProjectRepository",

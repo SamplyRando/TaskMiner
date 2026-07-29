@@ -1,6 +1,12 @@
 from uuid import UUID
 
 from app.core import permissions
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
@@ -99,7 +105,23 @@ class PermissionService:
         ):
             raise LastOwnerError
 
-        return self.member_repository.update_role(member, data.role)
+        previous_role = member.role
+        updated_member = self.member_repository.update_role(member, data.role)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.MEMBER_ROLE_UPDATED,
+                resource_type=ActivityResourceType.MEMBER,
+                workspace_id=workspace.id,
+                resource_id=member.id,
+                actor_id=actor.id,
+                metadata={
+                    "new_role": data.role.value,
+                    "previous_role": previous_role.value,
+                    "user_id": str(member.user_id),
+                },
+            )
+        )
+        return updated_member
 
     def require_invitation_management(
         self,
@@ -108,6 +130,16 @@ class PermissionService:
     ) -> Workspace:
         workspace, membership = self._get_workspace_membership(user, workspace_id)
         if not permissions.can_manage_invitations(membership.role):
+            raise PermissionDeniedError
+        return workspace
+
+    def require_workspace_view(
+        self,
+        user: User,
+        workspace_id: UUID,
+    ) -> Workspace:
+        workspace, membership = self._get_workspace_membership(user, workspace_id)
+        if not permissions.can_view_workspace(membership.role):
             raise PermissionDeniedError
         return workspace
 

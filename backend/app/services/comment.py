@@ -1,5 +1,11 @@
 from uuid import UUID
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.comment import Comment
 from app.models.task import Task
 from app.models.user import User
@@ -34,7 +40,18 @@ class CommentService:
         data: CommentCreate,
     ) -> Comment:
         task = self._get_owned_task(author, task_id)
-        return self.repository.create(task, author, data)
+        comment = self.repository.create(task, author, data)
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.COMMENT_CREATED,
+                resource_type=ActivityResourceType.COMMENT,
+                workspace_id=task.project.workspace_id,
+                resource_id=comment.id,
+                actor_id=author.id,
+                metadata={"task_id": str(task.id)},
+            )
+        )
+        return comment
 
     def list_comments(self, owner: User, task_id: UUID) -> list[Comment]:
         task = self._get_owned_task(owner, task_id)

@@ -4,6 +4,12 @@ from uuid import UUID, uuid4
 
 from fastapi import UploadFile
 
+from app.core.events import (
+    ActivityEventType,
+    ActivityResourceType,
+    DomainEvent,
+    publish,
+)
 from app.models.attachment import Attachment
 from app.models.task import Task
 from app.models.user import User
@@ -65,7 +71,7 @@ class AttachmentService:
         file_size = self._store_file(upload, destination)
 
         try:
-            return self.repository.create(
+            attachment = self.repository.create(
                 task,
                 filename=filename,
                 stored_filename=stored_filename,
@@ -75,6 +81,21 @@ class AttachmentService:
         except Exception:
             destination.unlink(missing_ok=True)
             raise
+        publish(
+            DomainEvent(
+                event_type=ActivityEventType.ATTACHMENT_UPLOADED,
+                resource_type=ActivityResourceType.ATTACHMENT,
+                workspace_id=task.project.workspace_id,
+                resource_id=attachment.id,
+                actor_id=owner.id,
+                metadata={
+                    "filename": attachment.filename,
+                    "file_size": attachment.file_size,
+                    "task_id": str(task.id),
+                },
+            )
+        )
+        return attachment
 
     def list_attachments(self, owner: User, task_id: UUID) -> list[Attachment]:
         task = self._get_owned_task(owner, task_id)

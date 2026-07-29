@@ -1,5 +1,6 @@
 """Application service declarations."""
 
+from app.services.activity import ActivityService
 from app.services.attachment import (
     AttachmentExtensionNotAllowedError,
     AttachmentNotFoundError,
@@ -48,6 +49,7 @@ from app.services.workspace_member import (
 )
 
 __all__ = [
+    "ActivityService",
     "AttachmentExtensionNotAllowedError",
     "AttachmentNotFoundError",
     "AttachmentService",
