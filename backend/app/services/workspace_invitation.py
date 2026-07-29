@@ -110,6 +110,11 @@ class WorkspaceInvitationService:
                     workspace_id=workspace.id,
                     resource_id=invitation.id,
                     actor_id=actor.id,
+                    new_values={
+                        "email": invitation.email,
+                        "role": invitation.role.value,
+                        "status": invitation.status.value,
+                    },
                     metadata={
                         "email": invitation.email,
                         "role": invitation.role.value,
@@ -196,6 +201,8 @@ class WorkspaceInvitationService:
                 workspace_id=invitation.workspace_id,
                 resource_id=invitation.id,
                 actor_id=actor.id,
+                old_values={"status": InvitationStatus.PENDING.value},
+                new_values={"status": InvitationStatus.ACCEPTED.value},
                 metadata={
                     "email": invitation.email,
                     "role": invitation.role.value,

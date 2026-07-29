@@ -49,6 +49,15 @@ class TaskService:
                 workspace_id=project.workspace_id,
                 resource_id=task.id,
                 actor_id=owner.id,
+                new_values={
+                    "description": task.description,
+                    "due_date": (
+                        task.due_date.isoformat() if task.due_date is not None else None
+                    ),
+                    "priority": task.priority.value,
+                    "status": task.status.value,
+                    "title": task.title,
+                },
                 metadata={
                     "project_id": str(project.id),
                     "title": task.title,
@@ -89,7 +98,16 @@ class TaskService:
         task = self.repository.get_by_id_for_owner(task_id, owner)
         if task is None:
             raise TaskNotFoundError
+        changed_fields = data.model_fields_set
+        old_values = TaskRead.model_validate(task).model_dump(
+            mode="json",
+            include=changed_fields,
+        )
         updated_task = self.repository.update(task, data)
+        new_values = TaskRead.model_validate(updated_task).model_dump(
+            mode="json",
+            include=changed_fields,
+        )
         publish(
             DomainEvent(
                 event_type=ActivityEventType.TASK_UPDATED,
@@ -97,7 +115,9 @@ class TaskService:
                 workspace_id=task.project.workspace_id,
                 resource_id=task.id,
                 actor_id=owner.id,
-                metadata={"fields": sorted(data.model_fields_set)},
+                old_values=old_values,
+                new_values=new_values,
+                metadata={"fields": sorted(changed_fields)},
             )
         )
         return updated_task
@@ -114,6 +134,12 @@ class TaskService:
                 workspace_id=task.project.workspace_id,
                 resource_id=task.id,
                 actor_id=owner.id,
+                old_values={
+                    "description": task.description,
+                    "priority": task.priority.value,
+                    "status": task.status.value,
+                    "title": task.title,
+                },
                 metadata={
                     "project_id": str(task.project_id),
                     "title": task.title,

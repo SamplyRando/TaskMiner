@@ -88,6 +88,12 @@ class AttachmentService:
                 workspace_id=task.project.workspace_id,
                 resource_id=attachment.id,
                 actor_id=owner.id,
+                new_values={
+                    "content_type": attachment.content_type,
+                    "file_size": attachment.file_size,
+                    "filename": attachment.filename,
+                    "task_id": str(task.id),
+                },
                 metadata={
                     "filename": attachment.filename,
                     "file_size": attachment.file_size,

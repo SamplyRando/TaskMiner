@@ -48,6 +48,10 @@ class CommentService:
                 workspace_id=task.project.workspace_id,
                 resource_id=comment.id,
                 actor_id=author.id,
+                new_values={
+                    "content": comment.content,
+                    "task_id": str(task.id),
+                },
                 metadata={"task_id": str(task.id)},
             )
         )

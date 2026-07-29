@@ -53,6 +53,10 @@ class ProjectService:
                 workspace_id=workspace.id,
                 resource_id=project.id,
                 actor_id=owner.id,
+                new_values={
+                    "description": project.description,
+                    "name": project.name,
+                },
                 metadata={"name": project.name},
             )
         )
@@ -100,6 +104,10 @@ class ProjectService:
                 workspace_id=project.workspace_id,
                 resource_id=project.id,
                 actor_id=owner.id,
+                old_values={
+                    "description": project.description,
+                    "name": project.name,
+                },
                 metadata={"name": project.name},
             )
         )

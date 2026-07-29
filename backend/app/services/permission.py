@@ -114,6 +114,8 @@ class PermissionService:
                 workspace_id=workspace.id,
                 resource_id=member.id,
                 actor_id=actor.id,
+                old_values={"role": previous_role.value},
+                new_values={"role": data.role.value},
                 metadata={
                     "new_role": data.role.value,
                     "previous_role": previous_role.value,
@@ -140,6 +142,16 @@ class PermissionService:
     ) -> Workspace:
         workspace, membership = self._get_workspace_membership(user, workspace_id)
         if not permissions.can_view_workspace(membership.role):
+            raise PermissionDeniedError
+        return workspace
+
+    def require_audit_view(
+        self,
+        user: User,
+        workspace_id: UUID,
+    ) -> Workspace:
+        workspace, membership = self._get_workspace_membership(user, workspace_id)
+        if not permissions.can_view_audit(membership.role):
             raise PermissionDeniedError
         return workspace
 

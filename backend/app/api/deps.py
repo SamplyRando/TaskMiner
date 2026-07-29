@@ -11,6 +11,7 @@ from app.core.security import decode_access_token
 from app.database.database import get_db
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
+from app.repositories.audit import AuditRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.project import ProjectRepository
@@ -21,6 +22,7 @@ from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.services.attachment import AttachmentService
 from app.services.activity import ActivityService
+from app.services.audit import AuditService
 from app.services.comment import CommentService
 from app.services.permission import PermissionService
 from app.services.project import ProjectService
@@ -201,4 +203,22 @@ def get_activity_service(session: SessionDep) -> ActivityService:
 ActivityServiceDep = Annotated[
     ActivityService,
     Depends(get_activity_service),
+]
+
+
+def get_audit_service(session: SessionDep) -> AuditService:
+    member_repository = WorkspaceMemberRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        WorkspaceRepository(session),
+    )
+    return AuditService(
+        AuditRepository(session),
+        permission_service,
+    )
+
+
+AuditServiceDep = Annotated[
+    AuditService,
+    Depends(get_audit_service),
 ]

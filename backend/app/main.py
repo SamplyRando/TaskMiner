@@ -8,18 +8,22 @@ from app.core.config import settings
 from app.core.logging import configure_logging
 from app.database.database import SessionLocal
 from app.listeners.activity import ActivityListener
+from app.listeners.audit import AuditListener
 
 
 configure_logging(settings.log_level)
 activity_listener = ActivityListener(SessionLocal)
+audit_listener = AuditListener(SessionLocal)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     activity_listener.start()
+    audit_listener.start()
     try:
         yield
     finally:
+        audit_listener.stop()
         activity_listener.stop()
 
 

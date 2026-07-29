@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     activities,
+    audit,
     attachments,
     auth,
     comments,
@@ -38,6 +39,11 @@ api_router.include_router(
     activities.router,
     prefix="/workspaces",
     tags=["activities"],
+)
+api_router.include_router(
+    audit.router,
+    prefix="/workspaces",
+    tags=["audit"],
 )
 api_router.include_router(
     workspace_invitations.workspace_router,

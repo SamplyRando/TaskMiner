@@ -41,14 +41,36 @@ class DomainEvent:
     workspace_id: UUID
     resource_id: UUID
     actor_id: UUID | None
+    old_values: dict[str, Any] | None = None
+    new_values: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        try:
-            json.dumps(self.metadata, allow_nan=False)
-        except (TypeError, ValueError) as exc:
-            raise ValueError("Domain event metadata must be valid JSON.") from exc
-        object.__setattr__(self, "metadata", dict(self.metadata))
+        object.__setattr__(
+            self,
+            "old_values",
+            _validate_json_mapping("old_values", self.old_values),
+        )
+        object.__setattr__(
+            self,
+            "new_values",
+            _validate_json_mapping("new_values", self.new_values),
+        )
+        validated_metadata = _validate_json_mapping("metadata", self.metadata)
+        object.__setattr__(self, "metadata", validated_metadata or {})
+
+
+def _validate_json_mapping(
+    field_name: str,
+    value: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Domain event {field_name} must be valid JSON.") from exc
+    return dict(value)
 
 
 EventHandler = Callable[[DomainEvent], None]

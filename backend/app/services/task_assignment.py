@@ -39,6 +39,7 @@ class TaskAssignmentService:
         assigned_user = self.user_repository.get(data.assigned_user_id)
         if assigned_user is None or not assigned_user.is_active:
             raise TaskAssigneeNotFoundError
+        previous_assignee_id = task.assigned_user_id
         assigned_task = self.task_repository.assign(task, assigned_user)
         publish(
             DomainEvent(
@@ -47,6 +48,14 @@ class TaskAssignmentService:
                 workspace_id=task.project.workspace_id,
                 resource_id=task.id,
                 actor_id=owner.id,
+                old_values={
+                    "assigned_user_id": (
+                        str(previous_assignee_id)
+                        if previous_assignee_id is not None
+                        else None
+                    )
+                },
+                new_values={"assigned_user_id": str(assigned_user.id)},
                 metadata={"assigned_user_id": str(assigned_user.id)},
             )
         )
