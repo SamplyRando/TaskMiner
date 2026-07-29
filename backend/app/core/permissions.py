@@ -54,6 +54,10 @@ def can_manage_members(role: WorkspaceMemberRole) -> bool:
     return role == WorkspaceMemberRole.OWNER
 
 
+def can_manage_invitations(role: WorkspaceMemberRole) -> bool:
+    return role in {WorkspaceMemberRole.OWNER, WorkspaceMemberRole.ADMIN}
+
+
 def can_comment(role: WorkspaceMemberRole) -> bool:
     return role != WorkspaceMemberRole.VIEWER
 

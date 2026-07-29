@@ -6,6 +6,7 @@ from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserEmailConflictError, UserRepository
 from app.repositories.workspace import WorkspaceRepository
+from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "UserEmailConflictError",
     "UserRepository",
     "WorkspaceRepository",
+    "WorkspaceInvitationRepository",
     "WorkspaceMemberRepository",
 ]

@@ -15,6 +15,13 @@ from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 from app.schemas.task_assignment import TaskAssignmentUpdate
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate
+from app.schemas.workspace_invitation import (
+    InvitationAccept,
+    InvitationCreate,
+    InvitationList,
+    InvitationRead,
+    InvitationStatus,
+)
 from app.schemas.workspace_member import (
     WorkspaceMemberList,
     WorkspaceMemberRead,
@@ -44,6 +51,11 @@ __all__ = [
     "WorkspaceCreate",
     "WorkspaceRead",
     "WorkspaceUpdate",
+    "InvitationAccept",
+    "InvitationCreate",
+    "InvitationList",
+    "InvitationRead",
+    "InvitationStatus",
     "WorkspaceMemberList",
     "WorkspaceMemberRead",
     "WorkspaceMemberRoleUpdate",

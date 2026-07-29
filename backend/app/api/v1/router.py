@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     workspaces,
     workspace_members,
     workspace_permissions,
+    workspace_invitations,
 )
 
 
@@ -31,6 +32,16 @@ api_router.include_router(
     workspace_permissions.router,
     prefix="/workspaces",
     tags=["workspace-permissions"],
+)
+api_router.include_router(
+    workspace_invitations.workspace_router,
+    prefix="/workspaces",
+    tags=["workspace-invitations"],
+)
+api_router.include_router(
+    workspace_invitations.router,
+    prefix="/invitations",
+    tags=["workspace-invitations"],
 )
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 api_router.include_router(tasks.project_router, prefix="/projects", tags=["tasks"])

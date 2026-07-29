@@ -6,6 +6,10 @@ from tests.factories.projects import CreatedProject, ProjectFactory
 from tests.factories.tasks import CreatedTask, TaskFactory
 from tests.factories.users import RegisteredUser, UserFactory
 from tests.factories.workspaces import CreatedWorkspace, WorkspaceFactory
+from tests.factories.workspace_invitations import (
+    CreatedWorkspaceInvitation,
+    WorkspaceInvitationFactory,
+)
 from tests.factories.workspace_members import (
     CreatedWorkspaceMember,
     WorkspaceMemberFactory,
@@ -19,11 +23,13 @@ __all__ = [
     "CreatedProject",
     "CreatedTask",
     "CreatedWorkspace",
+    "CreatedWorkspaceInvitation",
     "CreatedWorkspaceMember",
     "ProjectFactory",
     "RegisteredUser",
     "TaskFactory",
     "UserFactory",
     "WorkspaceFactory",
+    "WorkspaceInvitationFactory",
     "WorkspaceMemberFactory",
 ]

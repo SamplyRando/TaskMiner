@@ -101,6 +101,16 @@ class PermissionService:
 
         return self.member_repository.update_role(member, data.role)
 
+    def require_invitation_management(
+        self,
+        user: User,
+        workspace_id: UUID,
+    ) -> Workspace:
+        workspace, membership = self._get_workspace_membership(user, workspace_id)
+        if not permissions.can_manage_invitations(membership.role):
+            raise PermissionDeniedError
+        return workspace
+
     def _get_workspace_membership(
         self,
         user: User,

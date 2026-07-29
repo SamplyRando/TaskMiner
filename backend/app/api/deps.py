@@ -16,6 +16,7 @@ from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
 from app.repositories.workspace import WorkspaceRepository
+from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.services.attachment import AttachmentService
 from app.services.comment import CommentService
@@ -25,6 +26,7 @@ from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
 from app.services.user import UserService
 from app.services.workspace import WorkspaceService
+from app.services.workspace_invitation import WorkspaceInvitationService
 from app.services.workspace_member import WorkspaceMemberService
 
 
@@ -158,4 +160,25 @@ def get_permission_service(session: SessionDep) -> PermissionService:
 PermissionServiceDep = Annotated[
     PermissionService,
     Depends(get_permission_service),
+]
+
+
+def get_workspace_invitation_service(
+    session: SessionDep,
+) -> WorkspaceInvitationService:
+    member_repository = WorkspaceMemberRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        WorkspaceRepository(session),
+    )
+    return WorkspaceInvitationService(
+        WorkspaceInvitationRepository(session),
+        member_repository,
+        permission_service,
+    )
+
+
+WorkspaceInvitationServiceDep = Annotated[
+    WorkspaceInvitationService,
+    Depends(get_workspace_invitation_service),
 ]
