@@ -29,5 +29,23 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      include: [
+        "src/api/dashboard.ts",
+        "src/features/dashboard/**/*.ts",
+        "src/components/dashboard/**/*.tsx",
+        "src/components/empty-state.tsx",
+        "src/components/ui/progress.tsx",
+        "src/pages/home-page.tsx",
+      ],
+      thresholds: {
+        branches: 95,
+        functions: 95,
+        lines: 95,
+        statements: 95,
+      },
+    },
   },
 });

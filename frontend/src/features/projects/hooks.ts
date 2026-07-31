@@ -38,6 +38,7 @@ export const useCreateProject = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
     },
   });
@@ -93,7 +94,10 @@ export const useUpdateProject = () => {
       }
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -132,6 +136,7 @@ export const useDeleteProject = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
     },
   });

@@ -41,7 +41,10 @@ export const useCreateTask = () => {
     mutationFn: ({ data, projectId }: CreateTaskVariables) =>
       createTask(projectId, data),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -104,7 +107,10 @@ export const useUpdateTask = () => {
       }
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -138,7 +144,10 @@ export const useDeleteTask = () => {
       }
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -172,7 +181,10 @@ export const useAssignTask = () => {
       }
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };

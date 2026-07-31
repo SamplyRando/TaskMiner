@@ -25,7 +25,10 @@ export const useCreateWorkspace = () => {
   return useMutation({
     mutationFn: createWorkspace,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -59,7 +62,10 @@ export const useUpdateWorkspace = () => {
       }
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
     },
   });
 };
@@ -89,6 +95,7 @@ export const useDeleteWorkspace = () => {
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
     },
   });
