@@ -14,6 +14,7 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.audit import AuditRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
+from app.repositories.dashboard import DashboardRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
@@ -24,6 +25,7 @@ from app.services.attachment import AttachmentService
 from app.services.activity import ActivityService
 from app.services.audit import AuditService
 from app.services.comment import CommentService
+from app.services.dashboard import DashboardService
 from app.services.permission import PermissionService
 from app.services.project import ProjectService
 from app.services.task import TaskService
@@ -71,6 +73,16 @@ def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+def get_dashboard_service(session: SessionDep) -> DashboardService:
+    return DashboardService(DashboardRepository(session))
+
+
+DashboardServiceDep = Annotated[
+    DashboardService,
+    Depends(get_dashboard_service),
+]
 
 
 def get_user_service(session: SessionDep) -> UserService:

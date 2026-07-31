@@ -14,6 +14,7 @@ from app.services.comment import (
     CommentService,
     CommentTaskNotFoundError,
 )
+from app.services.dashboard import DashboardService
 from app.services.project import ProjectNotFoundError, ProjectService
 from app.services.permission import (
     LastOwnerError,
@@ -60,6 +61,7 @@ __all__ = [
     "CommentNotFoundError",
     "CommentService",
     "CommentTaskNotFoundError",
+    "DashboardService",
     "InvalidCredentialsError",
     "ProjectNotFoundError",
     "ProjectService",
