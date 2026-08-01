@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, func, text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgreSQLUUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.events import ActivityEventType, ActivityResourceType
 from app.database.database import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Activity(Base):
@@ -66,4 +72,9 @@ class Activity(Base):
         nullable=False,
         server_default=func.now(),
         index=True,
+    )
+
+    actor: Mapped[User | None] = relationship(
+        foreign_keys=[actor_id],
+        lazy="joined",
     )

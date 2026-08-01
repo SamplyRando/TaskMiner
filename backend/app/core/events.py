@@ -1,10 +1,11 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 import json
 from threading import RLock
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 class ActivityEventType(str, Enum):
@@ -41,11 +42,15 @@ class DomainEvent:
     workspace_id: UUID
     resource_id: UUID
     actor_id: UUID | None
+    id: UUID = field(default_factory=uuid4)
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     old_values: dict[str, Any] | None = None
     new_values: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.occurred_at.tzinfo is None:
+            raise ValueError("Domain event occurred_at must be timezone-aware.")
         object.__setattr__(
             self,
             "old_values",

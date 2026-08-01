@@ -76,3 +76,24 @@
     @apply focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
 }
+
+@keyframes activity-arrival {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.activity-arrival {
+  animation: activity-arrival 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-arrival {
+    animation: none;
+  }
+}

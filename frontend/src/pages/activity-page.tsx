@@ -1,66 +1,104 @@
-import { ChevronLeft, ChevronRight, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { ActivityFilters } from "@/components/activity/activity-filters";
+import type { ActivityFiltersValue } from "@/components/activity/activity-filters";
+import { ActivityLiveBadge } from "@/components/activity/activity-live-badge";
 import { ActivityTimelineSkeleton } from "@/components/activity/activity-timeline-skeleton";
 import { ActivityTimeline } from "@/components/activity/activity-timeline";
 import { EmptyState } from "@/components/empty-state";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
-import { Button } from "@/components/ui/button";
 import { WorkspaceSelector } from "@/components/workspace-selector";
-import { useWorkspaceActivities } from "@/features/activities/hooks";
+import {
+  useActivityStream,
+  useInfiniteWorkspaceActivities,
+} from "@/features/activities/hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type {
+  ActivityActor,
+  ActivityFilters as Filters,
+} from "@/types/activity";
 
-const PAGE_SIZE = 20;
-
-type WorkspacePagination = {
-  pageIndex: number;
-  workspaceId: string | null;
+const emptyFilters: ActivityFiltersValue = {
+  actorId: "",
+  eventType: "",
+  period: "",
+  search: "",
 };
 
 export function ActivityPage() {
   const workspace = useActiveWorkspace();
-  const [pagination, setPagination] = useState<WorkspacePagination>({
-    pageIndex: 0,
-    workspaceId: null,
-  });
-  const pageIndex =
-    pagination.workspaceId === workspace.activeWorkspaceId
-      ? pagination.pageIndex
-      : 0;
-  const params = useMemo(
-    () => ({ limit: PAGE_SIZE, offset: pageIndex * PAGE_SIZE }),
-    [pageIndex],
+  const [filterState, setFilterState] =
+    useState<ActivityFiltersValue>(emptyFilters);
+  const debouncedSearch = useDebouncedValue(filterState.search.trim(), 300);
+  const filters = useMemo<Filters>(
+    () => ({
+      ...(filterState.actorId ? { actor_id: filterState.actorId } : {}),
+      ...(filterState.eventType ? { event_type: filterState.eventType } : {}),
+      ...(filterState.period ? { period: filterState.period } : {}),
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    }),
+    [
+      debouncedSearch,
+      filterState.actorId,
+      filterState.eventType,
+      filterState.period,
+    ],
   );
-  const activitiesQuery = useWorkspaceActivities(
+  const activitiesQuery = useInfiniteWorkspaceActivities(
     workspace.activeWorkspaceId,
-    params,
+    filters,
   );
-  const total = activitiesQuery.data?.count ?? 0;
-  const pageCount = Math.ceil(total / PAGE_SIZE);
-
-  const setPage = (nextPage: number) => {
-    setPagination({
-      pageIndex: nextPage,
-      workspaceId: workspace.activeWorkspaceId,
+  const activities = useMemo(() => {
+    const seen = new Set<string>();
+    return (activitiesQuery.data?.pages ?? []).flatMap((page) =>
+      page.items.filter((activity) => {
+        if (seen.has(activity.id)) {
+          return false;
+        }
+        seen.add(activity.id);
+        return true;
+      }),
+    );
+  }, [activitiesQuery.data?.pages]);
+  const actors = useMemo(() => {
+    const byId = new Map<string, ActivityActor>();
+    activities.forEach(({ actor }) => {
+      if (actor) {
+        byId.set(actor.id, actor);
+      }
     });
-  };
+    return [...byId.values()].sort((left, right) =>
+      left.full_name.localeCompare(right.full_name, "fr"),
+    );
+  }, [activities]);
+  const stream = useActivityStream({
+    filters,
+    workspaceId: workspace.activeWorkspaceId,
+    workspaceName: workspace.activeWorkspace?.name ?? "",
+  });
+  const total = activitiesQuery.data?.pages[0]?.count ?? 0;
 
   return (
     <div className="min-w-0 space-y-6">
       <EntityPageHeader
         actions={
-          <WorkspaceSelector
-            disabled={workspace.isPending}
-            onValueChange={(workspaceId) => {
-              workspace.selectWorkspace(workspaceId);
-              setPagination({ pageIndex: 0, workspaceId });
-            }}
-            value={workspace.activeWorkspaceId}
-            workspaces={workspace.workspaces}
-          />
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+            <ActivityLiveBadge status={stream.status} />
+            <WorkspaceSelector
+              disabled={workspace.isPending}
+              onValueChange={(workspaceId) => {
+                workspace.selectWorkspace(workspaceId);
+                setFilterState(emptyFilters);
+              }}
+              value={workspace.activeWorkspaceId}
+              workspaces={workspace.workspaces}
+            />
+          </div>
         }
-        description="Suivez les événements récents de votre espace de travail."
+        description="Suivez en direct les événements de votre espace de travail."
         title="Activité"
       />
 
@@ -85,6 +123,12 @@ export function ActivityPage() {
 
       {workspace.activeWorkspaceId && !workspace.isError ? (
         <>
+          <ActivityFilters
+            actors={actors}
+            onChange={setFilterState}
+            value={filterState}
+          />
+
           {activitiesQuery.isError ? (
             <ErrorState
               error={activitiesQuery.error}
@@ -93,48 +137,26 @@ export function ActivityPage() {
           ) : activitiesQuery.isPending ? (
             <ActivityTimelineSkeleton />
           ) : (
-            <ActivityTimeline items={activitiesQuery.data.items} />
-          )}
-
-          {!activitiesQuery.isError && !activitiesQuery.isPending ? (
-            <nav
-              aria-label="Pagination des activités"
-              className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-3 sm:flex-row"
-            >
+            <>
               <p className="text-muted-foreground text-sm" aria-live="polite">
                 {total} activité{total > 1 ? "s" : ""}
               </p>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground min-w-24 text-center text-sm">
-                  Page {pageCount === 0 ? 0 : pageIndex + 1} / {pageCount}
-                </span>
-                <Button
-                  aria-label="Page précédente"
-                  disabled={pageIndex === 0}
-                  onClick={() => {
-                    setPage(Math.max(pageIndex - 1, 0));
-                  }}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronLeft aria-hidden="true" className="size-4" />
-                </Button>
-                <Button
-                  aria-label="Page suivante"
-                  disabled={(pageIndex + 1) * PAGE_SIZE >= total}
-                  onClick={() => {
-                    setPage(pageIndex + 1);
-                  }}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronRight aria-hidden="true" className="size-4" />
-                </Button>
-              </div>
-            </nav>
-          ) : null}
+              <ActivityTimeline
+                hasNextPage={activitiesQuery.hasNextPage}
+                isFetchingNextPage={activitiesQuery.isFetchingNextPage}
+                items={activities}
+                latestActivityId={stream.latestActivityId}
+                onEndReached={() => {
+                  void activitiesQuery.fetchNextPage();
+                }}
+              />
+              {stream.latestActivityId ? (
+                <p aria-live="polite" className="sr-only">
+                  Nouvelle activité reçue en temps réel.
+                </p>
+              ) : null}
+            </>
+          )}
         </>
       ) : null}
     </div>

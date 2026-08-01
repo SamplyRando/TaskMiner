@@ -47,6 +47,11 @@ api_router.include_router(
     tags=["activities"],
 )
 api_router.include_router(
+    activities.stream_router,
+    prefix="/activities",
+    tags=["activities"],
+)
+api_router.include_router(
     audit.router,
     prefix="/workspaces",
     tags=["audit"],

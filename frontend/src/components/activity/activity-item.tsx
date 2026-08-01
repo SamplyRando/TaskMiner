@@ -12,16 +12,12 @@ import {
   UserRoundCheck,
   type LucideIcon,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, type CSSProperties } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { formatDateTime } from "@/lib/format";
-import {
-  activityEventLabels,
-  activityResourceLabels,
-  formatActor,
-  getMetadataSummary,
-} from "@/lib/activity-presentation";
+import { activityResourceLabels } from "@/lib/activity-presentation";
+import { formatDateTime, formatRelativeDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { ActivityEvent, ActivityItem as Activity } from "@/types/activity";
 
 const eventIcons: Record<ActivityEvent, LucideIcon> = {
@@ -44,16 +40,33 @@ const eventIcons: Record<ActivityEvent, LucideIcon> = {
 type ActivityItemProps = {
   activity: Activity;
   isLast: boolean;
+  isNew?: boolean;
+  position?: number;
+  style?: CSSProperties;
+  total?: number;
 };
 
 export const ActivityItem = memo(function ActivityItem({
   activity,
   isLast,
+  isNew = false,
+  position,
+  style,
+  total,
 }: ActivityItemProps) {
   const Icon = eventIcons[activity.event];
+  const actor = activity.actor?.full_name ?? activity.actor?.email ?? "Système";
 
   return (
-    <li className="relative flex gap-4 pb-6 last:pb-0">
+    <li
+      aria-posinset={position}
+      aria-setsize={total}
+      className={cn(
+        "relative flex gap-4 pb-6 last:pb-0",
+        isNew && "activity-arrival",
+      )}
+      style={style}
+    >
       {!isLast ? (
         <span
           aria-hidden="true"
@@ -66,24 +79,22 @@ export const ActivityItem = memo(function ActivityItem({
       <article className="bg-card min-w-0 flex-1 rounded-xl border p-4 shadow-sm">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
           <div className="min-w-0">
-            <h2 className="font-semibold">
-              {activityEventLabels[activity.event]}
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {getMetadataSummary(activity.metadata)}
-            </p>
+            <h2 className="font-semibold">{activity.message}</h2>
           </div>
           <Badge className="w-fit shrink-0" variant="outline">
             {activityResourceLabels[activity.resource]}
           </Badge>
         </div>
         <div className="text-muted-foreground mt-3 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
-          <span>{formatActor(activity.actor_id)}</span>
+          <span>{actor}</span>
           <span aria-hidden="true" className="hidden sm:inline">
             ·
           </span>
-          <time dateTime={activity.created_at}>
-            {formatDateTime(activity.created_at)}
+          <time
+            dateTime={activity.created_at}
+            title={formatDateTime(activity.created_at)}
+          >
+            {formatRelativeDate(activity.created_at)}
           </time>
         </div>
       </article>

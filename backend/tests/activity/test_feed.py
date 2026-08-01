@@ -47,11 +47,27 @@ def test_project_creation_automatically_adds_activity(
     assert item["event"] == "project_created"
     assert item["resource"] == "project"
     assert item["actor_id"] == str(user.id)
+    assert item["actor"] == {
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+    }
+    assert item["type"] == "project_created"
+    assert item["entity"] == "project"
+    assert item["entity_id"] == str(project.id)
+    assert item["workspace_id"] == str(workspace.id)
+    assert item["message"] == "Projet créé : Activity project"
     assert item["metadata"] == {"name": "Activity project"}
     assert set(item) == {
         "id",
+        "type",
+        "entity",
+        "entity_id",
+        "workspace_id",
+        "message",
         "event",
         "resource",
+        "actor",
         "actor_id",
         "metadata",
         "created_at",

@@ -18,12 +18,22 @@ export const secondWorkspace: Workspace = {
 };
 
 export const activityFixture: ActivityItem = {
+  actor: {
+    email: "ada@example.com",
+    full_name: "Ada Lovelace",
+    id: "00000000-0000-4000-8000-000000000001",
+  },
   actor_id: "00000000-0000-4000-8000-000000000001",
   created_at: "2026-08-01T10:30:00Z",
+  entity: "task",
+  entity_id: "00000000-0000-4000-8000-000000000004",
   event: "task_created",
   id: "00000000-0000-4000-8000-000000000110",
+  message: "Tâche créée : Préparer la mise en production",
   metadata: { title: "Préparer la mise en production" },
   resource: "task",
+  type: "task_created",
+  workspace_id: firstWorkspace.id,
 };
 
 export const activityFeedFixture: ActivityFeed = {

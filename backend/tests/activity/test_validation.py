@@ -18,6 +18,10 @@ from tests.factories import CreatedWorkspace, RegisteredUser
         {"limit": 0},
         {"limit": 101},
         {"limit": "invalid"},
+        {"actor_id": "invalid"},
+        {"event_type": "unknown"},
+        {"period": "year"},
+        {"search": ""},
         {"unexpected": "forbidden"},
     ],
 )
@@ -52,10 +56,16 @@ def test_activity_read_forbids_extra_fields() -> None:
         ActivityRead.model_validate(
             {
                 "id": uuid4(),
-                "event_type": "task_created",
-                "resource_type": "task",
+                "type": "task_created",
+                "entity": "task",
+                "entity_id": uuid4(),
+                "workspace_id": uuid4(),
+                "message": "Tâche créée",
+                "event": "task_created",
+                "resource": "task",
+                "actor": None,
                 "actor_id": uuid4(),
-                "activity_metadata": {},
+                "metadata": {},
                 "created_at": datetime.now(timezone.utc),
                 "unexpected": True,
             }

@@ -29,10 +29,29 @@ class ActivityService:
         )
         activities, count = self.repository.list_workspace_feed(
             workspace,
-            offset=params.offset,
-            limit=params.limit,
+            params=params,
         )
         return ActivityFeed(
-            items=[ActivityRead.model_validate(activity) for activity in activities],
+            items=[ActivityRead.from_activity(activity) for activity in activities],
             count=count,
         )
+
+    def prepare_stream(
+        self,
+        user: User,
+        workspace_id: UUID,
+        last_event_id: UUID | None,
+    ) -> list[ActivityRead]:
+        workspace = self.permission_service.require_workspace_view(
+            user,
+            workspace_id,
+        )
+        if last_event_id is None:
+            return []
+        return [
+            ActivityRead.from_activity(activity)
+            for activity in self.repository.list_after(
+                workspace,
+                last_event_id,
+            )
+        ]
