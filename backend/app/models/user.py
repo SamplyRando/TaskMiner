@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.task import Task
     from app.models.workspace import Workspace
     from app.models.workspace_member import WorkspaceMember
+    from app.models.workspace_invitation import WorkspaceInvitation
 
 
 class User(TimestampMixin, Base):
@@ -58,6 +59,11 @@ class User(TimestampMixin, Base):
     workspace_members: Mapped[list[WorkspaceMember]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    sent_workspace_invitations: Mapped[list[WorkspaceInvitation]] = relationship(
+        back_populates="invited_by",
+        foreign_keys="WorkspaceInvitation.invited_by_id",
         passive_deletes=True,
     )
     comments: Mapped[list[Comment]] = relationship(

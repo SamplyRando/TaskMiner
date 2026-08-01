@@ -42,7 +42,16 @@ def test_invalid_creation_payload_returns_422(
 
 @pytest.mark.parametrize(
     "server_field",
-    ["token", "status", "expires_at", "accepted_at", "revoked_at", "workspace_id"],
+    [
+        "token",
+        "status",
+        "expires_at",
+        "accepted_at",
+        "revoked_at",
+        "workspace_id",
+        "invited_by",
+        "invited_by_id",
+    ],
 )
 def test_server_fields_are_rejected(
     client: TestClient,
@@ -130,7 +139,40 @@ def test_invitation_read_schema_forbids_extra_fields() -> None:
 
 def test_invitation_list_schema_forbids_extra_fields() -> None:
     with pytest.raises(ValidationError):
-        InvitationList.model_validate({"items": [], "unexpected": True})
+        InvitationList.model_validate(
+            {
+                "items": [],
+                "total": 0,
+                "skip": 0,
+                "limit": 20,
+                "unexpected": True,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"skip": -1},
+        {"limit": 0},
+        {"limit": 101},
+        {"search": ""},
+        {"sort": "unknown"},
+        {"offset": 0},
+    ],
+)
+def test_invitation_list_rejects_invalid_parameters(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    params: dict[str, object],
+) -> None:
+    response = client.get(
+        f"/api/v1/workspaces/{workspace.id}/invitations",
+        headers=workspace.owner.headers,
+        params=params,
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize("method", ["PATCH", "DELETE"])

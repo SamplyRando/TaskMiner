@@ -10,6 +10,7 @@ class WorkspacePermissionFlags(BaseModel):
     manage_projects: bool
     manage_tasks: bool
     manage_members: bool
+    manage_invitations: bool
     read: bool
 
 

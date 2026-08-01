@@ -93,6 +93,7 @@ describe("TasksPage", () => {
     mockedPermissions.mockResolvedValue({
       permissions: {
         manage_members: true,
+        manage_invitations: true,
         manage_projects: true,
         manage_tasks: true,
         manage_workspace: true,

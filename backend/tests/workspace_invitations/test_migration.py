@@ -81,6 +81,7 @@ def test_invitation_migration_upgrades_and_downgrades() -> None:
         } == {
             "id",
             "workspace_id",
+            "invited_by_id",
             "email",
             "role",
             "token",
@@ -99,6 +100,7 @@ def test_invitation_migration_upgrades_and_downgrades() -> None:
         assert "ix_workspace_invitations_workspace_id" in indexes
         assert "ix_workspace_invitations_email" in indexes
         assert "ix_workspace_invitations_status" in indexes
+        assert "ix_workspace_invitations_invited_by_id" in indexes
 
         invitation_id = uuid4()
         with migration_engine.begin() as connection:

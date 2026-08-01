@@ -16,6 +16,7 @@ EXPECTED_PERMISSIONS = {
         "manage_projects": True,
         "manage_tasks": True,
         "manage_members": True,
+        "manage_invitations": True,
         "read": True,
     },
     WorkspaceMemberRole.ADMIN: {
@@ -23,6 +24,7 @@ EXPECTED_PERMISSIONS = {
         "manage_projects": True,
         "manage_tasks": True,
         "manage_members": False,
+        "manage_invitations": True,
         "read": True,
     },
     WorkspaceMemberRole.MEMBER: {
@@ -30,6 +32,7 @@ EXPECTED_PERMISSIONS = {
         "manage_projects": False,
         "manage_tasks": True,
         "manage_members": False,
+        "manage_invitations": False,
         "read": True,
     },
     WorkspaceMemberRole.VIEWER: {
@@ -37,6 +40,7 @@ EXPECTED_PERMISSIONS = {
         "manage_projects": False,
         "manage_tasks": False,
         "manage_members": False,
+        "manage_invitations": False,
         "read": True,
     },
 }
@@ -98,6 +102,7 @@ def test_permission_helpers_follow_role_matrix(
     assert permissions.can_manage_projects(role) is expected["manage_projects"]
     assert permissions.can_manage_tasks(role) is expected["manage_tasks"]
     assert permissions.can_manage_members(role) is expected["manage_members"]
+    assert permissions.can_manage_invitations(role) is expected["manage_invitations"]
 
 
 @pytest.mark.parametrize(

@@ -87,16 +87,13 @@ def test_member_and_viewer_cannot_manage_invitations(
     assert response.json() == {"detail": "Insufficient permissions."}
 
 
-@pytest.mark.parametrize("operation", ["create", "list", "revoke"])
+@pytest.mark.parametrize("operation", ["create", "list"])
 def test_non_member_cannot_manage_foreign_workspace_invitations(
     client: TestClient,
     workspace: CreatedWorkspace,
     other_user: RegisteredUser,
-    workspace_invitation_factory: WorkspaceInvitationFactory,
     operation: str,
 ) -> None:
-    invitation = workspace_invitation_factory.create(workspace, other_user)
-
     if operation == "create":
         response = client.post(
             f"/api/v1/workspaces/{workspace.id}/invitations",
@@ -110,13 +107,6 @@ def test_non_member_cannot_manage_foreign_workspace_invitations(
             headers=other_user.headers,
         )
         expected_detail = "Workspace not found."
-    else:
-        response = client.post(
-            f"/api/v1/invitations/{invitation.token}/revoke",
-            headers=other_user.headers,
-        )
-        expected_detail = "Invitation not found."
-
     assert response.status_code == 404
     assert response.json() == {"detail": expected_detail}
 

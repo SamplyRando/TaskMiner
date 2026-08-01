@@ -38,6 +38,15 @@ def test_invited_user_accepts_invitation(
     assert member is not None
     assert member.role == WorkspaceMemberRole.MEMBER
 
+    workspaces_response = client.get(
+        "/api/v1/workspaces",
+        headers=other_user.headers,
+    )
+    assert workspaces_response.status_code == 200
+    assert str(workspace_invitation.workspace.id) in {
+        item["id"] for item in workspaces_response.json()
+    }
+
 
 def test_acceptance_uses_invited_role(
     client: TestClient,

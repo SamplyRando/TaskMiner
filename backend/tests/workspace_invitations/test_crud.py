@@ -36,6 +36,11 @@ def test_owner_creates_invitation(
     assert data["token"]
     assert data["accepted_at"] is None
     assert data["revoked_at"] is None
+    assert data["invited_by"] == {
+        "id": str(workspace.owner.id),
+        "email": workspace.owner.email,
+        "full_name": workspace.owner.full_name,
+    }
     expires_at = datetime.fromisoformat(data["expires_at"])
     assert before + timedelta(days=7) <= expires_at
     assert expires_at <= after + timedelta(days=7)
@@ -49,6 +54,7 @@ def test_owner_creates_invitation(
         "expires_at",
         "accepted_at",
         "revoked_at",
+        "invited_by",
         "created_at",
         "updated_at",
     }
@@ -79,6 +85,55 @@ def test_owner_lists_invitations(
         str(second.id),
         str(first.id),
     ]
+    assert response.json()["total"] == 2
+    assert response.json()["skip"] == 0
+    assert response.json()["limit"] == 20
+
+
+def test_invitation_listing_supports_search_sort_and_pagination(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    other_user: RegisteredUser,
+    user_factory: UserFactory,
+    workspace_invitation_factory: WorkspaceInvitationFactory,
+) -> None:
+    workspace_invitation_factory.create(workspace, other_user)
+    second_user = user_factory.create()
+    second = workspace_invitation_factory.create(
+        workspace,
+        second_user,
+        role=WorkspaceMemberRole.VIEWER,
+    )
+
+    response = client.get(
+        f"/api/v1/workspaces/{workspace.id}/invitations",
+        headers=workspace.owner.headers,
+        params={
+            "search": second_user.email.split("@")[0].upper(),
+            "sort": "email",
+            "skip": 0,
+            "limit": 1,
+        },
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [str(second.id)]
+    assert response.json()["total"] == 1
+
+
+def test_invited_user_can_refuse_invitation(
+    client: TestClient,
+    workspace_invitation: CreatedWorkspaceInvitation,
+    other_user: RegisteredUser,
+) -> None:
+    response = client.post(
+        f"/api/v1/invitations/{workspace_invitation.token}/revoke",
+        headers=other_user.headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "revoked"
+    assert response.json()["revoked_at"] is not None
 
 
 def test_invited_user_reads_invitation_by_token(

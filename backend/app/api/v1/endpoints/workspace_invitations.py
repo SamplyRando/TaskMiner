@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import CurrentUserDep, WorkspaceInvitationServiceDep
 from app.models.workspace_invitation import WorkspaceInvitation
@@ -8,6 +9,7 @@ from app.schemas.workspace_invitation import (
     InvitationAccept,
     InvitationCreate,
     InvitationList,
+    InvitationListParams,
     InvitationRead,
 )
 from app.services.permission import PermissionDeniedError
@@ -65,9 +67,10 @@ def list_workspace_invitations(
     workspace_id: UUID,
     current_user: CurrentUserDep,
     service: WorkspaceInvitationServiceDep,
+    params: Annotated[InvitationListParams, Query()],
 ) -> InvitationList:
     try:
-        return service.list_invitations(current_user, workspace_id)
+        return service.list_invitations(current_user, workspace_id, params)
     except WorkspaceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

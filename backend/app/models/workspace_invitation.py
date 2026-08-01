@@ -15,6 +15,7 @@ from app.models.mixins import TimestampMixin
 from app.models.workspace_member import WorkspaceMemberRole
 
 if TYPE_CHECKING:
+    from app.models.user import User
     from app.models.workspace import Workspace
 
 
@@ -50,6 +51,12 @@ class WorkspaceInvitation(TimestampMixin, Base):
         PostgreSQLUUID(as_uuid=True),
         ForeignKey("workspaces.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    invited_by_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
@@ -92,3 +99,8 @@ class WorkspaceInvitation(TimestampMixin, Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="invitations")
+    invited_by: Mapped[User | None] = relationship(
+        back_populates="sent_workspace_invitations",
+        foreign_keys=[invited_by_id],
+        lazy="joined",
+    )

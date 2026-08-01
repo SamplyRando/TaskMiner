@@ -23,8 +23,8 @@ class WorkspaceService:
     ) -> Workspace:
         return self.repository.create(owner, data)
 
-    def list_workspaces(self, owner: User) -> list[Workspace]:
-        return self.repository.list_by_owner(owner)
+    def list_workspaces(self, user: User) -> list[Workspace]:
+        return self.repository.list_for_user(user)
 
     def get_workspace(self, owner: User, workspace_id: UUID) -> Workspace:
         workspace = self.repository.get_by_id_for_owner(workspace_id, owner)

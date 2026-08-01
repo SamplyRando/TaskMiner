@@ -20,6 +20,7 @@ from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.schemas.workspace_invitation import (
     InvitationCreate,
     InvitationList,
+    InvitationListParams,
     InvitationRead,
 )
 from app.services.permission import PermissionDeniedError, PermissionService
@@ -97,6 +98,7 @@ class WorkspaceInvitationService:
             try:
                 invitation = self.repository.create(
                     workspace,
+                    actor,
                     normalized_data,
                     token=secrets.token_urlsafe(32),
                     expires_at=expires_at,
@@ -128,17 +130,21 @@ class WorkspaceInvitationService:
         self,
         actor: User,
         workspace_id: UUID,
+        params: InvitationListParams,
     ) -> InvitationList:
         workspace = self.permission_service.require_invitation_management(
             actor,
             workspace_id,
         )
         self.repository.expire_pending_for_workspace(workspace, self._now())
-        invitations = self.repository.list_by_workspace(workspace)
+        invitations, total = self.repository.list_by_workspace(workspace, params)
         return InvitationList(
             items=[
                 InvitationRead.model_validate(invitation) for invitation in invitations
-            ]
+            ],
+            total=total,
+            skip=params.skip,
+            limit=params.limit,
         )
 
     def get_invitation(
@@ -219,10 +225,11 @@ class WorkspaceInvitationService:
         invitation = self.repository.get_by_token(token, for_update=True)
         if invitation is None:
             raise InvitationNotFoundError
-        self.permission_service.require_invitation_management(
-            actor,
-            invitation.workspace_id,
-        )
+        if not self._email_matches(actor, invitation):
+            self.permission_service.require_invitation_management(
+                actor,
+                invitation.workspace_id,
+            )
         invitation = self._expire_if_needed(invitation)
         self._ensure_pending(invitation)
         return self.repository.revoke(invitation, self._now())

@@ -92,6 +92,7 @@ def test_permissions_schema_forbids_extra_fields() -> None:
                     "manage_projects": True,
                     "manage_tasks": True,
                     "manage_members": True,
+                    "manage_invitations": True,
                     "read": True,
                 },
                 "unexpected": True,
@@ -107,6 +108,7 @@ def test_permission_flags_schema_forbids_extra_fields() -> None:
                 "manage_projects": True,
                 "manage_tasks": True,
                 "manage_members": True,
+                "manage_invitations": True,
                 "read": True,
                 "unexpected": True,
             }

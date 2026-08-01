@@ -5,6 +5,7 @@ export type WorkspacePermissionFlags = {
   manage_projects: boolean;
   manage_tasks: boolean;
   manage_members: boolean;
+  manage_invitations: boolean;
   read: boolean;
 };
 

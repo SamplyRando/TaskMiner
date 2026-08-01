@@ -82,6 +82,21 @@ class WorkspaceRepository:
         )
         return list(self.session.scalars(statement).all())
 
+    def list_for_user(self, user: User) -> list[Workspace]:
+        statement = (
+            select(Workspace)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                WorkspaceMember.user_id == user.id,
+                Workspace.deleted_at.is_(None),
+            )
+            .order_by(Workspace.created_at.asc(), Workspace.id.asc())
+        )
+        return list(self.session.scalars(statement).unique().all())
+
     def update(self, workspace: Workspace, data: WorkspaceUpdate) -> Workspace:
         updates = data.model_dump(exclude_unset=True)
         for field in ("name", "description"):

@@ -62,6 +62,7 @@ class PermissionService:
                 manage_projects=permissions.can_manage_projects(role),
                 manage_tasks=permissions.can_manage_tasks(role),
                 manage_members=permissions.can_manage_members(role),
+                manage_invitations=permissions.can_manage_invitations(role),
                 read=permissions.can_view_workspace(role),
             ),
         )

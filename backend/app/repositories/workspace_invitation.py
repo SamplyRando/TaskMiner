@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import select, update
+from typing import Any
+
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -8,7 +10,7 @@ from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_invitation import InvitationStatus, WorkspaceInvitation
 from app.models.workspace_member import WorkspaceMember
-from app.schemas.workspace_invitation import InvitationCreate
+from app.schemas.workspace_invitation import InvitationCreate, InvitationListParams
 
 
 class InvitationTokenConflictError(Exception):
@@ -28,6 +30,7 @@ class WorkspaceInvitationRepository:
     def create(
         self,
         workspace: Workspace,
+        actor: User,
         data: InvitationCreate,
         *,
         token: str,
@@ -35,6 +38,7 @@ class WorkspaceInvitationRepository:
     ) -> WorkspaceInvitation:
         invitation = WorkspaceInvitation(
             workspace_id=workspace.id,
+            invited_by_id=actor.id,
             email=str(data.email),
             role=data.role,
             token=token,
@@ -56,20 +60,56 @@ class WorkspaceInvitationRepository:
     def list_by_workspace(
         self,
         workspace: Workspace,
-    ) -> list[WorkspaceInvitation]:
+        params: InvitationListParams,
+    ) -> tuple[list[WorkspaceInvitation], int]:
+        filters = [
+            WorkspaceInvitation.workspace_id == workspace.id,
+            Workspace.deleted_at.is_(None),
+        ]
+        if params.search is not None:
+            pattern = f"%{params.search}%"
+            filters.append(
+                or_(
+                    WorkspaceInvitation.email.ilike(pattern),
+                    User.email.ilike(pattern),
+                    User.full_name.ilike(pattern),
+                )
+            )
+
+        total_statement = (
+            select(func.count(WorkspaceInvitation.id))
+            .join(Workspace, WorkspaceInvitation.workspace_id == Workspace.id)
+            .outerjoin(User, WorkspaceInvitation.invited_by_id == User.id)
+            .where(*filters)
+        )
+        total = int(self.session.scalar(total_statement) or 0)
+
+        sort_columns: dict[str, Any] = {
+            "email": WorkspaceInvitation.email,
+            "role": WorkspaceInvitation.role,
+            "status": WorkspaceInvitation.status,
+            "created_at": WorkspaceInvitation.created_at,
+            "expires_at": WorkspaceInvitation.expires_at,
+        }
+        sort_field = params.sort.removeprefix("-")
+        sort_column = sort_columns[sort_field]
+        sort_expression = (
+            sort_column.desc() if params.sort.startswith("-") else sort_column.asc()
+        )
+
         statement = (
             select(WorkspaceInvitation)
             .join(Workspace, WorkspaceInvitation.workspace_id == Workspace.id)
-            .where(
-                WorkspaceInvitation.workspace_id == workspace.id,
-                Workspace.deleted_at.is_(None),
-            )
+            .outerjoin(User, WorkspaceInvitation.invited_by_id == User.id)
+            .where(*filters)
             .order_by(
-                WorkspaceInvitation.created_at.desc(),
+                sort_expression,
                 WorkspaceInvitation.id.desc(),
             )
+            .offset(params.skip)
+            .limit(params.limit)
         )
-        return list(self.session.scalars(statement).all())
+        return list(self.session.scalars(statement).unique().all()), total
 
     def get_by_token(
         self,
