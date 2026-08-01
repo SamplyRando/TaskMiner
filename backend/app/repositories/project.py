@@ -66,6 +66,8 @@ class ProjectRepository:
             Project.deleted_at.is_(None),
             Workspace.deleted_at.is_(None),
         ]
+        if params.workspace_id is not None:
+            filters.append(Project.workspace_id == params.workspace_id)
         if params.search is not None:
             pattern = f"%{params.search}%"
             filters.append(

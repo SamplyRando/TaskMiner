@@ -5,6 +5,7 @@ export type Project = {
   name: string;
   description: string | null;
   owner_id: string;
+  workspace_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -24,5 +25,6 @@ export type ProjectSort =
 
 export type ProjectListParams = PaginationParams & {
   search?: string;
+  workspace_id?: string;
   sort: ProjectSort;
 };

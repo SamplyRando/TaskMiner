@@ -9,23 +9,41 @@ import {
   assignTask,
   createTask,
   deleteTask,
+  listAllTasks,
   listTasks,
   unassignTask,
   updateTask,
 } from "@/api/tasks";
 import type { PaginatedResponse } from "@/types/pagination";
-import type { Task, TaskInput, TaskListParams } from "@/types/task";
+import type {
+  Task,
+  TaskInput,
+  TaskKanbanParams,
+  TaskListParams,
+  TaskUpdate,
+} from "@/types/task";
 
 export const taskKeys = {
   all: ["tasks"] as const,
   lists: () => [...taskKeys.all, "list"] as const,
   list: (params: TaskListParams) => [...taskKeys.lists(), params] as const,
+  kanban: (params: TaskKanbanParams) =>
+    [...taskKeys.lists(), "kanban", params] as const,
 };
 
-export const useTasks = (params: TaskListParams) =>
+export const useTasks = (params: TaskListParams, enabled = true) =>
   useQuery({
+    enabled,
     queryKey: taskKeys.list(params),
     queryFn: () => listTasks(params),
+    placeholderData: keepPreviousData,
+  });
+
+export const useKanbanTasks = (params: TaskKanbanParams, enabled = true) =>
+  useQuery({
+    enabled,
+    queryKey: taskKeys.kanban(params),
+    queryFn: () => listAllTasks(params),
     placeholderData: keepPreviousData,
   });
 
@@ -51,7 +69,7 @@ export const useCreateTask = () => {
 
 type UpdateTaskVariables = {
   taskId: string;
-  data: TaskInput;
+  data: TaskUpdate;
 };
 
 type TaskQueriesSnapshot = [

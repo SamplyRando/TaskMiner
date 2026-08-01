@@ -4,22 +4,13 @@ import { Pencil, Trash2, UserRoundCog } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  taskPriorityLabels,
+  taskStatusLabels,
+} from "@/features/tasks/task-presentation";
 import { formatDateTime } from "@/lib/format";
 import type { Project } from "@/types/project";
-import type { Task, TaskPriority, TaskStatus } from "@/types/task";
-
-const statusLabels: Record<TaskStatus, string> = {
-  done: "Terminée",
-  in_progress: "En cours",
-  todo: "À faire",
-};
-
-const priorityLabels: Record<TaskPriority, string> = {
-  high: "Haute",
-  low: "Basse",
-  medium: "Moyenne",
-  urgent: "Urgente",
-};
+import type { Task } from "@/types/task";
 
 type TaskColumnActions = {
   onAssign: (task: Task) => void;
@@ -70,7 +61,7 @@ export function getTaskColumns({
         <Badge
           variant={row.original.status === "done" ? "default" : "secondary"}
         >
-          {statusLabels[row.original.status]}
+          {taskStatusLabels[row.original.status]}
         </Badge>
       ),
     },
@@ -84,7 +75,7 @@ export function getTaskColumns({
             row.original.priority === "urgent" ? "destructive" : "outline"
           }
         >
-          {priorityLabels[row.original.priority]}
+          {taskPriorityLabels[row.original.priority]}
         </Badge>
       ),
     },

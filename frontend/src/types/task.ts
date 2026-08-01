@@ -27,6 +27,8 @@ export type TaskInput = {
   due_date: string | null;
 };
 
+export type TaskUpdate = Partial<TaskInput>;
+
 export type TaskSort =
   | "created_at"
   | "updated_at"
@@ -40,5 +42,8 @@ export type TaskListParams = PaginationParams & {
   status?: TaskStatus;
   priority?: TaskPriority;
   project_id?: string;
+  workspace_id?: string;
   sort: TaskSort;
 };
+
+export type TaskKanbanParams = Omit<TaskListParams, "limit" | "skip">;

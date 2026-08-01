@@ -94,6 +94,8 @@ class TaskRepository:
             filters.append(Task.priority == params.priority)
         if params.project_id is not None:
             filters.append(Task.project_id == params.project_id)
+        if params.workspace_id is not None:
+            filters.append(Project.workspace_id == params.workspace_id)
 
         total_statement = (
             select(func.count(Task.id))

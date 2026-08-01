@@ -1,5 +1,5 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { Plus, Search } from "lucide-react";
+import { Columns3, List, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
@@ -9,19 +9,25 @@ import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { WorkspaceSelector } from "@/components/workspace-selector";
 import { useProjects } from "@/features/projects/hooks";
 import {
   useAssignTask,
   useCreateTask,
   useDeleteTask,
+  useKanbanTasks,
   useTasks,
   useUpdateTask,
 } from "@/features/tasks/hooks";
+import { TaskKanban } from "@/features/tasks/kanban/task-kanban";
 import { TaskAssignmentDialog } from "@/features/tasks/task-assignment-dialog";
 import { getTaskColumns } from "@/features/tasks/task-columns";
 import { TaskFormDialog } from "@/features/tasks/task-form-dialog";
+import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAuthStore } from "@/store/auth-store";
+import { useTaskViewStore } from "@/store/task-view-store";
 import type {
   Task,
   TaskInput,
@@ -47,6 +53,9 @@ function getSortParameter(sorting: SortingState): TaskSort {
 
 export function TasksPage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const mode = useTaskViewStore((state) => state.mode);
+  const setMode = useTaskViewStore((state) => state.setMode);
+  const workspace = useActiveWorkspace();
   const [search, setSearch] = useState("");
   const deferredSearch = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<TaskStatus | "">("");
@@ -59,21 +68,45 @@ export function TasksPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const projectsQuery = useProjects({ limit: 100, skip: 0, sort: "name" });
+  const projectsQuery = useProjects(
+    {
+      limit: 100,
+      skip: 0,
+      sort: "name",
+      ...(workspace.activeWorkspaceId
+        ? { workspace_id: workspace.activeWorkspaceId }
+        : {}),
+    },
+    workspace.activeWorkspaceId !== null,
+  );
+  const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
   const projects = useMemo(
     () => projectsQuery.data?.items ?? [],
     [projectsQuery.data?.items],
   );
   const normalizedSearch = deferredSearch.trim();
-  const tasksQuery = useTasks({
-    limit: pagination.pageSize,
-    skip: pagination.pageIndex * pagination.pageSize,
+  const taskFilters = {
     sort: getSortParameter(sorting),
     ...(normalizedSearch ? { search: normalizedSearch } : {}),
     ...(priority ? { priority } : {}),
     ...(projectId ? { project_id: projectId } : {}),
     ...(status ? { status } : {}),
-  });
+    ...(workspace.activeWorkspaceId
+      ? { workspace_id: workspace.activeWorkspaceId }
+      : {}),
+  } as const;
+  const tasksQuery = useTasks(
+    {
+      ...taskFilters,
+      limit: pagination.pageSize,
+      skip: pagination.pageIndex * pagination.pageSize,
+    },
+    mode === "list" && workspace.activeWorkspaceId !== null,
+  );
+  const kanbanQuery = useKanbanTasks(
+    taskFilters,
+    mode === "kanban" && workspace.activeWorkspaceId !== null,
+  );
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -153,26 +186,69 @@ export function TasksPage() {
     <div className="space-y-6">
       <EntityPageHeader
         actions={
-          <Button
-            disabled={projects.length === 0}
-            onClick={() => {
-              createTask.reset();
-              setSelectedTask(null);
-              setFormOpen(true);
-            }}
-            title={
-              projects.length === 0
-                ? "Créez d’abord un projet"
-                : "Créer une tâche"
-            }
-            type="button"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Nouvelle tâche
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              aria-label="Mode d’affichage des tâches"
+              className="bg-muted flex rounded-lg p-1"
+              role="group"
+            >
+              <Button
+                aria-pressed={mode === "list"}
+                className="h-8 px-3"
+                onClick={() => {
+                  setMode("list");
+                }}
+                type="button"
+                variant={mode === "list" ? "default" : "ghost"}
+              >
+                <List aria-hidden="true" className="size-4" />
+                Liste
+              </Button>
+              <Button
+                aria-pressed={mode === "kanban"}
+                className="h-8 px-3"
+                onClick={() => {
+                  setMode("kanban");
+                }}
+                type="button"
+                variant={mode === "kanban" ? "default" : "ghost"}
+              >
+                <Columns3 aria-hidden="true" className="size-4" />
+                Kanban
+              </Button>
+            </div>
+            <Button
+              disabled={projects.length === 0}
+              onClick={() => {
+                createTask.reset();
+                setSelectedTask(null);
+                setFormOpen(true);
+              }}
+              title={
+                projects.length === 0
+                  ? "Créez d’abord un projet"
+                  : "Créer une tâche"
+              }
+              type="button"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Nouvelle tâche
+            </Button>
+          </div>
         }
         description="Planifiez, filtrez et assignez les tâches de vos projets."
         title="Tâches"
+      />
+
+      <WorkspaceSelector
+        disabled={workspace.isPending}
+        onValueChange={(workspaceId) => {
+          workspace.selectWorkspace(workspaceId);
+          setProjectId("");
+          resetPage();
+        }}
+        value={workspace.activeWorkspaceId}
+        workspaces={workspace.workspaces}
       />
 
       <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1fr)_repeat(3,minmax(10rem,0.35fr))]">
@@ -236,13 +312,50 @@ export function TasksPage() {
         </Select>
       </div>
 
-      {tasksQuery.isError || projectsQuery.isError ? (
+      {(mode === "list" && tasksQuery.isError) ||
+      (mode === "kanban" && kanbanQuery.isError) ||
+      projectsQuery.isError ||
+      workspace.isError ||
+      (mode === "kanban" && permissionsQuery.isError) ? (
         <ErrorState
-          error={tasksQuery.error ?? projectsQuery.error}
+          error={
+            (mode === "list" ? tasksQuery.error : kanbanQuery.error) ??
+            projectsQuery.error ??
+            workspace.error ??
+            permissionsQuery.error
+          }
           onRetry={() => {
-            void tasksQuery.refetch();
+            if (mode === "list") {
+              void tasksQuery.refetch();
+            } else {
+              void kanbanQuery.refetch();
+              void permissionsQuery.refetch();
+            }
             void projectsQuery.refetch();
+            void workspace.refetch();
           }}
+        />
+      ) : mode === "kanban" ? (
+        <TaskKanban
+          canManageTasks={
+            permissionsQuery.data?.permissions.manage_tasks ?? false
+          }
+          currentUserId={currentUserId}
+          isLoading={
+            workspace.isPending ||
+            projectsQuery.isPending ||
+            kanbanQuery.isPending ||
+            permissionsQuery.isPending
+          }
+          onStatusChange={async (task, nextStatus) => {
+            await updateTask.mutateAsync({
+              data: { status: nextStatus },
+              taskId: task.id,
+            });
+          }}
+          projects={projects}
+          statusFilter={status}
+          tasks={kanbanQuery.data?.items ?? []}
         />
       ) : (
         <DataTable
@@ -254,7 +367,11 @@ export function TasksPage() {
               ? "Aucun résultat"
               : "Aucune tâche"
           }
-          isLoading={tasksQuery.isPending || projectsQuery.isPending}
+          isLoading={
+            workspace.isPending ||
+            tasksQuery.isPending ||
+            projectsQuery.isPending
+          }
           manualPagination
           manualSorting
           onPaginationChange={setPagination}

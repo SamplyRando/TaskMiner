@@ -44,6 +44,7 @@ class TaskListParams(BaseModel):
     status: TaskStatus | None = None
     priority: TaskPriority | None = None
     project_id: UUID | None = None
+    workspace_id: UUID | None = None
     sort: Literal[
         "created_at",
         "updated_at",

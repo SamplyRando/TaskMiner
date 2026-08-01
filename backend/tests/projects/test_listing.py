@@ -5,7 +5,11 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models.project import Project
-from tests.factories import ProjectFactory, RegisteredUser
+from tests.factories import (
+    ProjectFactory,
+    RegisteredUser,
+    WorkspaceFactory,
+)
 
 
 def test_project_search_is_case_insensitive_across_fields(
@@ -99,6 +103,37 @@ def test_project_listing_combines_search_sort_and_pagination(
     assert data["total"] == 3
     assert data["skip"] == 1
     assert data["limit"] == 1
+
+
+def test_project_listing_filters_by_workspace(
+    client: TestClient,
+    user: RegisteredUser,
+    project_factory: ProjectFactory,
+    workspace_factory: WorkspaceFactory,
+    database_session: Session,
+) -> None:
+    first = project_factory.create(user, name="First workspace project")
+    first_model = database_session.get(Project, first.id)
+    assert first_model is not None
+    second_workspace = workspace_factory.create(user)
+    database_session.add(
+        Project(
+            name="Second workspace project",
+            workspace_id=second_workspace.id,
+        )
+    )
+    database_session.commit()
+
+    response = client.get(
+        "/api/v1/projects",
+        headers=user.headers,
+        params={"workspace_id": str(first_model.workspace_id)},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert {item["id"] for item in data["items"]} == {str(first.id)}
+    assert data["items"][0]["workspace_id"] == str(first_model.workspace_id)
 
 
 @pytest.mark.parametrize(

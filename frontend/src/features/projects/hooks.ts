@@ -22,8 +22,9 @@ export const projectKeys = {
     [...projectKeys.lists(), params] as const,
 };
 
-export const useProjects = (params: ProjectListParams) =>
+export const useProjects = (params: ProjectListParams, enabled = true) =>
   useQuery({
+    enabled,
     queryKey: projectKeys.list(params),
     queryFn: () => listProjects(params),
     placeholderData: keepPreviousData,

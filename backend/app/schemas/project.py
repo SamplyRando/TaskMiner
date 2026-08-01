@@ -25,6 +25,7 @@ class ProjectListParams(BaseModel):
     skip: int = Field(default=0, ge=0)
     limit: int = Field(default=20, ge=1, le=100)
     search: str | None = Field(default=None, min_length=1, max_length=255)
+    workspace_id: UUID | None = None
     sort: Literal[
         "created_at",
         "updated_at",
@@ -42,5 +43,6 @@ class ProjectRead(BaseModel):
     name: str
     description: str | None
     owner_id: UUID
+    workspace_id: UUID
     created_at: datetime
     updated_at: datetime

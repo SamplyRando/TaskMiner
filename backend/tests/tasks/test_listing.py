@@ -6,10 +6,12 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
+from app.models.project import Project
 from tests.factories import (
     ProjectFactory,
     RegisteredUser,
     TaskFactory,
+    WorkspaceFactory,
 )
 
 
@@ -140,6 +142,38 @@ def test_task_filters_status_priority_and_project(
         str(todo_high.id),
         str(done_high.id),
     }
+
+
+def test_task_list_filters_by_workspace(
+    client: TestClient,
+    user: RegisteredUser,
+    project_factory: ProjectFactory,
+    task_factory: TaskFactory,
+    workspace_factory: WorkspaceFactory,
+    database_session: Session,
+) -> None:
+    first_project = project_factory.create(user)
+    first_task = task_factory.create(first_project)
+    first_project_model = database_session.get(Project, first_project.id)
+    assert first_project_model is not None
+    second_workspace = workspace_factory.create(user)
+    second_project = Project(
+        name="Second workspace project",
+        workspace_id=second_workspace.id,
+    )
+    database_session.add(second_project)
+    database_session.flush()
+    database_session.add(Task(title="Foreign workspace task", project=second_project))
+    database_session.commit()
+
+    response = client.get(
+        "/api/v1/tasks",
+        headers=user.headers,
+        params={"workspace_id": str(first_project_model.workspace_id)},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [str(first_task.id)]
 
 
 def test_task_listing_combines_all_filters(

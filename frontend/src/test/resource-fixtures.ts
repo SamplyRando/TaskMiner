@@ -23,6 +23,7 @@ export const projectFixture: Project = {
   name: "Projet Alpha",
   owner_id: userId,
   updated_at: "2026-07-31T08:30:00Z",
+  workspace_id: workspaceId,
 };
 
 export const taskFixture: Task = {
