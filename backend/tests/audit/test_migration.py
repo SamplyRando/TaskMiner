@@ -85,6 +85,7 @@ def test_audit_migration_upgrades_and_downgrades() -> None:
             "old_values",
             "new_values",
             "metadata",
+            "success",
             "created_at",
         }
         assert {index["name"] for index in inspector.get_indexes("audit_logs")} == {
@@ -92,6 +93,7 @@ def test_audit_migration_upgrades_and_downgrades() -> None:
             "ix_audit_logs_created_at",
             "ix_audit_logs_event_type",
             "ix_audit_logs_resource_type",
+            "ix_audit_logs_success",
             "ix_audit_logs_workspace_id",
         }
         foreign_keys = {
@@ -132,7 +134,7 @@ def test_audit_migration_upgrades_and_downgrades() -> None:
                 text(
                     """
                     SELECT event_type, resource_type, old_values,
-                           new_values, metadata
+                           new_values, metadata, success
                     FROM audit_logs WHERE id = :id
                     """
                 ),
@@ -143,6 +145,7 @@ def test_audit_migration_upgrades_and_downgrades() -> None:
         assert log.old_values == {"title": "Before"}
         assert log.new_values == {"title": "After"}
         assert log.metadata == {"fields": ["title"]}
+        assert log.success is True
 
         run_alembic(migration_url, "downgrade", PRE_AUDIT_REVISION)
 

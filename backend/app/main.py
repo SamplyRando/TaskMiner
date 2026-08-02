@@ -9,7 +9,7 @@ from app.core.logging import configure_logging
 from app.database.database import SessionLocal
 from app.listeners.activity import ActivityListener
 from app.listeners.audit import AuditListener
-from app.realtime.registry import activity_stream_broker
+from app.realtime.registry import activity_stream_broker, audit_stream_broker
 
 
 configure_logging(settings.log_level)
@@ -22,9 +22,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     activity_listener.start()
     audit_listener.start()
     activity_stream_broker.start()
+    audit_stream_broker.start()
     try:
         yield
     finally:
+        audit_stream_broker.stop()
         activity_stream_broker.stop()
         audit_listener.stop()
         activity_listener.stop()

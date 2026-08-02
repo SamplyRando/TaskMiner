@@ -22,7 +22,8 @@ from app.repositories.workspace import WorkspaceRepository
 from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.realtime.activity_stream import ActivityStreamBroker
-from app.realtime.registry import activity_stream_broker
+from app.realtime.audit_stream import AuditStreamBroker
+from app.realtime.registry import activity_stream_broker, audit_stream_broker
 from app.services.attachment import AttachmentService
 from app.services.activity import ActivityService
 from app.services.audit import AuditService
@@ -245,4 +246,14 @@ def get_audit_service(session: SessionDep) -> AuditService:
 AuditServiceDep = Annotated[
     AuditService,
     Depends(get_audit_service),
+]
+
+
+def get_audit_stream_broker() -> AuditStreamBroker:
+    return audit_stream_broker
+
+
+AuditStreamBrokerDep = Annotated[
+    AuditStreamBroker,
+    Depends(get_audit_stream_broker),
 ]

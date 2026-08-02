@@ -1,13 +1,20 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, func, text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgreSQLUUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.events import ActivityEventType, ActivityResourceType
 from app.database.database import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.workspace import Workspace
 
 
 class AuditLog(Base):
@@ -70,9 +77,25 @@ class AuditLog(Base):
         default=dict,
         server_default=text("'{}'::jsonb"),
     )
+    success: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=text("true"),
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
         index=True,
+    )
+
+    actor: Mapped[User | None] = relationship(
+        foreign_keys=[actor_id],
+        lazy="joined",
+    )
+    workspace: Mapped[Workspace] = relationship(
+        foreign_keys=[workspace_id],
+        lazy="joined",
     )

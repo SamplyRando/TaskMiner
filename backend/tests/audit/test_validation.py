@@ -24,6 +24,11 @@ from tests.factories import CreatedWorkspace, RegisteredUser
         {"limit": "invalid"},
         {"event_type": "unknown_event"},
         {"resource_type": "unknown_resource"},
+        {"actor_id": "not-a-uuid"},
+        {"period": "year"},
+        {"success": "maybe"},
+        {"search": ""},
+        {"search": "x" * 256},
         {"unexpected": "forbidden"},
     ],
 )
@@ -73,13 +78,18 @@ def test_audit_read_forbids_extra_fields() -> None:
         AuditRead.model_validate(
             {
                 "id": uuid4(),
-                "event_type": "task_updated",
-                "resource_type": "task",
+                "workspace_id": uuid4(),
+                "workspace_name": "Workspace",
+                "actor": None,
+                "event": "task_updated",
+                "resource": "task",
                 "resource_id": uuid4(),
                 "actor_id": uuid4(),
                 "old_values": {"title": "Before"},
                 "new_values": {"title": "After"},
-                "audit_metadata": {},
+                "metadata": {},
+                "message": "Tâche modifiée",
+                "success": True,
                 "created_at": datetime.now(timezone.utc),
                 "unexpected": True,
             }

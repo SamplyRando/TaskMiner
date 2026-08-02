@@ -92,8 +92,16 @@
   animation: activity-arrival 300ms ease-out;
 }
 
+.audit-arrival {
+  animation: activity-arrival 300ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .activity-arrival {
+    animation: none;
+  }
+
+  .audit-arrival {
     animation: none;
   }
 }

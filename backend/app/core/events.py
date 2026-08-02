@@ -42,6 +42,7 @@ class DomainEvent:
     workspace_id: UUID
     resource_id: UUID
     actor_id: UUID | None
+    success: bool = True
     id: UUID = field(default_factory=uuid4)
     occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     old_values: dict[str, Any] | None = None

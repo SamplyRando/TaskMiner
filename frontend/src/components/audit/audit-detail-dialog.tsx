@@ -5,14 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ArrowDown, ShieldCheck, ShieldX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { JsonValueView } from "@/components/audit/json-value-view";
 import { formatDateTime } from "@/lib/format";
-import {
-  activityEventLabels,
-  activityResourceLabels,
-  formatActor,
-} from "@/lib/activity-presentation";
+import { activityResourceLabels } from "@/lib/activity-presentation";
 import type { AuditLog } from "@/types/audit";
 
 type AuditDetailDialogProps = {
@@ -33,13 +30,30 @@ export function AuditDetailDialog({
           <>
             <DialogHeader>
               <div className="flex flex-wrap items-center gap-2 pr-8">
-                <DialogTitle>{activityEventLabels[log.event]}</DialogTitle>
+                <DialogTitle>{log.message}</DialogTitle>
                 <Badge variant="outline">
                   {activityResourceLabels[log.resource]}
                 </Badge>
+                <Badge
+                  className={
+                    log.success
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-red-200 bg-red-50 text-red-800"
+                  }
+                  variant="outline"
+                >
+                  {log.success ? (
+                    <ShieldCheck aria-hidden="true" className="mr-1 size-3.5" />
+                  ) : (
+                    <ShieldX aria-hidden="true" className="mr-1 size-3.5" />
+                  )}
+                  {log.success ? "Succès" : "Échec"}
+                </Badge>
               </div>
               <DialogDescription>
-                {formatDateTime(log.created_at)} · {formatActor(log.actor_id)}
+                {formatDateTime(log.created_at)} ·{" "}
+                {log.actor?.full_name ?? log.actor?.email ?? "Système"} ·{" "}
+                {log.workspace_name}
               </DialogDescription>
             </DialogHeader>
 
@@ -48,7 +62,7 @@ export function AuditDetailDialog({
               <code className="break-all">{log.resource_id}</code>
             </div>
 
-            <div className="grid min-w-0 gap-4 md:grid-cols-2">
+            <div className="min-w-0 space-y-3">
               <section aria-labelledby="audit-before-title" className="min-w-0">
                 <h3 className="mb-2 font-semibold" id="audit-before-title">
                   Avant
@@ -57,6 +71,11 @@ export function AuditDetailDialog({
                   <JsonValueView value={log.old_values} />
                 </div>
               </section>
+              <ArrowDown
+                aria-label="Devient"
+                className="text-muted-foreground mx-auto size-5"
+                role="img"
+              />
               <section aria-labelledby="audit-after-title" className="min-w-0">
                 <h3 className="mb-2 font-semibold" id="audit-after-title">
                   Après

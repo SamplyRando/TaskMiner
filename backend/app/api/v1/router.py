@@ -57,6 +57,11 @@ api_router.include_router(
     tags=["audit"],
 )
 api_router.include_router(
+    audit.stream_router,
+    prefix="/audit",
+    tags=["audit"],
+)
+api_router.include_router(
     workspace_invitations.workspace_router,
     prefix="/workspaces",
     tags=["workspace-invitations"],

@@ -42,10 +42,16 @@ export const activityFeedFixture: ActivityFeed = {
 };
 
 export const auditLogFixture: AuditLog = {
+  actor: {
+    email: "ada@example.com",
+    full_name: "Ada Lovelace",
+    id: "00000000-0000-4000-8000-000000000001",
+  },
   actor_id: "00000000-0000-4000-8000-000000000001",
   created_at: "2026-08-01T10:45:00Z",
   event: "task_updated",
   id: "00000000-0000-4000-8000-000000000120",
+  message: "Tâche modifiée : Préparer la mise en production",
   metadata: { title: "Préparer la mise en production" },
   new_values: {
     priority: "urgent",
@@ -55,6 +61,9 @@ export const auditLogFixture: AuditLog = {
   old_values: null,
   resource: "task",
   resource_id: "00000000-0000-4000-8000-000000000004",
+  success: true,
+  workspace_id: firstWorkspace.id,
+  workspace_name: firstWorkspace.name,
 };
 
 export const auditFeedFixture: AuditFeed = {

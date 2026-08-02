@@ -1,38 +1,31 @@
-import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { FileSearch, ShieldAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ApiError } from "@/api/client";
 import { AuditDetailDialog } from "@/components/audit/audit-detail-dialog";
-import { DataTable } from "@/components/data-table/data-table";
+import { AuditFilters } from "@/components/audit/audit-filters";
+import { AuditLiveBadge } from "@/components/audit/audit-live-badge";
+import { AuditTimeline } from "@/components/audit/audit-timeline";
+import { AuditTimelineSkeleton } from "@/components/audit/audit-timeline-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
-import { Select } from "@/components/ui/select";
 import { WorkspaceSelector } from "@/components/workspace-selector";
-import { getAuditColumns } from "@/features/audit/audit-columns";
-import { useWorkspaceAudit } from "@/features/audit/hooks";
-import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import {
-  activityEventLabels,
-  activityResourceLabels,
-} from "@/lib/activity-presentation";
-import type { ActivityEvent, ActivityResource } from "@/types/activity";
-import type { AuditLog } from "@/types/audit";
-
-const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
-const eventOptions = Object.entries(activityEventLabels) as [
-  ActivityEvent,
-  string,
-][];
-const resourceOptions = Object.entries(activityResourceLabels) as [
-  ActivityResource,
-  string,
-][];
-
-type WorkspacePagination = PaginationState & {
-  workspaceId: string | null;
-};
+  useAuditStream,
+  useInfiniteWorkspaceAudit,
+} from "@/features/audit/hooks";
+import {
+  type AuditFiltersValue,
+  emptyAuditFilters,
+} from "@/features/audit/filters";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type {
+  AuditActor,
+  AuditFilters as Filters,
+  AuditLog,
+} from "@/types/audit";
 
 function AuditPermissionState() {
   return (
@@ -47,69 +40,104 @@ function AuditPermissionState() {
   );
 }
 
+function AuditNotFoundState() {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border px-6 text-center">
+      <FileSearch aria-hidden="true" className="text-muted-foreground size-8" />
+      <p className="mt-3 font-medium">Workspace introuvable</p>
+      <p className="text-muted-foreground mt-1 text-sm">
+        Ce workspace n’existe plus ou ne vous est pas accessible.
+      </p>
+    </div>
+  );
+}
+
 export function AuditPage() {
   const workspace = useActiveWorkspace();
-  const [paginationState, setPaginationState] = useState<WorkspacePagination>({
-    ...initialPagination,
-    workspaceId: null,
-  });
-  const pagination =
-    paginationState.workspaceId === workspace.activeWorkspaceId
-      ? paginationState
-      : { ...initialPagination, workspaceId: workspace.activeWorkspaceId };
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [eventType, setEventType] = useState<ActivityEvent | "">("");
-  const [resourceType, setResourceType] = useState<ActivityResource | "">("");
+  const [filterState, setFilterState] =
+    useState<AuditFiltersValue>(emptyAuditFilters);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-  const params = useMemo(
+  const debouncedSearch = useDebouncedValue(filterState.search.trim(), 300);
+  const filters = useMemo<Filters>(
     () => ({
-      limit: pagination.pageSize,
-      offset: pagination.pageIndex * pagination.pageSize,
-      ...(eventType ? { event_type: eventType } : {}),
-      ...(resourceType ? { resource_type: resourceType } : {}),
+      ...(filterState.actorId ? { actor_id: filterState.actorId } : {}),
+      ...(filterState.eventType ? { event_type: filterState.eventType } : {}),
+      ...(filterState.resourceType
+        ? { resource_type: filterState.resourceType }
+        : {}),
+      ...(filterState.period ? { period: filterState.period } : {}),
+      ...(filterState.success
+        ? { success: filterState.success === "true" }
+        : {}),
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
     }),
-    [eventType, pagination.pageIndex, pagination.pageSize, resourceType],
+    [
+      debouncedSearch,
+      filterState.actorId,
+      filterState.eventType,
+      filterState.period,
+      filterState.resourceType,
+      filterState.success,
+    ],
   );
-  const auditQuery = useWorkspaceAudit(workspace.activeWorkspaceId, params);
-  const columns = useMemo(
-    () =>
-      getAuditColumns({
-        onView: setSelectedLog,
+  const auditQuery = useInfiniteWorkspaceAudit(
+    workspace.activeWorkspaceId,
+    filters,
+  );
+  const logs = useMemo(() => {
+    const seen = new Set<string>();
+    return (auditQuery.data?.pages ?? []).flatMap((page) =>
+      page.items.filter((auditLog) => {
+        if (seen.has(auditLog.id)) {
+          return false;
+        }
+        seen.add(auditLog.id);
+        return true;
       }),
-    [],
-  );
-  const total = auditQuery.data?.count ?? 0;
-  const pageCount = Math.ceil(total / pagination.pageSize);
+    );
+  }, [auditQuery.data?.pages]);
+  const actors = useMemo(() => {
+    const byId = new Map<string, AuditActor>();
+    logs.forEach(({ actor }) => {
+      if (actor) {
+        byId.set(actor.id, actor);
+      }
+    });
+    return [...byId.values()].sort((left, right) =>
+      left.full_name.localeCompare(right.full_name, "fr"),
+    );
+  }, [logs]);
+  const stream = useAuditStream({
+    filters,
+    historyReady: !auditQuery.isPending && !auditQuery.isError,
+    latestKnownId: logs[0]?.id ?? null,
+    workspaceId: workspace.activeWorkspaceId,
+  });
+  const total = auditQuery.data?.pages[0]?.count ?? 0;
   const isForbidden =
     auditQuery.error instanceof ApiError && auditQuery.error.status === 403;
-
-  const resetPage = () => {
-    setPaginationState((current) => ({
-      ...current,
-      pageIndex: 0,
-      workspaceId: workspace.activeWorkspaceId,
-    }));
-  };
+  const isNotFound =
+    auditQuery.error instanceof ApiError && auditQuery.error.status === 404;
 
   return (
     <div className="min-w-0 space-y-6">
       <EntityPageHeader
         actions={
-          <WorkspaceSelector
-            disabled={workspace.isPending}
-            onValueChange={(workspaceId) => {
-              workspace.selectWorkspace(workspaceId);
-              setPaginationState({
-                ...initialPagination,
-                workspaceId,
-              });
-              setSelectedLog(null);
-            }}
-            value={workspace.activeWorkspaceId}
-            workspaces={workspace.workspaces}
-          />
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+            <AuditLiveBadge status={stream.status} />
+            <WorkspaceSelector
+              disabled={workspace.isPending}
+              onValueChange={(workspaceId) => {
+                workspace.selectWorkspace(workspaceId);
+                setFilterState(emptyAuditFilters);
+                setSelectedLog(null);
+              }}
+              value={workspace.activeWorkspaceId}
+              workspaces={workspace.workspaces}
+            />
+          </div>
         }
-        description="Consultez la trace immuable des changements sensibles."
+        description="Consultez en direct la trace immuable des opérations sensibles."
         title="Audit"
       />
 
@@ -134,91 +162,44 @@ export function AuditPage() {
 
       {workspace.activeWorkspaceId && !workspace.isError ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:max-w-3xl">
-            <div>
-              <label
-                className="text-muted-foreground mb-1.5 block text-sm font-medium"
-                htmlFor="audit-event-filter"
-              >
-                Type d’événement
-              </label>
-              <Select
-                id="audit-event-filter"
-                onChange={(event) => {
-                  setEventType(event.target.value as ActivityEvent | "");
-                  resetPage();
-                }}
-                value={eventType}
-              >
-                <option value="">Tous les événements</option>
-                {eventOptions.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label
-                className="text-muted-foreground mb-1.5 block text-sm font-medium"
-                htmlFor="audit-resource-filter"
-              >
-                Type de ressource
-              </label>
-              <Select
-                id="audit-resource-filter"
-                onChange={(event) => {
-                  setResourceType(event.target.value as ActivityResource | "");
-                  resetPage();
-                }}
-                value={resourceType}
-              >
-                <option value="">Toutes les ressources</option>
-                {resourceOptions.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
+          <AuditFilters
+            actors={actors}
+            onChange={setFilterState}
+            value={filterState}
+          />
 
           {isForbidden ? (
             <AuditPermissionState />
+          ) : isNotFound ? (
+            <AuditNotFoundState />
           ) : auditQuery.isError ? (
             <ErrorState
               error={auditQuery.error}
               onRetry={() => void auditQuery.refetch()}
             />
+          ) : auditQuery.isPending ? (
+            <AuditTimelineSkeleton />
           ) : (
-            <DataTable
-              columns={columns}
-              data={auditQuery.data?.items ?? []}
-              emptyDescription="Aucun événement ne correspond aux filtres sélectionnés."
-              emptyTitle={
-                eventType || resourceType
-                  ? "Aucun résultat"
-                  : "Journal d’audit vide"
-              }
-              isLoading={auditQuery.isPending}
-              manualPagination
-              manualSorting
-              onPaginationChange={(updater) => {
-                setPaginationState((current) => {
-                  const nextPagination =
-                    typeof updater === "function" ? updater(current) : updater;
-                  return {
-                    ...nextPagination,
-                    workspaceId: workspace.activeWorkspaceId,
-                  };
-                });
-              }}
-              onSortingChange={setSorting}
-              pageCount={pageCount}
-              pagination={pagination}
-              sorting={sorting}
-              total={total}
-            />
+            <>
+              <p className="text-muted-foreground text-sm" aria-live="polite">
+                {total} entrée{total > 1 ? "s" : ""}
+              </p>
+              <AuditTimeline
+                hasNextPage={auditQuery.hasNextPage}
+                isFetchingNextPage={auditQuery.isFetchingNextPage}
+                items={logs}
+                latestAuditId={stream.latestAuditId}
+                onEndReached={() => {
+                  void auditQuery.fetchNextPage();
+                }}
+                onView={setSelectedLog}
+              />
+              {stream.latestAuditId ? (
+                <p aria-live="polite" className="sr-only">
+                  Nouvelle entrée d’audit reçue en temps réel.
+                </p>
+              ) : null}
+            </>
           )}
         </>
       ) : null}

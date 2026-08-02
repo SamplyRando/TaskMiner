@@ -50,8 +50,20 @@ def test_project_creation_automatically_adds_audit_log(
         "name": "Audited project",
     }
     assert item["metadata"] == {"name": "Audited project"}
+    assert item["workspace_id"] == str(workspace.id)
+    assert item["workspace_name"] == workspace.name
+    assert item["actor"] == {
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+    }
+    assert item["message"] == "Projet créé : Audited project"
+    assert item["success"] is True
     assert set(item) == {
         "id",
+        "workspace_id",
+        "workspace_name",
+        "actor",
         "event",
         "resource",
         "resource_id",
@@ -59,6 +71,8 @@ def test_project_creation_automatically_adds_audit_log(
         "old_values",
         "new_values",
         "metadata",
+        "message",
+        "success",
         "created_at",
     }
 
