@@ -49,9 +49,17 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               type="button"
               variant="ghost"
             >
-              <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-full text-xs font-bold">
-                {initials}
-              </span>
+              {currentUser?.avatar_url ? (
+                <img
+                  alt=""
+                  className="size-9 rounded-full border object-cover"
+                  src={currentUser.avatar_url}
+                />
+              ) : (
+                <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-full text-xs font-bold">
+                  {initials}
+                </span>
+              )}
               <span className="hidden min-w-0 text-left sm:block">
                 <span className="block max-w-48 truncate text-sm font-medium">
                   {displayName}

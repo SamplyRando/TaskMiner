@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/api/client";
 import { listProjects } from "@/api/projects";
+import { getUserPreferences } from "@/api/settings";
 import { assignTask, createTask, listAllTasks, listTasks } from "@/api/tasks";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { listWorkspaces } from "@/api/workspace";
@@ -12,6 +13,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useTaskViewStore } from "@/store/task-view-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { renderWithQuery } from "@/test/query-wrapper";
+import { settingsPreferencesFixture } from "@/test/settings-fixtures";
 import {
   projectFixture,
   taskFixture,
@@ -25,6 +27,7 @@ vi.mock("@/api/projects", () => ({
   listProjects: vi.fn(),
   updateProject: vi.fn(),
 }));
+vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 vi.mock("@/api/tasks", () => ({
   assignTask: vi.fn(),
@@ -54,10 +57,12 @@ const mockedListProjects = vi.mocked(listProjects);
 const mockedListTasks = vi.mocked(listTasks);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
+const mockedGetPreferences = vi.mocked(getUserPreferences);
 
 describe("TasksPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     localStorage.clear();
     useTaskViewStore.setState({ mode: "list" });
     useWorkspaceStore.setState({ activeWorkspaceId: null });

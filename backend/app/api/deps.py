@@ -18,6 +18,7 @@ from app.repositories.dashboard import DashboardRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
+from app.repositories.user_preference import UserPreferenceRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.repositories.workspace_invitation import WorkspaceInvitationRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
@@ -33,6 +34,7 @@ from app.services.permission import PermissionService
 from app.services.project import ProjectService
 from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
+from app.services.settings import SettingsService
 from app.services.user import UserService
 from app.services.workspace import WorkspaceService
 from app.services.workspace_invitation import WorkspaceInvitationService
@@ -69,7 +71,14 @@ def get_current_user(
         raise unauthorized from exc
 
     user = UserRepository(session).get(user_id)
-    if user is None or not user.is_active:
+    token_version = payload.get("ver", 0)
+    if (
+        user is None
+        or not user.is_active
+        or user.deleted_at is not None
+        or not isinstance(token_version, int)
+        or token_version != user.auth_version
+    ):
         raise unauthorized
 
     return user
@@ -93,6 +102,18 @@ def get_user_service(session: SessionDep) -> UserService:
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+
+
+def get_settings_service(session: SessionDep) -> SettingsService:
+    return SettingsService(
+        UserRepository(session),
+        UserPreferenceRepository(session),
+        WorkspaceRepository(session),
+        WorkspaceMemberRepository(session),
+    )
+
+
+SettingsServiceDep = Annotated[SettingsService, Depends(get_settings_service)]
 
 
 def get_project_service(session: SessionDep) -> ProjectService:

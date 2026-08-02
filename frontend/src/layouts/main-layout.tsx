@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 
+import { AppearanceSync } from "@/components/providers/appearance-sync";
 import { Sidebar } from "@/layouts/sidebar";
 import { Topbar } from "@/layouts/topbar";
 
@@ -9,6 +10,7 @@ export function MainLayout() {
 
   return (
     <div className="bg-background min-h-screen">
+      <AppearanceSync />
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => {

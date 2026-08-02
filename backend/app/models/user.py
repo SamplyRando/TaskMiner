@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, String, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.workspace import Workspace
     from app.models.workspace_member import WorkspaceMember
     from app.models.workspace_invitation import WorkspaceInvitation
+    from app.models.user_preference import UserPreference
 
 
 class User(TimestampMixin, Base):
@@ -49,6 +51,29 @@ class User(TimestampMixin, Base):
         nullable=False,
         default=True,
         server_default=text("true"),
+    )
+    avatar_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    )
+    auth_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default=text("0"),
+    )
+
+    preferences: Mapped[UserPreference] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        uselist=False,
     )
 
     workspaces: Mapped[list[Workspace]] = relationship(

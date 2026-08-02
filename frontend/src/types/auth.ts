@@ -5,6 +5,7 @@ export type UserProfile = {
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;
+  avatar_url?: string | null;
 };
 
 export type AuthSession = {

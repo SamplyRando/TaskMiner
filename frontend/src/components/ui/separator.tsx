@@ -1,0 +1,16 @@
+import type { HTMLAttributes } from "react";
+
+import { cn } from "@/lib/utils";
+
+export function Separator({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("bg-border h-px w-full", className)}
+      role="separator"
+      {...props}
+    />
+  );
+}

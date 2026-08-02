@@ -3,9 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createProject, listProjects } from "@/api/projects";
+import { getUserPreferences } from "@/api/settings";
 import { ProjectsPage } from "@/pages/projects-page";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { projectFixture } from "@/test/resource-fixtures";
+import { settingsPreferencesFixture } from "@/test/settings-fixtures";
 
 vi.mock("@/api/projects", () => ({
   createProject: vi.fn(),
@@ -13,13 +15,16 @@ vi.mock("@/api/projects", () => ({
   listProjects: vi.fn(),
   updateProject: vi.fn(),
 }));
+vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 const mockedCreateProject = vi.mocked(createProject);
 const mockedListProjects = vi.mocked(listProjects);
+const mockedGetPreferences = vi.mocked(getUserPreferences);
 
 describe("ProjectsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListProjects.mockResolvedValue({
       items: [projectFixture],
       limit: 20,

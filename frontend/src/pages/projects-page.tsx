@@ -1,6 +1,6 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -16,6 +16,7 @@ import {
 } from "@/features/projects/hooks";
 import { getProjectColumns } from "@/features/projects/project-columns";
 import { ProjectFormDialog } from "@/features/projects/project-form-dialog";
+import { useUserPreferences } from "@/features/settings/hooks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { Project, ProjectInput, ProjectSort } from "@/types/project";
 
@@ -35,6 +36,8 @@ function getSortParameter(sorting: SortingState): ProjectSort {
 }
 
 export function ProjectsPage() {
+  const preferences = useUserPreferences();
+  const pageSizeApplied = useRef(false);
   const [search, setSearch] = useState("");
   const deferredSearch = useDebouncedValue(search, 300);
   const [pagination, setPagination] = useState(initialPagination);
@@ -43,6 +46,16 @@ export function ProjectsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const normalizedSearch = deferredSearch.trim();
+
+  useEffect(() => {
+    if (!preferences.data || pageSizeApplied.current) return;
+    pageSizeApplied.current = true;
+    setPagination((current) =>
+      current.pageSize === preferences.data.items_per_page
+        ? current
+        : { pageIndex: 0, pageSize: preferences.data.items_per_page },
+    );
+  }, [preferences.data]);
 
   const projectsQuery = useProjects({
     limit: pagination.pageSize,

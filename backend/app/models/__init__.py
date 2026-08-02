@@ -7,6 +7,7 @@ from app.models.comment import Comment
 from app.models.project import Project
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.user import User
+from app.models.user_preference import UserAccent, UserMotion, UserPreference, UserTheme
 from app.models.workspace import Workspace
 from app.models.workspace_invitation import InvitationStatus, WorkspaceInvitation
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
@@ -21,6 +22,10 @@ __all__ = [
     "TaskPriority",
     "TaskStatus",
     "User",
+    "UserAccent",
+    "UserMotion",
+    "UserPreference",
+    "UserTheme",
     "Workspace",
     "WorkspaceInvitation",
     "InvitationStatus",

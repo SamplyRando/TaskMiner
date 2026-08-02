@@ -21,6 +21,8 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_access_token(
     subject: str,
     expires_delta: timedelta | None = None,
+    *,
+    token_version: int = 0,
 ) -> str:
     if settings.secret_key is None or settings.algorithm is None:
         raise RuntimeError("JWT security settings are not configured")
@@ -35,6 +37,7 @@ def create_access_token(
         "sub": subject,
         "iat": issued_at,
         "exp": issued_at + expires_delta,
+        "ver": token_version,
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 

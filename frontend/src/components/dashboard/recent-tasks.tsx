@@ -126,6 +126,17 @@ export const RecentTasks = memo(function RecentTasks({
         ),
       },
       {
+        accessorKey: "due_date",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Échéance" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {formatDateTime(row.original.due_date)}
+          </span>
+        ),
+      },
+      {
         id: "actions",
         enableGlobalFilter: false,
         enableSorting: false,

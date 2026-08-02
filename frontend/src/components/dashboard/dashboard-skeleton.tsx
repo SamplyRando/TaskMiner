@@ -12,8 +12,8 @@ export function DashboardSkeleton() {
         <Skeleton className="h-9 w-56" />
         <Skeleton className="h-5 w-full max-w-lg" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 8 }, (_, index) => (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {Array.from({ length: 10 }, (_, index) => (
           <Card key={index}>
             <CardContent className="flex items-center justify-between p-5">
               <div className="space-y-3">

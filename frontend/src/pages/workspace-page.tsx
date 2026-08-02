@@ -1,6 +1,6 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -8,6 +8,7 @@ import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUserPreferences } from "@/features/settings/hooks";
 import {
   useCreateWorkspace,
   useDeleteWorkspace,
@@ -18,9 +19,11 @@ import { getWorkspaceColumns } from "@/features/workspaces/workspace-columns";
 import { WorkspaceFormDialog } from "@/features/workspaces/workspace-form-dialog";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
 
-const initialPagination: PaginationState = { pageIndex: 0, pageSize: 10 };
+const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 
 export function WorkspacePage() {
+  const preferences = useUserPreferences();
+  const pageSizeApplied = useRef(false);
   const [search, setSearch] = useState("");
   const [pagination, setPagination] = useState(initialPagination);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -29,6 +32,16 @@ export function WorkspacePage() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!preferences.data || pageSizeApplied.current) return;
+    pageSizeApplied.current = true;
+    setPagination((current) =>
+      current.pageSize === preferences.data.items_per_page
+        ? current
+        : { pageIndex: 0, pageSize: preferences.data.items_per_page },
+    );
+  }, [preferences.data]);
 
   const workspacesQuery = useWorkspaces();
   const createWorkspace = useCreateWorkspace();

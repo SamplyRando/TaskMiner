@@ -1,6 +1,6 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, MailPlus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
@@ -29,6 +29,7 @@ import {
   useWorkspaceInvitations,
 } from "@/features/invitations/hooks";
 import { RecipientInvitationCard } from "@/features/invitations/recipient-invitation-card";
+import { useUserPreferences } from "@/features/settings/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -66,6 +67,8 @@ const isAccessError = (error: unknown): boolean =>
   error instanceof ApiError && (error.status === 403 || error.status === 404);
 
 export function InvitationsPage() {
+  const preferences = useUserPreferences();
+  const pageSizeApplied = useRef(false);
   const workspace = useActiveWorkspace();
   const currentUser = useAuthStore((state) => state.currentUser);
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -87,6 +90,20 @@ export function InvitationsPage() {
   const [selectedInvitation, setSelectedInvitation] =
     useState<WorkspaceInvitation | null>(null);
   const [notice, setNotice] = useState<InvitationNotice | null>(null);
+
+  useEffect(() => {
+    if (!preferences.data || pageSizeApplied.current) return;
+    pageSizeApplied.current = true;
+    setPaginationState((current) =>
+      current.pageSize === preferences.data.items_per_page
+        ? current
+        : {
+            ...current,
+            pageIndex: 0,
+            pageSize: preferences.data.items_per_page,
+          },
+    );
+  }, [preferences.data]);
 
   const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
   const canManage = Boolean(

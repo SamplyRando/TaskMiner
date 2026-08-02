@@ -30,6 +30,7 @@ describe("dashboard components", () => {
         color="emerald"
         icon={CheckCircle2}
         title="Tâches terminées"
+        tooltip="Tâches au statut terminé."
         value={12}
       />,
     );
@@ -69,28 +70,35 @@ describe("dashboard components", () => {
         ...baseActivity,
         event: "attachment_uploaded" as const,
         id: "activity-filename",
+        message: "Pièce jointe ajoutée : rapport.pdf",
         metadata: { filename: "rapport.pdf" },
       },
       {
         ...baseActivity,
         event: "invitation_created" as const,
         id: "activity-email",
+        message: "Invitation créée : member@example.com",
         metadata: { email: "member@example.com" },
       },
       {
         ...baseActivity,
         event: "workspace_updated" as const,
         id: "activity-workspace",
+        message: "Workspace modifié",
         metadata: {},
       },
     ];
-    const { rerender } = render(<ActivityList items={activities} />);
+    const { rerender } = renderInRouter(<ActivityList items={activities} />);
 
     expect(screen.getByText(/Préparer la livraison/)).toBeInTheDocument();
     expect(screen.getByText(/rapport.pdf/)).toBeInTheDocument();
     expect(screen.getByText(/member@example.com/)).toBeInTheDocument();
 
-    rerender(<ActivityList items={[]} />);
+    rerender(
+      <MemoryRouter>
+        <ActivityList items={[]} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText("Aucune activité")).toBeInTheDocument();
   });
 

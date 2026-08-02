@@ -11,6 +11,7 @@ import {
   listWorkspaceInvitations,
   revokeInvitation,
 } from "@/api/invitations";
+import { getUserPreferences } from "@/api/settings";
 import { listWorkspaces } from "@/api/workspace";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { InvitationsPage } from "@/pages/invitations-page";
@@ -34,6 +35,7 @@ vi.mock("@/api/invitations", () => ({
   listWorkspaceInvitations: vi.fn(),
   revokeInvitation: vi.fn(),
 }));
+vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
@@ -53,6 +55,7 @@ const mockedList = vi.mocked(listWorkspaceInvitations);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
 const mockedRevoke = vi.mocked(revokeInvitation);
+const mockedGetPreferences = vi.mocked(getUserPreferences);
 
 const setMobileViewport = (matches: boolean) => {
   Object.defineProperty(window, "matchMedia", {
@@ -84,6 +87,18 @@ describe("InvitationsPage", () => {
     localStorage.clear();
     setMobileViewport(false);
     authenticateStore(fakeUser);
+    mockedGetPreferences.mockResolvedValue({
+      accent: "violet",
+      dashboard_period: 30,
+      items_per_page: 20,
+      motion: "full",
+      notify_activity_feed: true,
+      notify_assignments: true,
+      notify_audit: true,
+      notify_comments: true,
+      notify_invitations: true,
+      theme: "system",
+    });
     useWorkspaceStore.setState({ activeWorkspaceId: null });
     mockedListWorkspaces.mockResolvedValue([firstWorkspace, secondWorkspace]);
     mockedPermissions.mockResolvedValue(ownerPermissions);

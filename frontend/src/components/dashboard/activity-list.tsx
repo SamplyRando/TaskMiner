@@ -1,5 +1,6 @@
-import { Activity, Circle } from "lucide-react";
+import { Activity, ArrowUpRight } from "lucide-react";
 import { memo } from "react";
+import { Link } from "react-router-dom";
 
 import { EmptyState } from "@/components/empty-state";
 import {
@@ -9,48 +10,64 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatDateTime } from "@/lib/format";
-import type { ActivityEvent, DashboardActivity } from "@/types/dashboard";
+import { Select } from "@/components/ui/select";
+import { formatRelativeDate } from "@/lib/format";
+import type { ActivityResource, DashboardActivity } from "@/types/dashboard";
 
-const eventLabels: Record<ActivityEvent, string> = {
-  attachment_uploaded: "Pièce jointe ajoutée",
-  comment_created: "Commentaire ajouté",
-  invitation_accepted: "Invitation acceptée",
-  invitation_created: "Invitation créée",
-  member_role_updated: "Rôle d’un membre modifié",
-  project_created: "Projet créé",
-  project_deleted: "Projet supprimé",
-  project_updated: "Projet modifié",
-  task_assigned: "Tâche assignée",
-  task_created: "Tâche créée",
-  task_deleted: "Tâche supprimée",
-  task_updated: "Tâche modifiée",
-  workspace_created: "Workspace créé",
-  workspace_updated: "Workspace modifié",
+const resourceLinks: Record<ActivityResource, string> = {
+  attachment: "/app/tasks",
+  comment: "/app/tasks",
+  invitation: "/app/invitations",
+  member: "/app/workspace",
+  project: "/app/projects",
+  task: "/app/tasks",
+  workspace: "/app/workspace",
 };
 
-const getActivityDetail = (activity: DashboardActivity): string => {
-  for (const key of ["name", "title", "email", "filename"] as const) {
-    const value = activity.metadata[key];
-    if (typeof value === "string") {
-      return value;
-    }
-  }
-  return activity.workspace_name;
-};
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toLocaleUpperCase("fr-FR"))
+    .join("");
 
 type ActivityListProps = {
   items: DashboardActivity[];
+  limit?: number;
+  onLimitChange?: (limit: number) => void;
 };
 
 export const ActivityList = memo(function ActivityList({
   items,
+  limit = 8,
+  onLimitChange,
 }: ActivityListProps) {
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Dernières activités</CardTitle>
-        <CardDescription>Événements récents de vos workspaces.</CardDescription>
+    <Card className="h-full min-w-0">
+      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+        <div className="space-y-1.5">
+          <CardTitle>Dernières activités</CardTitle>
+          <CardDescription>
+            Événements récents de vos workspaces.
+          </CardDescription>
+        </div>
+        {onLimitChange ? (
+          <Select
+            aria-label="Nombre maximal d’activités"
+            className="w-32"
+            onChange={(event) => {
+              onLimitChange(Number(event.target.value));
+            }}
+            value={limit}
+          >
+            {[5, 8, 12, 20].map((value) => (
+              <option key={value} value={value}>
+                {value} éléments
+              </option>
+            ))}
+          </Select>
+        ) : null}
       </CardHeader>
       <CardContent className="px-0 pb-2">
         {items.length === 0 ? (
@@ -61,27 +78,45 @@ export const ActivityList = memo(function ActivityList({
           />
         ) : (
           <ul className="divide-y">
-            {items.map((item) => (
-              <li className="flex gap-3 px-6 py-3" key={item.id}>
-                <Circle
-                  aria-hidden="true"
-                  className="text-primary mt-1 size-2 shrink-0 fill-current"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
-                    <p className="truncate text-sm font-medium">
-                      {eventLabels[item.event]}
-                    </p>
-                    <time className="text-muted-foreground shrink-0 text-xs">
-                      {formatDateTime(item.created_at)}
-                    </time>
+            {items.map((item) => {
+              const actorName = item.actor?.full_name ?? "TaskMiner";
+              return (
+                <li className="flex gap-3 px-6 py-3" key={item.id}>
+                  <div
+                    aria-hidden="true"
+                    className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  >
+                    {initials(actorName) || "TM"}
                   </div>
-                  <p className="text-muted-foreground mt-0.5 truncate text-sm">
-                    {getActivityDetail(item)} · {item.workspace_name}
-                  </p>
-                </div>
-              </li>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
+                      <p className="truncate text-sm font-medium">
+                        {item.message}
+                      </p>
+                      <time
+                        className="text-muted-foreground shrink-0 text-xs"
+                        dateTime={item.created_at}
+                      >
+                        {formatRelativeDate(item.created_at)}
+                      </time>
+                    </div>
+                    <div className="text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1 text-sm">
+                      <span className="truncate">
+                        {actorName} · {item.workspace_name}
+                      </span>
+                      <Link
+                        aria-label={`Ouvrir la ressource liée à ${item.message}`}
+                        className="text-primary ml-auto inline-flex shrink-0 items-center gap-1 font-medium hover:underline"
+                        to={resourceLinks[item.resource]}
+                      >
+                        Voir
+                        <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>

@@ -8,9 +8,11 @@ import {
   listWorkspaces,
   updateWorkspace,
 } from "@/api/workspace";
+import { getUserPreferences } from "@/api/settings";
 import { WorkspacePage } from "@/pages/workspace-page";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { workspaceFixture } from "@/test/resource-fixtures";
+import { settingsPreferencesFixture } from "@/test/settings-fixtures";
 
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
@@ -18,15 +20,18 @@ vi.mock("@/api/workspace", () => ({
   listWorkspaces: vi.fn(),
   updateWorkspace: vi.fn(),
 }));
+vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 const mockedCreateWorkspace = vi.mocked(createWorkspace);
 const mockedDeleteWorkspace = vi.mocked(deleteWorkspace);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedUpdateWorkspace = vi.mocked(updateWorkspace);
+const mockedGetPreferences = vi.mocked(getUserPreferences);
 
 describe("WorkspacePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
   });
 

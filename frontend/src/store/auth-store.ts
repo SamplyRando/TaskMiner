@@ -23,6 +23,8 @@ type AuthState = {
   login: (credentials: LoginCredentials) => Promise<void>;
   hydrate: () => Promise<void>;
   logout: () => void;
+  setCurrentUser: (user: UserProfile) => void;
+  replaceAccessToken: (token: string, tokenType: "bearer") => void;
   clearError: () => void;
 };
 
@@ -151,6 +153,12 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({ ...emptySession, isHydrated: true });
         localStorage.removeItem(AUTH_STORAGE_KEY);
+      },
+      setCurrentUser: (currentUser) => {
+        set({ currentUser });
+      },
+      replaceAccessToken: (accessToken, tokenType) => {
+        set({ accessToken, tokenType, isAuthenticated: true });
       },
       clearError: () => {
         set({ error: null });

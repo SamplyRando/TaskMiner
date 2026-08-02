@@ -1,6 +1,6 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { Columns3, List, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
 import { DeleteDialog } from "@/components/delete-dialog";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import { useProjects } from "@/features/projects/hooks";
+import { useUserPreferences } from "@/features/settings/hooks";
 import {
   useAssignTask,
   useCreateTask,
@@ -52,6 +53,8 @@ function getSortParameter(sorting: SortingState): TaskSort {
 }
 
 export function TasksPage() {
+  const preferences = useUserPreferences();
+  const pageSizeApplied = useRef(false);
   const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
   const mode = useTaskViewStore((state) => state.mode);
   const setMode = useTaskViewStore((state) => state.setMode);
@@ -67,6 +70,16 @@ export function TasksPage() {
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    if (!preferences.data || pageSizeApplied.current) return;
+    pageSizeApplied.current = true;
+    setPagination((current) =>
+      current.pageSize === preferences.data.items_per_page
+        ? current
+        : { pageIndex: 0, pageSize: preferences.data.items_per_page },
+    );
+  }, [preferences.data]);
 
   const projectsQuery = useProjects(
     {

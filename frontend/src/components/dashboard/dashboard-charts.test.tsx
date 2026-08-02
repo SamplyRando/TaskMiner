@@ -53,18 +53,21 @@ describe("DashboardCharts", () => {
     render(
       <DashboardCharts
         priorities={dashboardFixture.priority_distribution}
+        periodLabel="30 jours"
         statuses={dashboardFixture.status_distribution}
-        trend={dashboardFixture.task_creation_trend}
+        trends={dashboardFixture.trends}
       />,
     );
 
-    expect(screen.getByText("Tendances")).toBeInTheDocument();
+    expect(screen.getByText("Évolution temporelle")).toBeInTheDocument();
     expect(screen.getByTestId("pie-chart-data")).toHaveTextContent(
       "En attente,En cours,Terminées",
     );
     expect(screen.getByTestId("bar-chart")).toHaveTextContent(
       "Basse,Moyenne,Haute,Urgente",
     );
-    expect(screen.getByTestId("line-chart")).toHaveTextContent("30 juil.");
+    expect(screen.getAllByTestId("line-chart")[0]).toHaveTextContent(
+      "30 juil.",
+    );
   });
 });

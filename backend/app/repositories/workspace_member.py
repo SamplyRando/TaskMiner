@@ -82,3 +82,29 @@ class WorkspaceMemberRepository:
             self.session.rollback()
             raise
         return member
+
+    def delete(self, member: WorkspaceMember) -> None:
+        try:
+            self.session.delete(member)
+            self.session.commit()
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+
+    def get_primary_role(self, user_id: UUID) -> WorkspaceMemberRole | None:
+        priority = {
+            WorkspaceMemberRole.OWNER: 0,
+            WorkspaceMemberRole.ADMIN: 1,
+            WorkspaceMemberRole.MEMBER: 2,
+            WorkspaceMemberRole.VIEWER: 3,
+        }
+        statement = (
+            select(WorkspaceMember.role)
+            .join(Workspace, WorkspaceMember.workspace_id == Workspace.id)
+            .where(
+                WorkspaceMember.user_id == user_id,
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        roles = list(self.session.scalars(statement).all())
+        return min(roles, key=priority.__getitem__) if roles else None

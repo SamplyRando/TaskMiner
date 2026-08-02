@@ -45,4 +45,8 @@ class UserService:
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsError
 
-        return create_access_token(subject=str(user.id))
+        user = self.repository.record_login(user)
+        return create_access_token(
+            subject=str(user.id),
+            token_version=user.auth_version,
+        )
