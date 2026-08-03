@@ -18,6 +18,7 @@ import { getProjectColumns } from "@/features/projects/project-columns";
 import { ProjectFormDialog } from "@/features/projects/project-form-dialog";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useSessionState } from "@/hooks/use-session-state";
 import type { Project, ProjectInput, ProjectSort } from "@/types/project";
 
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
@@ -38,10 +39,16 @@ function getSortParameter(sorting: SortingState): ProjectSort {
 export function ProjectsPage() {
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSessionState("taskminer-projects-search", "");
   const deferredSearch = useDebouncedValue(search, 300);
-  const [pagination, setPagination] = useState(initialPagination);
-  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [pagination, setPagination] = useSessionState(
+    "taskminer-projects-pagination",
+    initialPagination,
+  );
+  const [sorting, setSorting] = useSessionState<SortingState>(
+    "taskminer-projects-sorting",
+    initialSorting,
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -55,7 +62,7 @@ export function ProjectsPage() {
         ? current
         : { pageIndex: 0, pageSize: preferences.data.items_per_page },
     );
-  }, [preferences.data]);
+  }, [preferences.data, setPagination]);
 
   const projectsQuery = useProjects({
     limit: pagination.pageSize,
@@ -160,11 +167,32 @@ export function ProjectsPage() {
         <DataTable
           columns={columns}
           data={projectsQuery.data?.items ?? []}
+          emptyAction={
+            search ? undefined : (
+              <Button
+                onClick={() => {
+                  createProject.reset();
+                  setSelectedProject(null);
+                  setFormOpen(true);
+                }}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Créer un projet
+              </Button>
+            )
+          }
           emptyDescription="Créez votre premier projet pour organiser vos tâches."
           emptyTitle={search ? "Aucun résultat" : "Aucun projet"}
           isLoading={projectsQuery.isPending}
           manualPagination
           manualSorting
+          mobileLabels={{
+            created_at: "Créé le",
+            description: "Description",
+            name: "Projet",
+            workspace_name: "Workspace",
+          }}
           onPaginationChange={setPagination}
           onSortingChange={(updater) => {
             setSorting(updater);

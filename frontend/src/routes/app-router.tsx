@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Spinner } from "@/components/ui/spinner";
+import { BrandMark } from "@/components/brand-logo";
 import { MainLayout } from "@/layouts/main-layout";
 import { ProtectedRoute } from "@/routes/protected-route";
 import { PublicRoute } from "@/routes/public-route";
@@ -38,7 +39,11 @@ const WorkspacePage = lazy(async () => ({
 }));
 
 const routeFallback = (
-  <main className="flex min-h-64 items-center justify-center">
+  <main
+    aria-label="Chargement de la page"
+    className="flex min-h-screen flex-col items-center justify-center gap-4"
+  >
+    <BrandMark className="text-primary size-12" />
     <Spinner className="text-primary size-6" label="Chargement de la page" />
   </main>
 );

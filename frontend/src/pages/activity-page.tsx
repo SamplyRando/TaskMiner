@@ -1,5 +1,5 @@
 import { Radio } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { ActivityFilters } from "@/components/activity/activity-filters";
 import type { ActivityFiltersValue } from "@/components/activity/activity-filters";
@@ -7,8 +7,10 @@ import { ActivityLiveBadge } from "@/components/activity/activity-live-badge";
 import { ActivityTimelineSkeleton } from "@/components/activity/activity-timeline-skeleton";
 import { ActivityTimeline } from "@/components/activity/activity-timeline";
 import { EmptyState } from "@/components/empty-state";
+import { EmptyStateLink } from "@/components/empty-state-link";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
+import { Button } from "@/components/ui/button";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import {
   useActivityStream,
@@ -16,6 +18,7 @@ import {
 } from "@/features/activities/hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useSessionState } from "@/hooks/use-session-state";
 import type {
   ActivityActor,
   ActivityFilters as Filters,
@@ -30,8 +33,10 @@ const emptyFilters: ActivityFiltersValue = {
 
 export function ActivityPage() {
   const workspace = useActiveWorkspace();
-  const [filterState, setFilterState] =
-    useState<ActivityFiltersValue>(emptyFilters);
+  const [filterState, setFilterState] = useSessionState<ActivityFiltersValue>(
+    "taskminer-activity-filters",
+    emptyFilters,
+  );
   const debouncedSearch = useDebouncedValue(filterState.search.trim(), 300);
   const filters = useMemo<Filters>(
     () => ({
@@ -114,6 +119,11 @@ export function ActivityPage() {
       workspace.workspaces.length === 0 ? (
         <div className="bg-card rounded-xl border">
           <EmptyState
+            action={
+              <EmptyStateLink to="/app/workspace">
+                Créer un workspace
+              </EmptyStateLink>
+            }
             description="Créez un workspace pour commencer à suivre son activité."
             icon={Radio}
             title="Aucun workspace"
@@ -142,6 +152,23 @@ export function ActivityPage() {
                 {total} activité{total > 1 ? "s" : ""}
               </p>
               <ActivityTimeline
+                emptyAction={
+                  Object.values(filterState).some(Boolean) ? (
+                    <Button
+                      onClick={() => {
+                        setFilterState(emptyFilters);
+                      }}
+                      type="button"
+                      variant="outline"
+                    >
+                      Effacer les filtres
+                    </Button>
+                  ) : (
+                    <EmptyStateLink to="/app/tasks">
+                      Créer une tâche
+                    </EmptyStateLink>
+                  )
+                }
                 hasNextPage={activitiesQuery.hasNextPage}
                 isFetchingNextPage={activitiesQuery.isFetchingNextPage}
                 items={activities}

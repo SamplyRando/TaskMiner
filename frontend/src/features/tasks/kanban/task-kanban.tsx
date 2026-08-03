@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { TaskKanbanCard } from "@/features/tasks/kanban/task-kanban-card";
@@ -31,6 +31,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from "@/types/task";
 type TaskKanbanProps = {
   canManageTasks: boolean;
   currentUserId: string;
+  emptyAction?: ReactNode;
   isLoading: boolean;
   onStatusChange: (task: Task, status: TaskStatus) => Promise<void>;
   projects: Project[];
@@ -41,6 +42,7 @@ type TaskKanbanProps = {
 export function TaskKanban({
   canManageTasks,
   currentUserId,
+  emptyAction,
   isLoading,
   onStatusChange,
   projects,
@@ -101,6 +103,7 @@ export function TaskKanban({
     return (
       <div className="bg-card rounded-2xl border py-12">
         <EmptyState
+          action={emptyAction}
           description="Créez une tâche ou ajustez les filtres actifs."
           title="Aucune tâche à afficher"
         />

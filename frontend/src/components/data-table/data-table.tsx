@@ -10,7 +10,9 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { ReactNode } from "react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,15 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 type DataTableProps<Data> = {
   columns: ColumnDef<Data>[];
   data: Data[];
+  emptyAction?: ReactNode;
   emptyDescription: string;
   emptyTitle: string;
   isLoading: boolean;
   manualPagination: boolean;
   manualSorting: boolean;
+  mobileLabels?: Record<string, string>;
   onPaginationChange: OnChangeFn<PaginationState>;
   onSortingChange: OnChangeFn<SortingState>;
   pageCount: number;
@@ -42,11 +47,13 @@ type DataTableProps<Data> = {
 export function DataTable<Data>({
   columns,
   data,
+  emptyAction,
   emptyDescription,
   emptyTitle,
   isLoading,
   manualPagination,
   manualSorting,
+  mobileLabels = {},
   onPaginationChange,
   onSortingChange,
   pageCount,
@@ -54,6 +61,7 @@ export function DataTable<Data>({
   sorting,
   total,
 }: DataTableProps<Data>) {
+  const isMobile = useMediaQuery("(max-width: 767px)");
   // TanStack Table owns a mutable table instance; React Compiler intentionally
   // leaves this hook un-memoized while preserving the library's expected model.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -73,56 +81,116 @@ export function DataTable<Data>({
 
   return (
     <div className="space-y-4">
-      <div className="bg-card overflow-hidden rounded-xl border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading
-              ? Array.from({ length: pagination.pageSize }, (_, rowIndex) => (
-                  <TableRow key={`skeleton-${String(rowIndex)}`}>
-                    {columns.map((_column, columnIndex) => (
-                      <TableCell key={`cell-${String(columnIndex)}`}>
-                        <Skeleton className="h-5 w-full max-w-40" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              : table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
+      <div
+        aria-busy={isLoading}
+        className="bg-card overflow-hidden rounded-xl border shadow-sm"
+      >
+        {!isMobile ? (
+          <div>
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
                     ))}
                   </TableRow>
                 ))}
-          </TableBody>
-        </Table>
-        {!isLoading && table.getRowModel().rows.length === 0 ? (
-          <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
-            <p className="font-medium">{emptyTitle}</p>
-            <p className="text-muted-foreground mt-1 max-w-md text-sm">
-              {emptyDescription}
-            </p>
+              </TableHeader>
+              <TableBody>
+                {isLoading
+                  ? Array.from(
+                      { length: pagination.pageSize },
+                      (_, rowIndex) => (
+                        <TableRow key={`skeleton-${String(rowIndex)}`}>
+                          {columns.map((_column, columnIndex) => (
+                            <TableCell key={`cell-${String(columnIndex)}`}>
+                              <Skeleton className="h-5 w-full max-w-40" />
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ),
+                    )
+                  : table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+              </TableBody>
+            </Table>
           </div>
+        ) : (
+          <div className="divide-y">
+            {isLoading
+              ? Array.from(
+                  { length: Math.min(pagination.pageSize, 5) },
+                  (_, rowIndex) => (
+                    <div
+                      className="space-y-3 p-4"
+                      key={`mobile-skeleton-${String(rowIndex)}`}
+                    >
+                      <Skeleton className="h-5 w-2/3" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-9 w-28" />
+                    </div>
+                  ),
+                )
+              : table.getRowModel().rows.map((row) => (
+                  <article
+                    className="hover:bg-muted/30 space-y-3 p-4 transition-colors"
+                    key={`mobile-${row.id}`}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const isActions = cell.column.id === "actions";
+                      return (
+                        <div
+                          className={
+                            isActions
+                              ? "flex justify-end border-t pt-3"
+                              : "grid grid-cols-[minmax(5.5rem,0.4fr)_minmax(0,1fr)] items-start gap-3"
+                          }
+                          key={cell.id}
+                        >
+                          {isActions ? null : (
+                            <span className="text-muted-foreground text-xs font-medium">
+                              {mobileLabels[cell.column.id] ?? cell.column.id}
+                            </span>
+                          )}
+                          <div
+                            className={isActions ? "w-full" : "min-w-0 text-sm"}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </article>
+                ))}
+          </div>
+        )}
+        {!isLoading && table.getRowModel().rows.length === 0 ? (
+          <EmptyState
+            action={emptyAction}
+            description={emptyDescription}
+            title={emptyTitle}
+          />
         ) : null}
       </div>
 
@@ -130,7 +198,7 @@ export function DataTable<Data>({
         <p className="text-muted-foreground text-sm">
           {total} élément{total > 1 ? "s" : ""}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
           <Select
             aria-label="Éléments par page"
             className="w-20"

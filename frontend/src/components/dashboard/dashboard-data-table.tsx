@@ -21,10 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 type DashboardDataTableProps<Data> = {
   columns: ColumnDef<Data>[];
   data: Data[];
+  mobileLabels?: Record<string, string>;
   searchLabel: string;
   searchPlaceholder: string;
 };
@@ -32,9 +34,11 @@ type DashboardDataTableProps<Data> = {
 export function DashboardDataTable<Data>({
   columns,
   data,
+  mobileLabels = {},
   searchLabel,
   searchPlaceholder,
 }: DashboardDataTableProps<Data>) {
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -73,35 +77,68 @@ export function DashboardDataTable<Data>({
         />
       </div>
 
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
+      {!isMobile ? (
+        <div>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
                       )}
-                </TableHead>
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="divide-y">
           {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
+            <article className="space-y-3 px-6 py-4" key={`mobile-${row.id}`}>
               {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+                <div
+                  className={
+                    cell.column.id === "actions"
+                      ? "flex justify-end border-t pt-3"
+                      : "grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3"
+                  }
+                  key={cell.id}
+                >
+                  {cell.column.id === "actions" ? null : (
+                    <span className="text-muted-foreground text-xs font-medium">
+                      {mobileLabels[cell.column.id] ?? cell.column.id}
+                    </span>
+                  )}
+                  <div className="min-w-0 text-sm">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                </div>
               ))}
-            </TableRow>
+            </article>
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      )}
 
       {table.getRowModel().rows.length === 0 ? (
         <p className="text-muted-foreground px-6 py-10 text-center text-sm">

@@ -1,72 +1,45 @@
 # API TaskMiner
 
-## Informations générales
+## Accès
 
-L'API est fournie par FastAPI. Les routes métier sont versionnées sous
-`/api/v1`. La documentation interactive est générée automatiquement à partir
-du schéma OpenAPI.
+L'API FastAPI est versionnée sous `/api/v1`. La documentation contractuelle
+complète est générée par OpenAPI :
 
-En développement Docker, le backend est directement accessible sur
-`http://localhost:8000`. nginx expose également les accès configurés par le
-reverse proxy sur `http://localhost`.
+- Swagger UI : `/docs`
+- Schéma OpenAPI : `/openapi.json`
+- Santé : `GET /health`
 
-## Routes système
+Les routes protégées attendent `Authorization: Bearer <token>`. Le frontend
+centralise cet en-tête dans son client Axios.
 
-### `GET /`
+## Domaines fonctionnels
 
-Retourne les informations publiques minimales du backend.
+| Domaine | Préfixes principaux | Capacités |
+| --- | --- | --- |
+| Auth | `/api/v1/auth` | inscription, connexion |
+| Utilisateur | `/api/v1/users/me` | profil, mot de passe, préférences, compte |
+| Workspaces | `/api/v1/workspaces` | CRUD, permissions, membres, invitations |
+| Projets | `/api/v1/projects` | CRUD, recherche, tri, pagination |
+| Tâches | `/api/v1/tasks` | CRUD, filtres, assignation, Kanban |
+| Commentaires | `/api/v1/comments` | lecture, modification, soft delete |
+| Pièces jointes | `/api/v1/attachments` | téléchargement et soft delete |
+| Dashboard | `/api/v1/dashboard` | agrégats et projets récents paginés |
+| Activité | `/api/v1/workspaces/{id}/activities` | historique paginé et flux SSE |
+| Audit | `/api/v1/workspaces/{id}/audit` | historique filtré et flux SSE sécurisé |
 
-Réponse `200 OK` :
+Les routes imbriquées permettent également la création et la liste des tâches,
+commentaires, pièces jointes, membres et invitations dans leur ressource parente.
 
-```json
-{
-  "project": "TaskMiner",
-  "version": "0.1.0",
-  "docs": "/docs"
-}
-```
+## Conventions
 
-### `GET /health`
+- Corps JSON validés par Pydantic v2 avec champs supplémentaires interdits.
+- UUID pour les identifiants publics.
+- Pagination `{ items, total/count, skip/offset, limit }` selon le domaine.
+- Dates ISO 8601 en UTC.
+- `401` pour une session absente ou invalide, `403` pour une permission refusée,
+  `404` pour une ressource absente ou masquée, `409` pour un conflit.
+- Les suppressions de ressources métier sont logiques (`deleted_at`).
+- Les flux SSE supportent heartbeat, reconnexion et `Last-Event-ID`.
 
-Healthcheck applicatif utilisé notamment par Docker.
-
-Réponse `200 OK` :
-
-```json
-{
-  "status": "running",
-  "project": "TaskMiner",
-  "version": "0.1.0"
-}
-```
-
-### `GET /docs`
-
-Affiche Swagger UI, l'interface interactive générée par FastAPI. Le document
-OpenAPI brut est disponible via `/openapi.json`.
-
-## Routes API v1
-
-Les routes suivantes vérifient uniquement l'architecture et le routage. Elles
-n'accèdent pas à PostgreSQL et n'implémentent encore aucune opération CRUD.
-
-### `GET /api/v1/users`
-
-### `GET /api/v1/projects`
-
-### `GET /api/v1/tasks`
-
-Réponse commune `200 OK` :
-
-```json
-{
-  "message": "Not implemented yet"
-}
-```
-
-## État d'implémentation
-
-Les schémas, contrats de repositories et classes de services existent, mais
-les endpoints métier restent volontairement des placeholders. Aucun contrat
-CRUD ne doit être considéré comme public ou stable avant son implémentation et
-sa validation dans un prochain sprint.
+Le schéma OpenAPI reste la source de vérité pour les payloads, codes exacts et
+paramètres disponibles ; ce document fournit une carte d'orientation stable.

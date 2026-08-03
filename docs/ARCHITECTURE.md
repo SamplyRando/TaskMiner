@@ -2,104 +2,106 @@
 
 ## Vue d'ensemble
 
-TaskMiner suit une architecture en couches. FastAPI porte l'interface HTTP,
-les schémas Pydantic définissent les contrats de données, les services
-accueilleront les cas d'usage, les repositories isoleront la persistance et
-SQLAlchemy représente le modèle relationnel. Au Sprint 4, les couches sont en
-place, mais les opérations métier et les requêtes CRUD ne sont pas encore
-implémentées.
-
-L'application s'exécute dans quatre conteneurs reliés à un réseau Docker
-unique : nginx, frontend, backend et PostgreSQL.
-
-## Schéma logique
+TaskMiner est une application SaaS conteneurisée, structurée autour d'un
+frontend React, d'une API FastAPI et de PostgreSQL. Le backend applique
+strictement le flux `API → Service → Repository → SQLAlchemy`. Le frontend
+sépare accès API, hooks React Query, features, composants et pages.
 
 ```text
-                         Client HTTP
-                              |
-                              v
-                     +-----------------+
-                     |      nginx      |
-                     | reverse proxy   |
-                     +--------+--------+
-                              |
-                 +------------+------------+
-                 |                         |
-                 v                         v
-        +-----------------+       +-----------------+
-        | Frontend React  |       | Backend FastAPI |
-        |  placeholder    |       |    /api/v1      |
-        +-----------------+       +--------+--------+
-                                          |
-                   +----------------------v----------------------+
-                   | API -> Schemas -> Services -> Repositories  |
-                   +----------------------+----------------------+
-                                          |
-                                          v
-                                  +---------------+
-                                  |  SQLAlchemy   |
-                                  |    Models     |
-                                  +-------+-------+
-                                          |
-                                          v
-                                  +---------------+
-                                  |  PostgreSQL   |
-                                  +---------------+
+                         Client web
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ nginx / port 80 │
+                    └────────┬────────┘
+                     SPA     │     API / SSE
+              ┌──────────────┴──────────────┐
+              ▼                             ▼
+     ┌─────────────────┐          ┌─────────────────┐
+     │ React 19 + Vite │          │ FastAPI         │
+     │ port 3000       │          │ port 8000       │
+     └────────┬────────┘          └────────┬────────┘
+              │                            │
+     Router / Query / Store       API → Service → Repository
+                                           │
+                                  Domain Events / Listeners
+                                           │
+                                           ▼
+                                  SQLAlchemy 2 + Alembic
+                                           │
+                                           ▼
+                                      PostgreSQL 17
 ```
-
-Les flèches entre API, services et repositories décrivent la direction cible
-des dépendances. Les endpoints métier sont encore des placeholders et ne
-parcourent donc pas cette chaîne actuellement.
 
 ## Backend
 
-Le code Python se trouve dans `backend/app/` :
+Le code applicatif réside dans `backend/app/` :
 
-- `main.py` crée l'application FastAPI, conserve les routes système et monte
-  le router versionné sous `/api/v1`.
-- `api/` contient la couche HTTP.
-  - `deps.py` expose la dépendance de session SQLAlchemy typée.
-  - `v1/router.py` centralise les routers de la version 1.
-  - `v1/endpoints/` contient les modules `users`, `projects` et `tasks`.
-- `core/` regroupe la configuration applicative et le logging.
-- `database/` configure le moteur SQLAlchemy, la fabrique de sessions, la
-  classe déclarative `Base` et la dépendance de session.
-- `models/` contient les entités SQLAlchemy, leurs relations et les enums
-  persistés.
-- `schemas/` contient les modèles Pydantic d'entrée et de sortie. Les contrats
-  Create, Update et Read sont séparés.
-- `repositories/` définit les signatures des futures opérations de
-  persistance. Aucune requête n'y est encore implémentée.
-- `services/` est réservé aux cas d'usage. Les classes actuelles reçoivent
-  seulement leur repository.
-- `utils/` accueillera uniquement de petits utilitaires transversaux lorsqu'ils
-  seront nécessaires.
+- `api/` expose les dépendances FastAPI et les routes versionnées `/api/v1`.
+- `schemas/` définit les contrats Pydantic v2, distincts des modèles persistés.
+- `services/` contient les cas d'usage, permissions et règles métier.
+- `repositories/` concentre toutes les requêtes SQLAlchemy 2.
+- `models/` décrit les entités, relations, contraintes et enums PostgreSQL.
+- `database/` configure le moteur, les sessions et la base déclarative.
+- `core/` regroupe settings, sécurité JWT/Argon2, permissions, logs et événements.
+- `listeners/` consomme les Domain Events pour alimenter Activity et Audit.
+- `realtime/` gère les abonnements SSE isolés par workspace.
+- `utils/` contient les utilitaires transversaux sans dépendance métier.
 
-## Migrations
-
-Le dossier `backend/alembic/` contient l'environnement et les versions de
-migration. Alembic utilise `Base.metadata` et importe `app.models` pour comparer
-le schéma SQLAlchemy au schéma PostgreSQL.
+Les services publient des événements de domaine après réussite transactionnelle.
+Les listeners Activity et Audit les persistent sans coupler les services métier
+à ces consommateurs. Les flux SSE diffusent ensuite les nouvelles entrées aux
+clients autorisés.
 
 ## Frontend
 
-Le dossier `frontend/` contient actuellement un placeholder React servi par
-Vite sur le port 3000. Il confirme le fonctionnement de la chaîne Docker, mais
-ne constitue pas encore l'interface produit.
+Le code frontend réside dans `frontend/src/` :
+
+- `api/` contient le client Axios typé et les appels HTTP/SSE.
+- `features/` regroupe hooks React Query, formulaires et composants métier.
+- `components/` contient les primitives UI, tableaux, timelines et widgets.
+- `pages/` compose les écrans routés sans dupliquer les accès réseau.
+- `routes/` protège, découpe et précharge les pages.
+- `store/` contient les états globaux Zustand : auth, workspace et vue tâches.
+- `hooks/` regroupe les comportements réutilisables et la persistance de page.
+- `layouts/` fournit Sidebar, Topbar, navigation mobile et contenu principal.
+- `types/` formalise tous les contrats TypeScript en mode strict.
+
+React Query est la source de vérité des données serveur. Zustand est réservé à
+l'état de session et aux préférences de navigation. Les mutations invalident les
+clés concernées et utilisent des mises à jour optimistes uniquement lorsqu'un
+rollback fiable est possible.
+
+## Données et sécurité
+
+- PostgreSQL stocke les données relationnelles, préférences, événements et logs.
+- Alembic est l'unique mécanisme d'évolution du schéma.
+- Les UUID identifient les ressources publiques.
+- Le soft delete masque les ressources sans perdre leur traçabilité.
+- Les mots de passe sont hachés avec Argon2 ; les tokens sont signés en HS256.
+- Chaque accès workspace passe par les permissions centralisées.
+- Les ressources étrangères restent masquées avec une réponse 404 lorsque requis.
 
 ## Infrastructure
 
-- `docker-compose.yml` orchestre les quatre services.
-- `docker/nginx/nginx.conf` configure le reverse proxy.
-- `backend/Dockerfile` construit une image Python 3.12 non-root.
-- `frontend/Dockerfile` construit le placeholder React.
-- Le réseau `taskminer_network` permet la résolution des services par leur nom.
-- Le volume `taskminer_postgres_data` conserve les données PostgreSQL.
+`docker-compose.yml` orchestre quatre services sur `taskminer_network` :
+
+- `postgres` avec volume de données persistant et healthcheck `pg_isready` ;
+- `backend` construit depuis Python 3.12 et démarré après PostgreSQL ;
+- `frontend` construit avec Node 22 puis servi par nginx non privilégié ;
+- `nginx` expose l'application, l'API, Swagger et les healthchecks sur le port 80.
+
+Les images statiques frontend sont mises en cache, tandis que les routes SPA
+retombent sur `index.html`. Les dépendances Compose utilisent les healthchecks
+afin d'éviter un démarrage dans un état partiellement disponible.
 
 ## Principes structurants
 
-- Les endpoints délégueront aux services et ne porteront pas de logique métier.
-- Les services ne dépendront pas des détails HTTP.
-- Les repositories concentreront les accès à SQLAlchemy.
-- Les schémas Pydantic resteront distincts des modèles de persistance.
-- Toute évolution du schéma sera livrée par une migration Alembic réversible.
+- Aucun accès SQLAlchemy depuis les endpoints.
+- Aucune dépendance HTTP dans les repositories.
+- Aucun secret dans le code ou les images Docker.
+- Aucun état serveur dupliqué dans Zustand.
+- Contrats d'entrée stricts avec champs supplémentaires interdits.
+- Pages importantes chargées à la demande, puis préchargées au survol ou focus.
+- Composants partagés responsables de l'accessibilité et des micro-interactions.
+- Toute évolution métier doit être testée aux niveaux service, API et interface.

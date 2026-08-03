@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUserPreferences } from "@/features/settings/hooks";
+import { useSessionState } from "@/hooks/use-session-state";
 import {
   useCreateWorkspace,
   useDeleteWorkspace,
@@ -24,9 +25,18 @@ const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 export function WorkspacePage() {
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
-  const [search, setSearch] = useState("");
-  const [pagination, setPagination] = useState(initialPagination);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [search, setSearch] = useSessionState(
+    "taskminer-workspaces-search",
+    "",
+  );
+  const [pagination, setPagination] = useSessionState(
+    "taskminer-workspaces-pagination",
+    initialPagination,
+  );
+  const [sorting, setSorting] = useSessionState<SortingState>(
+    "taskminer-workspaces-sorting",
+    [],
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(
@@ -41,7 +51,7 @@ export function WorkspacePage() {
         ? current
         : { pageIndex: 0, pageSize: preferences.data.items_per_page },
     );
-  }, [preferences.data]);
+  }, [preferences.data, setPagination]);
 
   const workspacesQuery = useWorkspaces();
   const createWorkspace = useCreateWorkspace();
@@ -156,11 +166,31 @@ export function WorkspacePage() {
         <DataTable
           columns={columns}
           data={filteredWorkspaces}
+          emptyAction={
+            search ? undefined : (
+              <Button
+                onClick={() => {
+                  createWorkspace.reset();
+                  setSelectedWorkspace(null);
+                  setFormOpen(true);
+                }}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Créer un workspace
+              </Button>
+            )
+          }
           emptyDescription="Créez votre premier workspace pour commencer."
           emptyTitle={search ? "Aucun résultat" : "Aucun workspace"}
           isLoading={workspacesQuery.isPending}
           manualPagination={false}
           manualSorting={false}
+          mobileLabels={{
+            created_at: "Créé le",
+            description: "Description",
+            name: "Workspace",
+          }}
           onPaginationChange={setPagination}
           onSortingChange={setSorting}
           pageCount={Math.ceil(filteredWorkspaces.length / pagination.pageSize)}

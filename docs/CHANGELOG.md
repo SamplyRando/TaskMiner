@@ -8,15 +8,22 @@ possible les principes du versionnement sémantique.
 
 ### Ajouté
 
-- Section réservée aux changements du prochain sprint.
+- Identité TaskMiner complète : logo, favicon, métadonnées sociales, manifest et
+  préparation PWA.
+- Présentation mobile en cartes pour les tableaux métier.
+- Préchargement des routes et persistance de l'état des pages dans la session.
+- Tests dédiés aux composants de polish, à la marque et à la persistance.
 
 ### Modifié
 
-- Aucun changement en attente.
+- États interactifs, focus, skeletons, dialogues, cartes, listes, toasts et
+  empty states harmonisés.
+- README et documentation d'architecture remis à niveau avec le produit actuel.
 
 ### Corrigé
 
-- Aucun correctif en attente.
+- Navigation de la Sidebar hors écran retirée de l'ordre de tabulation mobile.
+- Protection globale contre les débordements horizontaux involontaires.
 
 ## [0.1.0] - 2026-07-18
 

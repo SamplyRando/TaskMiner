@@ -28,6 +28,7 @@ export function RegisterForm({
       password: "",
       confirmPassword: "",
     },
+    mode: "onChange",
     resolver: zodResolver(registerSchema),
   });
 

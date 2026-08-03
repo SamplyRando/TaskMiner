@@ -41,6 +41,7 @@ export function WorkspaceFormDialog({
   const isEditing = Boolean(workspace);
   const form = useForm<WorkspaceFormValues>({
     defaultValues: { description: "", name: "" },
+    mode: "onChange",
     resolver: zodResolver(workspaceFormSchema),
   });
 

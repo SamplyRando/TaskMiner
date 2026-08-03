@@ -27,6 +27,7 @@ import { TaskFormDialog } from "@/features/tasks/task-form-dialog";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useSessionState } from "@/hooks/use-session-state";
 import { useAuthStore } from "@/store/auth-store";
 import { useTaskViewStore } from "@/store/task-view-store";
 import type {
@@ -59,13 +60,28 @@ export function TasksPage() {
   const mode = useTaskViewStore((state) => state.mode);
   const setMode = useTaskViewStore((state) => state.setMode);
   const workspace = useActiveWorkspace();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSessionState("taskminer-tasks-search", "");
   const deferredSearch = useDebouncedValue(search, 300);
-  const [status, setStatus] = useState<TaskStatus | "">("");
-  const [priority, setPriority] = useState<TaskPriority | "">("");
-  const [projectId, setProjectId] = useState("");
-  const [pagination, setPagination] = useState(initialPagination);
-  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [status, setStatus] = useSessionState<TaskStatus | "">(
+    "taskminer-tasks-status",
+    "",
+  );
+  const [priority, setPriority] = useSessionState<TaskPriority | "">(
+    "taskminer-tasks-priority",
+    "",
+  );
+  const [projectId, setProjectId] = useSessionState(
+    "taskminer-tasks-project",
+    "",
+  );
+  const [pagination, setPagination] = useSessionState(
+    "taskminer-tasks-pagination",
+    initialPagination,
+  );
+  const [sorting, setSorting] = useSessionState<SortingState>(
+    "taskminer-tasks-sorting",
+    initialSorting,
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -79,7 +95,7 @@ export function TasksPage() {
         ? current
         : { pageIndex: 0, pageSize: preferences.data.items_per_page },
     );
-  }, [preferences.data]);
+  }, [preferences.data, setPagination]);
 
   const projectsQuery = useProjects(
     {
@@ -354,6 +370,21 @@ export function TasksPage() {
             permissionsQuery.data?.permissions.manage_tasks ?? false
           }
           currentUserId={currentUserId}
+          emptyAction={
+            projects.length > 0 ? (
+              <Button
+                onClick={() => {
+                  createTask.reset();
+                  setSelectedTask(null);
+                  setFormOpen(true);
+                }}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Créer une tâche
+              </Button>
+            ) : undefined
+          }
           isLoading={
             workspace.isPending ||
             projectsQuery.isPending ||
@@ -374,6 +405,25 @@ export function TasksPage() {
         <DataTable
           columns={columns}
           data={tasksQuery.data?.items ?? []}
+          emptyAction={
+            search ||
+            status ||
+            priority ||
+            projectId ||
+            projects.length === 0 ? undefined : (
+              <Button
+                onClick={() => {
+                  createTask.reset();
+                  setSelectedTask(null);
+                  setFormOpen(true);
+                }}
+                type="button"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Créer une tâche
+              </Button>
+            )
+          }
           emptyDescription="Créez une tâche ou ajustez les filtres actifs."
           emptyTitle={
             search || status || priority || projectId
@@ -387,6 +437,14 @@ export function TasksPage() {
           }
           manualPagination
           manualSorting
+          mobileLabels={{
+            assigned_user: "Assignée à",
+            due_date: "Échéance",
+            priority: "Priorité",
+            project_id: "Projet",
+            status: "Statut",
+            title: "Tâche",
+          }}
           onPaginationChange={setPagination}
           onSortingChange={(updater) => {
             setSorting(updater);

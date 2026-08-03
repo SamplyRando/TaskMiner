@@ -29,7 +29,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     : "TM";
 
   return (
-    <header className="bg-background/95 sticky top-0 z-20 flex h-16 items-center justify-between border-b px-4 backdrop-blur-sm sm:px-6">
+    <header className="bg-background/90 sticky top-0 z-20 flex h-16 items-center justify-between border-b px-4 shadow-xs backdrop-blur-xl sm:px-6">
       <Button
         aria-label="Ouvrir le menu"
         className="lg:hidden"
@@ -52,11 +52,11 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               {currentUser?.avatar_url ? (
                 <img
                   alt=""
-                  className="size-9 rounded-full border object-cover"
+                  className="size-9 rounded-full border object-cover shadow-sm"
                   src={currentUser.avatar_url}
                 />
               ) : (
-                <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-full text-xs font-bold">
+                <span className="bg-primary text-primary-foreground ring-primary/10 flex size-9 items-center justify-center rounded-full text-xs font-bold shadow-sm ring-2">
                   {initials}
                 </span>
               )}

@@ -8,8 +8,10 @@ import { AuditLiveBadge } from "@/components/audit/audit-live-badge";
 import { AuditTimeline } from "@/components/audit/audit-timeline";
 import { AuditTimelineSkeleton } from "@/components/audit/audit-timeline-skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { EmptyStateLink } from "@/components/empty-state-link";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
+import { Button } from "@/components/ui/button";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import {
   useAuditStream,
@@ -21,6 +23,7 @@ import {
 } from "@/features/audit/filters";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useSessionState } from "@/hooks/use-session-state";
 import type {
   AuditActor,
   AuditFilters as Filters,
@@ -54,8 +57,10 @@ function AuditNotFoundState() {
 
 export function AuditPage() {
   const workspace = useActiveWorkspace();
-  const [filterState, setFilterState] =
-    useState<AuditFiltersValue>(emptyAuditFilters);
+  const [filterState, setFilterState] = useSessionState<AuditFiltersValue>(
+    "taskminer-audit-filters",
+    emptyAuditFilters,
+  );
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const debouncedSearch = useDebouncedValue(filterState.search.trim(), 300);
   const filters = useMemo<Filters>(
@@ -153,6 +158,11 @@ export function AuditPage() {
       workspace.workspaces.length === 0 ? (
         <div className="bg-card rounded-xl border">
           <EmptyState
+            action={
+              <EmptyStateLink to="/app/workspace">
+                Créer un workspace
+              </EmptyStateLink>
+            }
             description="Créez un workspace pour commencer à alimenter le journal d’audit."
             icon={FileSearch}
             title="Aucun workspace"
@@ -185,6 +195,23 @@ export function AuditPage() {
                 {total} entrée{total > 1 ? "s" : ""}
               </p>
               <AuditTimeline
+                emptyAction={
+                  Object.values(filterState).some(Boolean) ? (
+                    <Button
+                      onClick={() => {
+                        setFilterState(emptyAuditFilters);
+                      }}
+                      type="button"
+                      variant="outline"
+                    >
+                      Effacer les filtres
+                    </Button>
+                  ) : (
+                    <EmptyStateLink to="/app/projects">
+                      Voir les projets
+                    </EmptyStateLink>
+                  )
+                }
                 hasNextPage={auditQuery.hasNextPage}
                 isFetchingNextPage={auditQuery.isFetchingNextPage}
                 items={logs}

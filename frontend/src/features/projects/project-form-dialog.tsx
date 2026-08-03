@@ -41,6 +41,7 @@ export function ProjectFormDialog({
   const isEditing = Boolean(project);
   const form = useForm<ProjectFormValues>({
     defaultValues: { description: "", name: "" },
+    mode: "onChange",
     resolver: zodResolver(projectFormSchema),
   });
 

@@ -42,6 +42,7 @@ export function SecurityPanel({ onSuccess }: SecurityPanelProps) {
   } = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { confirmation: "", currentPassword: "", newPassword: "" },
+    mode: "onChange",
   });
   const password = useWatch({ control, name: "newPassword" });
   const confirmation = useWatch({ control, name: "confirmation" });

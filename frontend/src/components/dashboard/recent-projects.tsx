@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { DashboardDataTable } from "@/components/dashboard/dashboard-data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { EmptyState } from "@/components/empty-state";
+import { EmptyStateLink } from "@/components/empty-state-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/format";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type {
   DashboardProjectSort,
   DashboardRecentProject,
@@ -182,6 +184,7 @@ function ServerRecentProjects({
   controls: ServerControls;
   items: DashboardRecentProject[];
 }) {
+  const isMobile = useMediaQuery("(max-width: 767px)");
   // TanStack Table owns a mutable table instance by design.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -228,26 +231,59 @@ function ServerRecentProjects({
         </Select>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {serverHeaders.map((header) => (
-              <TableHead key={header}>{header}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+      {!isMobile ? (
+        <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {serverHeaders.map((header) => (
+                  <TableHead key={header}>{header}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="divide-y">
+          {table.getRowModel().rows.map((row) => (
+            <article className="space-y-3 px-6 py-4" key={`mobile-${row.id}`}>
+              {row.getVisibleCells().map((cell, index) => (
+                <div
+                  className={
+                    cell.column.id === "actions"
+                      ? "flex justify-end border-t pt-3"
+                      : "grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3"
+                  }
+                  key={cell.id}
+                >
+                  {cell.column.id === "actions" ? null : (
+                    <span className="text-muted-foreground text-xs font-medium">
+                      {serverHeaders[index]}
+                    </span>
+                  )}
+                  <div className="min-w-0 text-sm">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                </div>
+              ))}
+            </article>
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <p className="text-muted-foreground px-6 py-10 text-center text-sm">
@@ -324,6 +360,11 @@ export const RecentProjects = memo(function RecentProjects({
           </div>
         ) : items.length === 0 && !serverControls?.search ? (
           <EmptyState
+            action={
+              <EmptyStateLink to="/app/projects">
+                Créer un projet
+              </EmptyStateLink>
+            }
             description="Créez un projet pour commencer à organiser vos tâches."
             icon={FolderKanban}
             title="Aucun projet"
@@ -338,6 +379,14 @@ export const RecentProjects = memo(function RecentProjects({
           <DashboardDataTable
             columns={columns}
             data={items}
+            mobileLabels={{
+              created_at: "Créé le",
+              name: "Projet",
+              progress: "Progression",
+              status: "Statut",
+              task_count: "Tâches",
+              workspace_name: "Workspace",
+            }}
             searchLabel="Rechercher un projet récent"
             searchPlaceholder="Rechercher un projet…"
           />

@@ -41,6 +41,7 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
       avatarUrl: profile.avatar_url ?? "",
       fullName: profile.full_name,
     },
+    mode: "onChange",
   });
 
   useEffect(() => {

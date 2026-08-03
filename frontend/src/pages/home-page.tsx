@@ -10,7 +10,7 @@ import {
   ListTodo,
   Timer,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { ActivityList } from "@/components/dashboard/activity-list";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
@@ -27,6 +27,7 @@ import { ErrorState } from "@/components/error-state";
 import { useDashboard, useDashboardProjects } from "@/features/dashboard/hooks";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useSessionState } from "@/hooks/use-session-state";
 import { useAuthStore } from "@/store/auth-store";
 import type {
   DashboardParams,
@@ -49,11 +50,22 @@ export function HomePage() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const preferences = useUserPreferences();
   const defaultPeriodApplied = useRef(false);
-  const [filters, setFilters] = useState<DashboardParams>(initialFilters);
-  const [projectSearch, setProjectSearch] = useState("");
-  const [projectSort, setProjectSort] =
-    useState<DashboardProjectSort>("-created_at");
-  const [projectOffset, setProjectOffset] = useState(0);
+  const [filters, setFilters] = useSessionState<DashboardParams>(
+    "taskminer-dashboard-filters",
+    initialFilters,
+  );
+  const [projectSearch, setProjectSearch] = useSessionState(
+    "taskminer-dashboard-project-search",
+    "",
+  );
+  const [projectSort, setProjectSort] = useSessionState<DashboardProjectSort>(
+    "taskminer-dashboard-project-sort",
+    "-created_at",
+  );
+  const [projectOffset, setProjectOffset] = useSessionState(
+    "taskminer-dashboard-project-offset",
+    0,
+  );
 
   useEffect(() => {
     if (!preferences.data || defaultPeriodApplied.current) return;
@@ -66,7 +78,7 @@ export function HomePage() {
         ? current
         : { ...current, period: preferredPeriod },
     );
-  }, [preferences.data]);
+  }, [preferences.data, setFilters]);
   const debouncedProjectSearch = useDebouncedValue(projectSearch);
   const dashboardQuery = useDashboard(filters);
   const dashboard = dashboardQuery.data;

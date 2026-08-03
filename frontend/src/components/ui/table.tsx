@@ -12,7 +12,7 @@ export function Table({
   ...props
 }: TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="relative w-full overflow-auto">
+    <div className="relative w-full overflow-auto overscroll-x-contain">
       <table className={cn("w-full text-sm", className)} {...props} />
     </div>
   );
@@ -40,7 +40,10 @@ export function TableRow({
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={cn("hover:bg-muted/50 border-b transition-colors", className)}
+      className={cn(
+        "hover:bg-muted/50 focus-within:bg-muted/40 border-b transition-colors",
+        className,
+      )}
       {...props}
     />
   );

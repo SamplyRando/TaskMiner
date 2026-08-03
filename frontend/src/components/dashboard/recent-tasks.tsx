@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { DashboardDataTable } from "@/components/dashboard/dashboard-data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { EmptyState } from "@/components/empty-state";
+import { EmptyStateLink } from "@/components/empty-state-link";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -167,6 +168,9 @@ export const RecentTasks = memo(function RecentTasks({
       <CardContent className="px-0 pb-2">
         {items.length === 0 ? (
           <EmptyState
+            action={
+              <EmptyStateLink to="/app/tasks">Voir les tâches</EmptyStateLink>
+            }
             description={emptyDescription}
             icon={ListChecks}
             title={emptyTitle}
@@ -175,6 +179,15 @@ export const RecentTasks = memo(function RecentTasks({
           <DashboardDataTable
             columns={columns}
             data={items}
+            mobileLabels={{
+              assigned_user: "Assignée à",
+              created_at: "Créée le",
+              due_date: "Échéance",
+              priority: "Priorité",
+              project_name: "Projet",
+              status: "Statut",
+              title: "Tâche",
+            }}
             searchLabel={`Rechercher dans ${title.toLocaleLowerCase("fr-FR")}`}
             searchPlaceholder="Rechercher une tâche…"
           />

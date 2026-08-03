@@ -41,6 +41,7 @@ export function TaskAssignmentDialog({
 }: TaskAssignmentDialogProps) {
   const form = useForm<TaskAssignmentValues>({
     defaultValues: { assignedUserId: "" },
+    mode: "onChange",
     resolver: zodResolver(taskAssignmentSchema),
   });
 

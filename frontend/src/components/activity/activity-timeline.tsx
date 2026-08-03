@@ -1,5 +1,12 @@
 import { Activity, ArrowUp } from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { ActivityItem } from "@/components/activity/activity-item";
 import { EmptyState } from "@/components/empty-state";
@@ -12,6 +19,7 @@ const VIEWPORT_HEIGHT = 640;
 const OVERSCAN = 4;
 
 type ActivityTimelineProps = {
+  emptyAction?: ReactNode;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   items: ActivityRecord[];
@@ -20,6 +28,7 @@ type ActivityTimelineProps = {
 };
 
 export const ActivityTimeline = memo(function ActivityTimeline({
+  emptyAction,
   hasNextPage = false,
   isFetchingNextPage = false,
   items,
@@ -52,6 +61,7 @@ export const ActivityTimeline = memo(function ActivityTimeline({
     return (
       <div className="bg-card rounded-xl border">
         <EmptyState
+          action={emptyAction}
           description="Les prochains événements de ce workspace apparaîtront ici."
           icon={Activity}
           title="Aucune activité"

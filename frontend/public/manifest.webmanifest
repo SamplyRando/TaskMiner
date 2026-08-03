@@ -1,0 +1,24 @@
+{
+  "name": "TaskMiner",
+  "short_name": "TaskMiner",
+  "description": "L’espace de travail SaaS pour organiser projets, tâches et collaboration.",
+  "lang": "fr-FR",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#6d28d9",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

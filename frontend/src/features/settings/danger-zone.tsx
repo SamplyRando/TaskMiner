@@ -71,6 +71,7 @@ export function DangerZone() {
   } = useForm<DangerFormValues>({
     resolver: zodResolver(dangerSchema),
     defaultValues: { confirmation: "", currentPassword: "" },
+    mode: "onChange",
   });
   const mutationError =
     action === "account"

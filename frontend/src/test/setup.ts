@@ -20,4 +20,5 @@ Object.defineProperty(window, "matchMedia", {
 
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
 });

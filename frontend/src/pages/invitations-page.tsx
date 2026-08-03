@@ -1,7 +1,7 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, MailPlus, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
 import { DataTable } from "@/components/data-table/data-table";
@@ -34,6 +34,7 @@ import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useSessionState } from "@/hooks/use-session-state";
 import { useAuthStore } from "@/store/auth-store";
 import type {
   InvitationCreate,
@@ -67,6 +68,7 @@ const isAccessError = (error: unknown): boolean =>
   error instanceof ApiError && (error.status === 403 || error.status === 404);
 
 export function InvitationsPage() {
+  const navigate = useNavigate();
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
   const workspace = useActiveWorkspace();
@@ -74,17 +76,24 @@ export function InvitationsPage() {
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [searchParams] = useSearchParams();
   const invitationToken = searchParams.get("token");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useSessionState(
+    "taskminer-invitations-search",
+    "",
+  );
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
-  const [paginationState, setPaginationState] = useState<WorkspacePagination>({
-    ...initialPagination,
-    workspaceId: null,
-  });
+  const [paginationState, setPaginationState] =
+    useSessionState<WorkspacePagination>("taskminer-invitations-pagination", {
+      ...initialPagination,
+      workspaceId: null,
+    });
   const pagination =
     paginationState.workspaceId === workspace.activeWorkspaceId
       ? paginationState
       : { ...initialPagination, workspaceId: workspace.activeWorkspaceId };
-  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [sorting, setSorting] = useSessionState<SortingState>(
+    "taskminer-invitations-sorting",
+    initialSorting,
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [selectedInvitation, setSelectedInvitation] =
@@ -103,7 +112,7 @@ export function InvitationsPage() {
             pageSize: preferences.data.items_per_page,
           },
     );
-  }, [preferences.data]);
+  }, [preferences.data, setPaginationState]);
 
   const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
   const canManage = Boolean(
@@ -279,6 +288,16 @@ export function InvitationsPage() {
       workspace.workspaces.length === 0 ? (
         <div className="bg-card rounded-xl border">
           <EmptyState
+            action={
+              <Button
+                onClick={() => {
+                  void navigate("/app/workspace");
+                }}
+                type="button"
+              >
+                Créer un workspace
+              </Button>
+            }
             description="Créez un workspace avant d’inviter des membres."
             icon={MailPlus}
             title="Aucun workspace"
@@ -337,6 +356,31 @@ export function InvitationsPage() {
                   {invitationsQuery.data.items.length === 0 ? (
                     <div className="bg-card rounded-xl border">
                       <EmptyState
+                        action={
+                          debouncedSearch ? (
+                            <Button
+                              onClick={() => {
+                                setSearch("");
+                                setPage(0);
+                              }}
+                              type="button"
+                              variant="outline"
+                            >
+                              Effacer la recherche
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => {
+                                createInvitation.reset();
+                                setFormOpen(true);
+                              }}
+                              type="button"
+                            >
+                              <MailPlus aria-hidden="true" className="size-4" />
+                              Inviter un membre
+                            </Button>
+                          )
+                        }
                         description={
                           debouncedSearch
                             ? "Aucune invitation ne correspond à cette recherche."
@@ -407,6 +451,31 @@ export function InvitationsPage() {
               <DataTable
                 columns={columns}
                 data={invitationsQuery.data?.items ?? []}
+                emptyAction={
+                  debouncedSearch ? (
+                    <Button
+                      onClick={() => {
+                        setSearch("");
+                        setPage(0);
+                      }}
+                      type="button"
+                      variant="outline"
+                    >
+                      Effacer la recherche
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        createInvitation.reset();
+                        setFormOpen(true);
+                      }}
+                      type="button"
+                    >
+                      <MailPlus aria-hidden="true" className="size-4" />
+                      Inviter un membre
+                    </Button>
+                  )
+                }
                 emptyDescription={
                   debouncedSearch
                     ? "Aucune invitation ne correspond à cette recherche."
@@ -418,6 +487,14 @@ export function InvitationsPage() {
                 isLoading={invitationsQuery.isPending}
                 manualPagination
                 manualSorting
+                mobileLabels={{
+                  created_at: "Créée le",
+                  email: "E-mail",
+                  expires_at: "Expiration",
+                  invited_by: "Invité par",
+                  role: "Rôle",
+                  status: "Statut",
+                }}
                 onPaginationChange={(updater) => {
                   setPaginationState((current) => {
                     const next =

@@ -3,6 +3,7 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 
 import { EmptyState } from "@/components/empty-state";
+import { EmptyStateLink } from "@/components/empty-state-link";
 import {
   Card,
   CardContent,
@@ -72,6 +73,11 @@ export const ActivityList = memo(function ActivityList({
       <CardContent className="px-0 pb-2">
         {items.length === 0 ? (
           <EmptyState
+            action={
+              <EmptyStateLink to="/app/activity">
+                Voir l’activité
+              </EmptyStateLink>
+            }
             description="Les prochaines actions réalisées apparaîtront ici."
             icon={Activity}
             title="Aucune activité"

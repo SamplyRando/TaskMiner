@@ -101,10 +101,11 @@
 
   html {
     @apply bg-background;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-background text-foreground min-w-80 antialiased;
+    @apply bg-background text-foreground min-w-80 overflow-x-hidden antialiased;
     font-family:
       Inter,
       ui-sans-serif,
@@ -117,9 +118,76 @@
 
   button,
   a,
-  input {
-    @apply focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
+  input,
+  select,
+  textarea,
+  [tabindex]:not([tabindex="-1"]) {
+    @apply focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
+
+  button,
+  a,
+  select,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--foreground) 7%, transparent),
+    transparent
+  );
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+}
+
+@keyframes dropdown-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.dialog-overlay[data-state="open"] {
+  animation: dialog-overlay-in 180ms ease-out;
+}
+
+.dialog-content[data-state="open"] {
+  animation: dialog-content-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-content[data-state="open"] {
+  animation: dropdown-content-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
 }
 
 @keyframes activity-arrival {
@@ -141,6 +209,10 @@
   animation: activity-arrival 300ms ease-out;
 }
 
+.toast-arrival {
+  animation: activity-arrival 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .reduce-motion *,
 .reduce-motion *::before,
 .reduce-motion *::after {
@@ -151,11 +223,28 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .activity-arrival {
     animation: none;
   }
 
   .audit-arrival {
+    animation: none;
+  }
+
+  .toast-arrival {
     animation: none;
   }
 }

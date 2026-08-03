@@ -68,6 +68,7 @@ export function TaskFormDialog({
       status: "todo",
       title: "",
     },
+    mode: "onChange",
     resolver: zodResolver(taskFormSchema),
   });
 

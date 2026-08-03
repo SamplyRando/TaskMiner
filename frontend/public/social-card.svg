@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#111827"/>
+      <stop offset="1" stop-color="#4c1d95"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="112" y="153" width="170" height="170" rx="48" fill="#7c3aed"/>
+  <path d="M155 204h84M197 204v76M169 230h56" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="15"/>
+  <path d="m220 260 9 9 20-26" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="11"/>
+  <text x="112" y="420" fill="#fff" font-family="Inter,system-ui,sans-serif" font-size="86" font-weight="800">TaskMiner</text>
+  <text x="112" y="493" fill="#ddd6fe" font-family="Inter,system-ui,sans-serif" font-size="34">Pilotez vos projets avec clarté.</text>
+</svg>

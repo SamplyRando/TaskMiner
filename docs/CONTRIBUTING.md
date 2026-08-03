@@ -18,6 +18,9 @@ prématurées.
 - Ruff pour le lint et le formatage Python.
 - mypy pour le typage statique.
 - Docker Compose v2 pour l'environnement local.
+- React 19, TypeScript strict et Vite pour le frontend.
+- React Query pour l'état serveur et Zustand pour l'état global client limité.
+- ESLint, Prettier, Vitest et React Testing Library pour la qualité frontend.
 
 ## Préparer l'environnement
 
@@ -63,6 +66,22 @@ docker compose ps
 docker compose logs
 docker compose down
 ```
+
+Depuis `frontend/`, exécuter :
+
+```bash
+npm ci
+npm run format:check
+npm run lint
+npm run typecheck
+CI=true npm run test -- --run
+npm run build
+```
+
+Les composants interactifs doivent conserver une navigation clavier complète,
+un focus visible, des labels accessibles et un comportement compatible avec
+`prefers-reduced-motion`. Les données serveur passent exclusivement par React
+Query ; elles ne doivent pas être dupliquées dans un store Zustand.
 
 Toute migration doit être relue puis testée dans les deux directions :
 

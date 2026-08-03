@@ -1,5 +1,12 @@
 import { ArrowUp, FileSearch } from "lucide-react";
-import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { AuditItem } from "@/components/audit/audit-item";
 import { EmptyState } from "@/components/empty-state";
@@ -12,6 +19,7 @@ const VIEWPORT_HEIGHT = 680;
 const OVERSCAN = 4;
 
 type AuditTimelineProps = {
+  emptyAction?: ReactNode;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   items: AuditLog[];
@@ -21,6 +29,7 @@ type AuditTimelineProps = {
 };
 
 export const AuditTimeline = memo(function AuditTimeline({
+  emptyAction,
   hasNextPage = false,
   isFetchingNextPage = false,
   items,
@@ -59,6 +68,7 @@ export const AuditTimeline = memo(function AuditTimeline({
     return (
       <div className="bg-card rounded-xl border">
         <EmptyState
+          action={emptyAction}
           description="Les prochaines opérations auditables apparaîtront ici."
           icon={FileSearch}
           title="Journal d’audit vide"
