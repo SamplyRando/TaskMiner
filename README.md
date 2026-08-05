@@ -24,16 +24,15 @@ responsive.
 ```text
 Navigateur
    │
-   ▼
-nginx :80 ───────────────► React 19 / Vite :3000
-   │                         │
-   │ /api, /docs, /health    ├─ React Router + React Query
-   ▼                         ├─ Zustand + Axios
-FastAPI :8000                └─ Tailwind + shadcn/ui
+   ├──► Vercel ── React 19 / Vite
+   │                ├─ React Router + React Query
+   │                └─ Zustand + Axios
    │
-   ├─ API → Services → Repositories → SQLAlchemy 2
-   ├─ Domain Events → Activity / Audit / SSE
-   └─ Alembic → PostgreSQL 17
+   └──► Railway ─ FastAPI / Uvicorn / SSE
+                     │
+                     ├─ API → Services → Repositories → SQLAlchemy 2
+                     ├─ Domain Events → Activity / Audit
+                     └─ Alembic ──► Neon PostgreSQL
 ```
 
 La description détaillée des couches et des flux se trouve dans
@@ -42,7 +41,13 @@ La description détaillée des couches et des flux se trouve dans
 
 ## Démarrage rapide avec Docker
 
-Prérequis : Docker Engine avec Docker Compose v2.
+Docker reste disponible uniquement pour le développement local. Le déploiement
+de production utilise Vercel, Railway et Neon et ne dépend pas de Compose.
+
+Le guide de mise en production en moins de dix minutes est disponible dans
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+Prérequis pour l'environnement local : Docker Engine avec Docker Compose v2.
 
 ```bash
 cp .env.example .env
@@ -78,6 +83,7 @@ que lorsque cette perte de données est volontaire.
 | Variable | Rôle |
 | --- | --- |
 | `DATABASE_URL` | URL SQLAlchemy PostgreSQL du backend |
+| `MIGRATION_DATABASE_URL` | URL Neon directe réservée à Alembic |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Initialisation PostgreSQL |
 | `SECRET_KEY` | Signature des JWT, 32 caractères minimum |
 | `ALGORITHM` | Algorithme JWT, actuellement `HS256` |
@@ -85,10 +91,12 @@ que lorsque cette perte de données est volontaire.
 | `STORAGE_PATH` | Répertoire persistant des pièces jointes |
 | `TASKMINER_LOG_LEVEL` | Niveau de logs backend |
 | `VITE_API_URL` | Base URL de l'API côté frontend |
+| `CORS_ORIGINS` | Origines frontend autorisées, séparées par des virgules |
+| `CORS_ORIGIN_REGEX` | Expression régulière optionnelle pour les previews Vercel |
 | `BACKEND_PORT`, `FRONTEND_PORT`, `NGINX_PORT` | Ports publiés par Compose |
 
-Le fichier `.env` n'est jamais versionné. `.env.example` est la seule référence
-committée et ne contient aucun secret réel.
+Les fichiers `.env` ne sont jamais versionnés. Les exemples présents à la
+racine, dans `backend/` et dans `frontend/` ne contiennent aucun secret réel.
 
 ## Développement local
 
@@ -145,3 +153,4 @@ vers `main` ou `develop` et sur chaque pull request.
 - [Contribution](docs/CONTRIBUTING.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Changelog](docs/CHANGELOG.md)
+- [Déploiement Vercel, Railway et Neon](docs/DEPLOYMENT.md)

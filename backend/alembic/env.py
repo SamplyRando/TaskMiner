@@ -9,7 +9,11 @@ from app.database.database import Base
 
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+migration_database_url = settings.migration_database_url or settings.database_url
+config.set_main_option(
+    "sqlalchemy.url",
+    migration_database_url.replace("%", "%%"),
+)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
