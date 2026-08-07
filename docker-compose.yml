@@ -35,6 +35,7 @@ services:
       ALGORITHM: ${ALGORITHM:?ALGORITHM is required}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:?ACCESS_TOKEN_EXPIRE_MINUTES is required}
       STORAGE_PATH: ${STORAGE_PATH:-/app/storage}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     volumes:
       - backend_storage:/app/storage
     ports:

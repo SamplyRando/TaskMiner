@@ -52,6 +52,7 @@ Prérequis pour l'environnement local : Docker Engine avec Docker Compose v2.
 ```bash
 cp .env.example .env
 docker compose up -d --build
+docker compose exec backend alembic upgrade head
 docker compose ps
 ```
 

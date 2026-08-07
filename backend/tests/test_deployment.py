@@ -1,4 +1,6 @@
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
+import pytest
 
 from app.core.config import Settings
 
@@ -6,9 +8,33 @@ from app.core.config import Settings
 def build_settings(**overrides: object) -> Settings:
     values: dict[str, object] = {
         "DATABASE_URL": "postgresql://user:password@host/database",
+        "SECRET_KEY": "deployment-test-secret-key-at-least-32-characters",
+        "ACCESS_TOKEN_EXPIRE_MINUTES": 30,
+        "ALGORITHM": "HS256",
     }
     values.update(overrides)
     return Settings.model_validate(values)
+
+
+@pytest.mark.parametrize(
+    "missing_setting",
+    ["SECRET_KEY", "ACCESS_TOKEN_EXPIRE_MINUTES", "ALGORITHM"],
+)
+def test_security_settings_are_required(
+    missing_setting: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    values: dict[str, object] = {
+        "DATABASE_URL": "postgresql://user:password@host/database",
+        "SECRET_KEY": "deployment-test-secret-key-at-least-32-characters",
+        "ACCESS_TOKEN_EXPIRE_MINUTES": 30,
+        "ALGORITHM": "HS256",
+    }
+    values.pop(missing_setting)
+    monkeypatch.delenv(missing_setting, raising=False)
+
+    with pytest.raises(ValidationError):
+        Settings.model_validate(values)
 
 
 def test_provider_database_urls_use_psycopg_3() -> None:

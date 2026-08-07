@@ -24,12 +24,7 @@ def create_access_token(
     *,
     token_version: int = 0,
 ) -> str:
-    if settings.secret_key is None or settings.algorithm is None:
-        raise RuntimeError("JWT security settings are not configured")
-
     if expires_delta is None:
-        if settings.access_token_expire_minutes is None:
-            raise RuntimeError("JWT expiration is not configured")
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
 
     issued_at = datetime.now(timezone.utc)
@@ -43,9 +38,6 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> dict[str, object]:
-    if settings.secret_key is None or settings.algorithm is None:
-        raise RuntimeError("JWT security settings are not configured")
-
     payload = jwt.decode(
         token,
         settings.secret_key,

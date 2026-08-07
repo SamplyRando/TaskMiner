@@ -20,11 +20,16 @@ Les contrôles sont exécutés dans cet ordre :
 6. contrôle du formatage avec `ruff format --check .` ;
 7. vérification des types avec `mypy .` ;
 8. application des migrations avec `alembic upgrade head` ;
-9. exécution de la suite avec `pytest` ;
-10. construction de l'image avec `docker build -t taskminer-backend .`.
+9. contrôle de la dérive du schéma avec `alembic check` ;
+10. exécution de la suite avec `pytest` ;
+11. construction de l'image avec
+    `docker build -f Dockerfile -t taskminer-backend .` ;
+12. démarrage de l'image sur un port dynamique et vérification de `/health` et
+    `/docs`.
 
 Chaque commande est bloquante. Si une étape échoue, les étapes suivantes ne
-sont pas exécutées. Le conteneur backend n'est jamais démarré par la pipeline.
+sont pas exécutées. Le conteneur de validation est temporaire et supprimé à la
+fin du smoke test, y compris en cas d'erreur.
 
 Les valeurs PostgreSQL et JWT définies dans le workflow sont exclusivement des
 valeurs éphémères de CI. Elles ne doivent pas être réutilisées en production.

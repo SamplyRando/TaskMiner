@@ -3,11 +3,11 @@
 La production repose sur trois services indépendants :
 
 - **Vercel** sert l'application React statique ;
-- **Railway** exécute FastAPI avec Railpack, sans Docker ;
+- **Railway** construit et exécute l'image du backend avec son Dockerfile ;
 - **Neon** héberge PostgreSQL.
 
-Docker Compose reste un outil de développement local et n'intervient dans
-aucune étape ci-dessous.
+Docker Compose reste un outil de développement local. Railway utilise le
+Dockerfile du backend, mais jamais le fichier Compose.
 
 ## Prérequis
 
@@ -36,20 +36,19 @@ migrations à travers PgBouncer, qui fonctionne en mode transaction sur Neon.
 2. Configurer le service :
    - **Root Directory** : `/backend` ;
    - **Config File Path** : `/backend/railway.json`.
-3. Vérifier dans le déploiement que le builder sélectionné est **Railpack**.
-   Le Dockerfile présent sert uniquement au développement et à la CI.
+3. Vérifier dans le déploiement que le builder sélectionné est **Dockerfile**
+   et que `backend/Dockerfile` est bien détecté depuis le Root Directory.
 4. Ajouter les variables indiquées dans la section suivante.
 5. Dans **Networking**, générer un domaine public Railway.
-6. Facultatif mais indispensable pour conserver les pièces jointes : ajouter un
-   volume Railway monté sur `/app/storage` et définir
-   `STORAGE_PATH=/app/storage`.
+6. Si les pièces jointes sont utilisées, ajouter obligatoirement un volume
+   Railway monté sur `/app/storage` et définir `STORAGE_PATH=/app/storage`.
 
 `railway.json` exécute automatiquement `alembic upgrade head` avant chaque mise
-en production, démarre Uvicorn sur le port injecté par Railway et vérifie
-`/health` avant de valider le déploiement.
-
-Le `Procfile` fournit la même commande de démarrage comme solution de repli.
-Python est explicitement limité à la branche 3.12 par `runtime.txt`.
+en production et vérifie `/health` avant de valider le déploiement. Le
+Dockerfile démarre Uvicorn sur le port `PORT` injecté par Railway et impose
+Python 3.12. Le `Procfile` et `runtime.txt` restent des solutions de repli si le
+builder Railway est volontairement changé ; ils ne pilotent pas le déploiement
+Docker actuel.
 
 ### Variables Railway
 
@@ -151,8 +150,8 @@ Remplacer les valeurs après la création des services :
    `/app/settings`, et vérifier qu'elle est servie par Vercel.
 4. Créer un compte, se connecter et recharger la page.
 5. Contrôler l'Activity Feed et l'Audit Log afin de valider les flux SSE CORS.
-6. Envoyer une pièce jointe, redéployer Railway puis vérifier sa persistance si
-   un volume a été configuré.
+6. Envoyer une pièce jointe, redéployer Railway puis vérifier sa persistance sur
+   le volume configuré.
 
 Une erreur CORS signifie généralement que l'origine configurée contient un `/`
 final ou que l'URL Vercel réelle n'a pas été ajoutée à `CORS_ORIGINS`.

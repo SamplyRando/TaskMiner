@@ -30,18 +30,15 @@ class Settings(BaseSettings):
         description="Optional direct PostgreSQL URL used only by Alembic.",
         validation_alias="MIGRATION_DATABASE_URL",
     )
-    secret_key: str | None = Field(
-        default=None,
+    secret_key: str = Field(
         min_length=32,
         validation_alias="SECRET_KEY",
     )
-    access_token_expire_minutes: int | None = Field(
-        default=None,
+    access_token_expire_minutes: int = Field(
         gt=0,
         validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES",
     )
-    algorithm: Literal["HS256"] | None = Field(
-        default=None,
+    algorithm: Literal["HS256"] = Field(
         validation_alias="ALGORITHM",
     )
     storage_path: Path = Field(
