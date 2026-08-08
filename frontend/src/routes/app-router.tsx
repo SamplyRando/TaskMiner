@@ -4,7 +4,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandMark } from "@/components/brand-logo";
 import { MainLayout } from "@/layouts/main-layout";
-import { MarketingLayout } from "@/layouts/marketing-layout";
 import { ProtectedRoute } from "@/routes/protected-route";
 import { PublicRoute } from "@/routes/public-route";
 
@@ -25,6 +24,9 @@ const LoginPage = lazy(async () => ({
 }));
 const LandingPage = lazy(async () => ({
   default: (await import("@/pages/marketing/landing")).LandingPage,
+}));
+const MarketingLayout = lazy(async () => ({
+  default: (await import("@/layouts/marketing-layout")).MarketingLayout,
 }));
 const ProjectsPage = lazy(async () => ({
   default: (await import("@/pages/projects-page")).ProjectsPage,
