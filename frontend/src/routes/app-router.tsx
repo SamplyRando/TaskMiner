@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandMark } from "@/components/brand-logo";
 import { MainLayout } from "@/layouts/main-layout";
+import { MarketingLayout } from "@/layouts/marketing-layout";
 import { ProtectedRoute } from "@/routes/protected-route";
 import { PublicRoute } from "@/routes/public-route";
 
@@ -21,6 +22,9 @@ const InvitationsPage = lazy(async () => ({
 }));
 const LoginPage = lazy(async () => ({
   default: (await import("@/pages/login-page")).LoginPage,
+}));
+const LandingPage = lazy(async () => ({
+  default: (await import("@/pages/marketing/landing")).LandingPage,
 }));
 const ProjectsPage = lazy(async () => ({
   default: (await import("@/pages/projects-page")).ProjectsPage,
@@ -52,6 +56,10 @@ export function AppRouter() {
   return (
     <Suspense fallback={routeFallback}>
       <Routes>
+        <Route element={<MarketingLayout />}>
+          <Route element={<LandingPage />} path="/" />
+        </Route>
+
         <Route element={<PublicRoute />}>
           <Route element={<LoginPage />} path="/login" />
           <Route element={<RegisterPage />} path="/register" />
@@ -70,7 +78,6 @@ export function AppRouter() {
           </Route>
         </Route>
 
-        <Route element={<Navigate replace to="/app" />} path="/" />
         <Route element={<Navigate replace to="/app" />} path="*" />
       </Routes>
     </Suspense>
