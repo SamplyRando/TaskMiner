@@ -7,6 +7,11 @@ export function HeroSection() {
   return (
     <main aria-labelledby="marketing-hero-title" className="marketing-hero">
       <div aria-hidden="true" className="marketing-hero__orb" />
+      <div aria-hidden="true" className="marketing-hero__ambient">
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="marketing-hero__container">
         <div className="marketing-hero__copy marketing-reveal">
           <div className="marketing-hero__eyebrow">

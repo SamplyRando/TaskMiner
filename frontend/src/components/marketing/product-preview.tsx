@@ -14,6 +14,11 @@ import {
   Users,
 } from "lucide-react";
 
+import {
+  FloatingPreviewWidgets,
+  KanbanGlimpse,
+} from "@/components/marketing/preview-widgets";
+
 const previewNavigation = [
   { icon: LayoutDashboard, label: "Overview", active: true },
   { icon: FolderKanban, label: "Projects", active: false },
@@ -26,27 +31,6 @@ const kpis = [
   { label: "In progress", value: "8", detail: "3 due soon", tone: "blue" },
   { label: "Completed", value: "37", detail: "This month", tone: "green" },
   { label: "Velocity", value: "92%", detail: "+8%", tone: "amber" },
-] as const;
-
-const tasks = [
-  {
-    title: "Finalize product positioning",
-    project: "Website launch",
-    priority: "High",
-    status: "In progress",
-  },
-  {
-    title: "Review onboarding flow",
-    project: "Product experience",
-    priority: "Medium",
-    status: "In review",
-  },
-  {
-    title: "Prepare launch checklist",
-    project: "Website launch",
-    priority: "Low",
-    status: "Todo",
-  },
 ] as const;
 
 const activities = [
@@ -120,7 +104,10 @@ export function ProductPreview() {
                 <kbd>⌘ K</kbd>
               </div>
               <div className="marketing-product__topbar-actions">
-                <Bell className="size-4" />
+                <span className="marketing-product__notification">
+                  <Bell className="size-4" />
+                  <span />
+                </span>
                 <span className="marketing-product__new-task">
                   <Plus className="size-3.5" />
                   New task
@@ -155,6 +142,13 @@ export function ProductPreview() {
                     </div>
                     <strong>{kpi.value}</strong>
                     <small>{kpi.detail}</small>
+                    <span className="marketing-kpi__sparkline">
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                    </span>
                   </div>
                 ))}
               </div>
@@ -163,31 +157,12 @@ export function ProductPreview() {
                 <section className="marketing-panel marketing-panel--tasks">
                   <div className="marketing-panel__header">
                     <div>
-                      <h3>Recent tasks</h3>
-                      <span>Across all projects</span>
+                      <h3>Priority board</h3>
+                      <span>12 tasks across 4 projects</span>
                     </div>
-                    <span className="marketing-panel__link">View all</span>
+                    <span className="marketing-panel__link">Open board</span>
                   </div>
-                  <div className="marketing-task-list">
-                    {tasks.map((task) => (
-                      <div className="marketing-task" key={task.title}>
-                        <span className="marketing-task__check" />
-                        <div className="marketing-task__copy">
-                          <strong>{task.title}</strong>
-                          <span>{task.project}</span>
-                        </div>
-                        <span
-                          className={`marketing-task__priority marketing-task__priority--${task.priority.toLowerCase()}`}
-                        >
-                          {task.priority}
-                        </span>
-                        <span className="marketing-task__status">
-                          {task.status}
-                        </span>
-                        <MoreHorizontal className="marketing-task__more size-4" />
-                      </div>
-                    ))}
-                  </div>
+                  <KanbanGlimpse />
                 </section>
 
                 <section className="marketing-panel marketing-panel--activity">
@@ -261,12 +236,29 @@ export function ProductPreview() {
                           fill="url(#marketing-chart-fill)"
                         />
                         <path
+                          className="marketing-chart__comparison"
+                          d="M0 82 C39 74 51 58 82 67 S128 44 158 53 S209 30 241 39 S282 19 320 27"
+                          fill="none"
+                          stroke="#5d5569"
+                          strokeDasharray="3 5"
+                          strokeLinecap="round"
+                          strokeWidth="1.4"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        <path
                           d="M0 76 C32 69 48 72 77 53 S124 63 153 40 S202 47 231 24 S277 31 320 10"
                           fill="none"
                           stroke="#a78bfa"
                           strokeLinecap="round"
                           strokeWidth="2.5"
                           vectorEffect="non-scaling-stroke"
+                        />
+                        <circle
+                          className="marketing-chart__point"
+                          cx="319"
+                          cy="10"
+                          fill="#d8ccff"
+                          r="3.5"
                         />
                       </svg>
                       <div className="marketing-chart__days">
@@ -286,9 +278,10 @@ export function ProductPreview() {
           </div>
         </div>
       </div>
+      <FloatingPreviewWidgets />
       <figcaption className="sr-only">
-        TaskMiner dashboard preview showing project metrics, recent tasks, team
-        activity, and analytics.
+        TaskMiner dashboard preview showing project metrics, a compact task
+        board, team activity, analytics, AI assistance, and upcoming work.
       </figcaption>
     </figure>
   );
