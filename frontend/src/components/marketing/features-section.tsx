@@ -13,37 +13,37 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 const features = [
   {
     description:
-      "Turn scattered priorities into a clear, intelligent plan for every day.",
+      "Turn a project brief into a starting plan with suggested tasks, priorities, milestones, and next actions.",
     icon: Bot,
     title: "AI Assistant",
   },
   {
     description:
-      "Keep initiatives, ownership, and momentum visible from one calm workspace.",
+      "Keep goals, ownership, tasks, and progress connected around every project.",
     icon: FolderKanban,
     title: "Projects",
   },
   {
     description:
-      "Move work forward with focused views, rich context, and effortless updates.",
+      "Assign work, set priorities and due dates, then move between focused list and Kanban views.",
     icon: CheckSquare2,
     title: "Tasks",
   },
   {
     description:
-      "Connect decisions and source material directly to the work they support.",
+      "Keep feedback and file attachments on the task where your team needs them.",
     icon: FileText,
-    title: "Documents",
+    title: "Comments & Files",
   },
   {
     description:
-      "Give every teammate the context, permissions, and clarity to contribute.",
+      "Invite teammates, assign workspace roles, and control who can view or manage shared work.",
     icon: UsersRound,
     title: "Team Collaboration",
   },
   {
     description:
-      "Understand progress, bottlenecks, and capacity without building reports.",
+      "See workload, completion, recent activity, and audit history without assembling a manual report.",
     icon: BarChart3,
     title: "Analytics",
   },
@@ -57,7 +57,10 @@ export function FeaturesSection() {
       id="features"
     >
       <div className="marketing-section-shell">
-        <SectionHeading eyebrow="One workspace. Total clarity." reveal>
+        <SectionHeading
+          eyebrow="AI project management, without the clutter"
+          reveal
+        >
           <span id="marketing-features-title">Everything your team needs.</span>
           <span>Nothing you don&apos;t.</span>
         </SectionHeading>

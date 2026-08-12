@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 const stats = [
-  { decimals: 0, label: "Tasks organized", suffix: "k+", value: 50 },
-  { decimals: 1, label: "Availability", suffix: "%", value: 99.9 },
-  { decimals: 0, label: "Faster planning", suffix: "x", value: 4 },
-  { decimals: 0, label: "AI assistance", suffix: "/7", value: 24 },
+  { decimals: 0, label: "Workspace roles", suffix: "", value: 4 },
+  { decimals: 0, label: "Task priority levels", suffix: "", value: 4 },
+  { decimals: 0, label: "Task workflow states", suffix: "", value: 3 },
+  { decimals: 0, label: "Live activity histories", suffix: "", value: 2 },
 ] as const;
 
 type AnimatedStatProps = {
@@ -108,10 +108,10 @@ export function StatsSection() {
         data-marketing-reveal
       >
         <div className="marketing-stats__intro">
-          <p>Built for momentum</p>
+          <p>Structure you can verify</p>
           <h2 id="marketing-stats-title">
-            Less process.
-            <span>More progress.</span>
+            Clear ownership.
+            <span>Traceable work.</span>
           </h2>
         </div>
         <dl className="marketing-stats__grid">

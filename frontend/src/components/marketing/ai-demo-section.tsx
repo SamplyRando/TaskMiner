@@ -103,8 +103,9 @@ export function AiDemoSection() {
           </span>
           <h2 id="marketing-ai-demo-title">Watch TaskMiner think.</h2>
           <p>
-            Describe your project in one sentence. TaskMiner instantly creates
-            tasks, priorities, milestones and next actions.
+            Describe the outcome and context. TaskMiner turns it into a
+            reviewable starting plan with tasks, priorities, milestones, and
+            next actions.
           </p>
           <div
             className="marketing-motion-reveal marketing-motion-reveal--up"

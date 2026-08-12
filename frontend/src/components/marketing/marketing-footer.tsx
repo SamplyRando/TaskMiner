@@ -1,4 +1,3 @@
-import { AtSign, BriefcaseBusiness, Code2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { BrandMark } from "@/components/brand-logo";
@@ -14,37 +13,36 @@ const footerColumns = [
   },
   {
     links: [
-      { href: "/about", label: "About" },
-      { href: "/blog", label: "Blog" },
-      { href: "/careers", label: "Careers" },
+      { href: "/register", label: "Create account" },
+      { href: "/login", label: "Sign in" },
+      { href: "#faq", label: "FAQ" },
     ],
-    title: "Company",
+    title: "Get started",
   },
   {
     links: [
-      { href: "/documentation", label: "Documentation" },
-      { href: "/api", label: "API" },
-      { href: "#faq", label: "Help Center" },
+      { href: "/app/projects", label: "Projects" },
+      { href: "/app/tasks", label: "Tasks" },
+      { href: "/app/activity", label: "Activity" },
     ],
-    title: "Resources",
+    title: "Workspace",
   },
   {
     links: [
-      { href: "/privacy", label: "Privacy" },
-      { href: "/terms", label: "Terms" },
-      { href: "/cookies", label: "Cookies" },
+      {
+        href: "mailto:hello@taskminer.app?subject=TaskMiner%20demo",
+        label: "Book a demo",
+      },
+      {
+        href: "mailto:hello@taskminer.app?subject=TaskMiner%20support",
+        label: "Contact support",
+      },
+      {
+        href: "mailto:hello@taskminer.app?subject=TaskMiner%20Enterprise",
+        label: "Enterprise inquiry",
+      },
     ],
-    title: "Legal",
-  },
-] as const;
-
-const socialLinks = [
-  { href: "https://github.com", icon: Code2, label: "TaskMiner on GitHub" },
-  { href: "https://x.com", icon: AtSign, label: "TaskMiner on X" },
-  {
-    href: "https://linkedin.com",
-    icon: BriefcaseBusiness,
-    label: "TaskMiner on LinkedIn",
+    title: "Contact",
   },
 ] as const;
 
@@ -66,22 +64,9 @@ export function MarketingFooter() {
               <span>TaskMiner</span>
             </Link>
             <p>
-              One intelligent workspace for teams that want to spend less time
-              managing work and more time moving it forward.
+              AI-assisted project management that turns context into prioritized
+              work your team can review, assign, and deliver.
             </p>
-            <div className="marketing-footer__socials">
-              {socialLinks.map(({ href, icon: Icon, label }) => (
-                <a
-                  aria-label={label}
-                  href={href}
-                  key={label}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <Icon aria-hidden="true" />
-                </a>
-              ))}
-            </div>
           </div>
 
           <nav
@@ -111,7 +96,7 @@ export function MarketingFooter() {
           <span>© 2026 TaskMiner</span>
           <span>
             <i aria-hidden="true" />
-            Built with AI.
+            Built for focused work.
           </span>
         </div>
       </div>

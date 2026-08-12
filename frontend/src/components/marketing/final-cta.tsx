@@ -32,8 +32,8 @@ export function FinalCta() {
           data-marketing-reveal
           style={{ "--reveal-delay": "80ms" } as CSSProperties}
         >
-          Give your team one intelligent place to plan clearly, collaborate
-          naturally, and execute with confidence.
+          Create your account, open a workspace, and turn your first project
+          into prioritized work your team can act on.
         </p>
         <div
           className="marketing-final-cta__actions marketing-motion-reveal marketing-motion-reveal--up"
@@ -60,7 +60,7 @@ export function FinalCta() {
           data-marketing-reveal
           style={{ "--reveal-delay": "210ms" } as CSSProperties}
         >
-          Free to start · No credit card required
+          Early access · No credit card required
         </span>
       </div>
     </section>

@@ -24,7 +24,7 @@ export function HeroSection() {
           <div className="marketing-hero__eyebrow">
             <span>
               <span className="marketing-hero__eyebrow-dot" />
-              The intelligent workspace
+              AI-assisted project workspace
             </span>
           </div>
 
@@ -36,8 +36,8 @@ export function HeroSection() {
           </h1>
 
           <p className="marketing-hero__description">
-            Bring projects, AI, documents, tasks, and collaboration into one
-            intelligent workspace built for momentum.
+            Turn project context into clear tasks, priorities, and next actions
+            in one shared workspace for planning, collaboration, and delivery.
           </p>
 
           <div className="marketing-hero__actions">

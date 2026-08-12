@@ -1,12 +1,12 @@
 import type { CSSProperties } from "react";
 
-const trustedTeams = [
-  { mark: "N", name: "NorthStudio" },
-  { mark: "N°", name: "Nova Labs" },
-  { mark: "PF", name: "PixelForge" },
-  { mark: "V", name: "Vertex" },
-  { mark: "L", name: "Luma" },
-  { mark: "O", name: "Orbit" },
+const teamDisciplines = [
+  { mark: "P", name: "Product" },
+  { mark: "E", name: "Engineering" },
+  { mark: "O", name: "Operations" },
+  { mark: "D", name: "Design" },
+  { mark: "C", name: "Client work" },
+  { mark: "L", name: "Leadership" },
 ] as const;
 
 export function TrustedTeams() {
@@ -21,18 +21,18 @@ export function TrustedTeams() {
           data-marketing-reveal
           id="trusted-teams-title"
         >
-          Trusted by ambitious teams
+          One workspace for every part of delivery
         </p>
         <ul
-          aria-label="Teams using TaskMiner"
+          aria-label="Disciplines connected by TaskMiner"
           className="marketing-logos marketing-motion-reveal marketing-motion-reveal--up"
           data-marketing-reveal
           style={{ "--reveal-delay": "80ms" } as CSSProperties}
         >
-          {trustedTeams.map((team) => (
-            <li key={team.name}>
-              <span aria-hidden="true">{team.mark}</span>
-              <strong>{team.name}</strong>
+          {teamDisciplines.map((discipline) => (
+            <li key={discipline.name}>
+              <span aria-hidden="true">{discipline.mark}</span>
+              <strong>{discipline.name}</strong>
             </li>
           ))}
         </ul>

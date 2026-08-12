@@ -1,53 +1,55 @@
 import { Check } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { cn } from "@/lib/utils";
 
-type BillingCycle = "monthly" | "yearly";
-
 const plans = [
   {
     action: "Start free",
-    features: ["AI Tasks", "Projects", "Documents", "3 team members"],
-    monthlyPrice: 0,
+    billingNote: "Free during early access",
+    features: [
+      "Workspaces, projects, and tasks",
+      "Task assignment and comments",
+      "Files, activity, and audit history",
+      "Roles and workspace invitations",
+    ],
     name: "Starter",
     price: "Free",
-    summary: "For individuals turning ideas into focused work.",
-    yearlyPrice: 0,
+    summary: "Use the complete current workspace during early access.",
   },
   {
-    action: "Start Pro",
+    action: "Join early access",
+    badge: "Planned",
+    billingNote: "Pro is coming soon; no paid checkout is available today",
     features: [
-      "Unlimited AI",
-      "Unlimited Projects",
-      "Analytics",
-      "Team Workspace",
-      "AI Automation",
+      "Pricing will be announced before launch",
+      "Plan details are not final",
+      "No payment is collected today",
+      "The current product remains available",
+      "Updates will be shared before launch",
     ],
-    monthlyPrice: 19,
     name: "Pro",
-    price: "",
-    summary: "For ambitious teams ready to move with clarity.",
-    yearlyPrice: 15,
+    price: "Soon",
+    summary: "The planned upgrade for teams that need deeper planning tools.",
   },
   {
-    action: "Contact sales",
-    features: ["SSO", "API", "Dedicated support", "Unlimited members"],
-    monthlyPrice: 39,
+    action: "Contact us",
+    billingNote: "Tell us about your team and requirements",
+    features: [
+      "Discuss workspace requirements",
+      "Review security needs",
+      "Explore rollout constraints",
+      "Plan migration requirements",
+    ],
     name: "Enterprise",
-    price: "Custom",
-    summary: "For organizations requiring control, scale, and support.",
-    yearlyPrice: 31,
+    price: "Contact",
+    summary: "For organizations evaluating TaskMiner for a broader rollout.",
   },
 ] as const;
 
 export function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
-  const isYearly = billingCycle === "yearly";
-
   return (
     <section
       aria-labelledby="marketing-pricing-title"
@@ -60,52 +62,20 @@ export function PricingSection() {
           data-marketing-reveal
         >
           <SectionHeading
-            description="Start with the essentials, then scale your workspace when your team is ready."
-            eyebrow="Simple, transparent pricing"
+            description="Create an account and use the current product without entering payment details. Paid plans are not available yet."
+            eyebrow="Early access"
           >
-            <span id="marketing-pricing-title">Choose your momentum.</span>
-            <span>Change plans anytime.</span>
+            <span id="marketing-pricing-title">
+              Start with the full product.
+            </span>
+            <span>Upgrade options are coming later.</span>
           </SectionHeading>
-
-          <div
-            aria-label="Billing period"
-            className={cn("marketing-billing-toggle", {
-              "marketing-billing-toggle--yearly": isYearly,
-            })}
-            role="group"
-          >
-            <span
-              aria-hidden="true"
-              className="marketing-billing-toggle__thumb"
-            />
-            <button
-              aria-pressed={!isYearly}
-              onClick={() => {
-                setBillingCycle("monthly");
-              }}
-              type="button"
-            >
-              Monthly
-            </button>
-            <button
-              aria-pressed={isYearly}
-              onClick={() => {
-                setBillingCycle("yearly");
-              }}
-              type="button"
-            >
-              Yearly
-            </button>
-          </div>
         </div>
 
         <div className="marketing-pricing-grid">
           {plans.map((plan, index) => {
             const isPro = plan.name === "Pro";
             const isEnterprise = plan.name === "Enterprise";
-            const numericPrice = isYearly
-              ? plan.yearlyPrice
-              : plan.monthlyPrice;
 
             return (
               <article
@@ -124,9 +94,9 @@ export function PricingSection() {
                   } as CSSProperties
                 }
               >
-                {isPro ? (
+                {"badge" in plan ? (
                   <span className="marketing-pricing-card__badge">
-                    Most Popular
+                    {plan.badge}
                   </span>
                 ) : null}
 
@@ -136,38 +106,12 @@ export function PricingSection() {
                 </header>
 
                 <div className="marketing-pricing-card__price">
-                  {isPro ? (
-                    <>
-                      <span aria-hidden="true">$</span>
-                      <strong key={`${billingCycle}-${plan.name}`}>
-                        {numericPrice}
-                      </strong>
-                      <small>/month</small>
-                      <span className="sr-only">
-                        {numericPrice} dollars per month
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <strong>{plan.price}</strong>
-                      {plan.name === "Starter" ? <small>forever</small> : null}
-                    </>
-                  )}
+                  <strong>{plan.price}</strong>
                 </div>
 
-                {isEnterprise ? (
-                  <p className="marketing-pricing-card__enterprise-rate">
-                    Plans from $
-                    <span key={`${billingCycle}-${plan.name}`}>
-                      {numericPrice}
-                    </span>{" "}
-                    per member / month
-                  </p>
-                ) : (
-                  <p className="marketing-pricing-card__billing-note">
-                    {isYearly ? "Billed annually" : "Billed monthly"}
-                  </p>
-                )}
+                <p className="marketing-pricing-card__billing-note">
+                  {plan.billingNote}
+                </p>
 
                 <ul>
                   {plan.features.map((feature) => (

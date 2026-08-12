@@ -5,27 +5,27 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 const steps = [
   {
     description:
-      "Give every project, task, and decision a home that stays structured as you grow.",
-    eyebrow: "Your foundation",
+      "Add the outcome, context, and people behind the work so the project starts with a shared source of truth.",
+    eyebrow: "Set the context",
     illustration: "workspace",
     number: "01",
-    title: "Create your workspace",
+    title: "Create a workspace and project",
   },
   {
     description:
-      "Bring the right people in, define access clearly, and move together from day one.",
-    eyebrow: "Your people",
+      "Invite teammates, assign roles and tasks, and keep decisions attached to the work through comments and files.",
+    eyebrow: "Coordinate delivery",
     illustration: "team",
     number: "02",
-    title: "Invite your team",
+    title: "Organize work with your team",
   },
   {
     description:
-      "TaskMiner turns context into priorities so everyone knows what matters next.",
-    eyebrow: "Your momentum",
+      "Use AI-assisted planning to suggest tasks, priorities, milestones, and next actions that your team can review.",
+    eyebrow: "Start with structure",
     illustration: "ai",
     number: "03",
-    title: "Let AI organize everything",
+    title: "Turn context into a plan",
   },
 ] as const;
 
@@ -119,7 +119,7 @@ export function HowItWorks() {
     >
       <div className="marketing-section-shell">
         <SectionHeading
-          description="From first idea to finished work, TaskMiner keeps the path intentionally simple."
+          description="Capture the project, coordinate the team, and use AI-assisted planning to create a structured starting point."
           eyebrow="How it works"
           reveal
         >

@@ -8,37 +8,42 @@ import { cn } from "@/lib/utils";
 const questions = [
   {
     answer:
-      "TaskMiner is an intelligent workspace that brings projects, tasks, documents, collaboration, and AI-assisted planning into one focused place.",
+      "TaskMiner is an AI-assisted project management workspace. It keeps projects, prioritized tasks, assignments, conversations, files, activity, and audit history connected in one place.",
     question: "What is TaskMiner?",
   },
   {
     answer:
-      "Yes. The Starter plan is free and includes the essential tools you need to organize projects, documents, and a small team.",
+      "TaskMiner is built for product, engineering, operations, design, and client-facing teams that need a shared view of what matters, who owns it, and what happens next.",
+    question: "Who is TaskMiner for?",
+  },
+  {
+    answer:
+      "Yes. TaskMiner is currently available during early access, and the application has no paid checkout today. You can create an account without entering payment details.",
     question: "Can I use it for free?",
   },
   {
     answer:
-      "TaskMiner analyzes the context you provide and proposes structured tasks, priorities, milestones, and next actions. You always remain in control of the final plan.",
-    question: "How does AI work?",
+      "AI-assisted planning uses the project context you provide to suggest a starting structure of tasks, priorities, milestones, and next actions. You review the plan and remain responsible for what your team adopts.",
+    question: "What does the AI actually do?",
   },
   {
     answer:
-      "Yes. Invite teammates into a shared workspace, assign work, collaborate through comments, and keep every decision connected to the project.",
+      "Yes. Workspace owners and admins can invite teammates. Roles control access, while assignments, comments, and attachments keep collaboration connected to each task.",
     question: "Can I invite my team?",
   },
   {
     answer:
-      "TaskMiner supports enterprise needs including SSO, API access, unlimited members, dedicated support, and workspace-level permissions.",
-    question: "Do you support enterprises?",
+      "You can manage workspaces, projects, tasks, assignments, comments, attachments, invitations, permissions, dashboards, activity, and audit history today.",
+    question: "What features are available today?",
   },
   {
     answer:
-      "Absolutely. You can change or cancel your plan at any time. Your workspace remains accessible through the end of the active billing period.",
-    question: "Can I cancel anytime?",
+      "No. TaskMiner provides structure and visibility; it does not make accountable decisions for your team. AI suggestions are a starting point for people to review and refine.",
+    question: "Does TaskMiner replace a project manager?",
   },
   {
     answer:
-      "Your workspace is isolated and protected through authenticated access, role-based permissions, and detailed activity and audit records.",
+      "Workspace access requires authentication and follows role-based permissions. Activity and audit histories make supported changes traceable inside the workspace.",
     question: "Is my workspace secure?",
   },
 ] as const;
