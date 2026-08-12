@@ -2,10 +2,17 @@ import { ArrowRight, Check, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ProductPreview } from "@/components/marketing/product-preview";
+import { useHeroParallax } from "@/components/marketing/use-hero-parallax";
 
 export function HeroSection() {
+  const heroRef = useHeroParallax<HTMLElement>();
+
   return (
-    <main aria-labelledby="marketing-hero-title" className="marketing-hero">
+    <main
+      aria-labelledby="marketing-hero-title"
+      className="marketing-hero"
+      ref={heroRef}
+    >
       <div aria-hidden="true" className="marketing-hero__orb" />
       <div aria-hidden="true" className="marketing-hero__ambient">
         <span />

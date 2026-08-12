@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import { SectionHeading } from "@/components/marketing/section-heading";
@@ -55,6 +56,7 @@ export function FaqSection() {
         <SectionHeading
           description="Everything you need to know before bringing your work into TaskMiner."
           eyebrow="Questions, answered"
+          reveal
         >
           <span id="marketing-faq-title">Clarity before</span>
           <span>you get started.</span>
@@ -68,10 +70,20 @@ export function FaqSection() {
 
             return (
               <article
-                className={cn("marketing-faq__item", {
-                  "marketing-faq__item--open": isOpen,
-                })}
+                className={cn(
+                  "marketing-faq__item",
+                  {
+                    "marketing-faq__item--open": isOpen,
+                  },
+                  "marketing-motion-reveal marketing-motion-reveal--up",
+                )}
+                data-marketing-reveal
                 key={item.question}
+                style={
+                  {
+                    "--reveal-delay": `${String(index * 35)}ms`,
+                  } as CSSProperties
+                }
               >
                 <h3>
                   <button

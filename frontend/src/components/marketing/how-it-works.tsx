@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { SectionHeading } from "@/components/marketing/section-heading";
 
 const steps = [
@@ -31,7 +33,9 @@ function WorkspaceIllustration() {
   return (
     <div
       aria-hidden="true"
-      className="marketing-step-art marketing-step-art--workspace"
+      className="marketing-step-art marketing-step-art--workspace marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
+      data-marketing-reveal
+      style={{ "--reveal-delay": "110ms" } as CSSProperties}
     >
       <div className="marketing-step-window">
         <span className="marketing-step-window__bar" />
@@ -55,7 +59,9 @@ function TeamIllustration() {
   return (
     <div
       aria-hidden="true"
-      className="marketing-step-art marketing-step-art--team"
+      className="marketing-step-art marketing-step-art--team marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
+      data-marketing-reveal
+      style={{ "--reveal-delay": "110ms" } as CSSProperties}
     >
       <span className="marketing-team-line marketing-team-line--one" />
       <span className="marketing-team-line marketing-team-line--two" />
@@ -81,7 +87,9 @@ function AiIllustration() {
   return (
     <div
       aria-hidden="true"
-      className="marketing-step-art marketing-step-art--ai"
+      className="marketing-step-art marketing-step-art--ai marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
+      data-marketing-reveal
+      style={{ "--reveal-delay": "110ms" } as CSSProperties}
     >
       <span className="marketing-ai-orbit marketing-ai-orbit--outer" />
       <span className="marketing-ai-orbit marketing-ai-orbit--inner" />
@@ -113,6 +121,7 @@ export function HowItWorks() {
         <SectionHeading
           description="From first idea to finished work, TaskMiner keeps the path intentionally simple."
           eyebrow="How it works"
+          reveal
         >
           <span id="marketing-how-title">Structure in minutes.</span>
           <span>Momentum from day one.</span>
@@ -121,7 +130,10 @@ export function HowItWorks() {
         <ol className="marketing-steps">
           {steps.map((step) => (
             <li className="marketing-step" key={step.number}>
-              <div className="marketing-step__copy">
+              <div
+                className="marketing-step__copy marketing-motion-reveal marketing-motion-reveal--up"
+                data-marketing-reveal
+              >
                 <span className="marketing-step__number">{step.number}</span>
                 <p>{step.eyebrow}</p>
                 <h3>{step.title}</h3>

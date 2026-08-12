@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 const trustedTeams = [
   { mark: "N", name: "NorthStudio" },
   { mark: "N°", name: "Nova Labs" },
@@ -14,8 +16,19 @@ export function TrustedTeams() {
       className="marketing-trust-bar"
     >
       <div className="marketing-section-shell">
-        <p id="trusted-teams-title">Trusted by ambitious teams</p>
-        <ul aria-label="Teams using TaskMiner" className="marketing-logos">
+        <p
+          className="marketing-motion-reveal marketing-motion-reveal--up"
+          data-marketing-reveal
+          id="trusted-teams-title"
+        >
+          Trusted by ambitious teams
+        </p>
+        <ul
+          aria-label="Teams using TaskMiner"
+          className="marketing-logos marketing-motion-reveal marketing-motion-reveal--up"
+          data-marketing-reveal
+          style={{ "--reveal-delay": "80ms" } as CSSProperties}
+        >
           {trustedTeams.map((team) => (
             <li key={team.name}>
               <span aria-hidden="true">{team.mark}</span>

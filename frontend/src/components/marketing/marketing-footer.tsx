@@ -53,7 +53,10 @@ export function MarketingFooter() {
     <footer className="marketing-footer">
       <div className="marketing-section-shell">
         <div className="marketing-footer__main">
-          <div className="marketing-footer__brand-column">
+          <div
+            className="marketing-footer__brand-column marketing-motion-reveal marketing-motion-reveal--up"
+            data-marketing-reveal
+          >
             <Link
               aria-label="TaskMiner home"
               className="marketing-footer__brand"
@@ -81,7 +84,11 @@ export function MarketingFooter() {
             </div>
           </div>
 
-          <nav aria-label="Footer navigation" className="marketing-footer__nav">
+          <nav
+            aria-label="Footer navigation"
+            className="marketing-footer__nav marketing-motion-reveal marketing-motion-reveal--up"
+            data-marketing-reveal
+          >
             {footerColumns.map((column) => (
               <div key={column.title}>
                 <h2>{column.title}</h2>
@@ -97,7 +104,10 @@ export function MarketingFooter() {
           </nav>
         </div>
 
-        <div className="marketing-footer__bottom">
+        <div
+          className="marketing-footer__bottom marketing-motion-reveal marketing-motion-reveal--up"
+          data-marketing-reveal
+        >
           <span>© 2026 TaskMiner</span>
           <span>
             <i aria-hidden="true" />

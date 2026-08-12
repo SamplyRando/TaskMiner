@@ -1,5 +1,6 @@
 import { Pause, Play, RotateCcw, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AiSummary } from "@/components/marketing/ai-summary";
 import { AiTaskCards } from "@/components/marketing/ai-task-cards";
@@ -18,7 +19,10 @@ function getReducedMotionPreference() {
 export function AiDemoSection() {
   const [cycle, setCycle] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(getReducedMotionPreference);
+  const sectionRef = useRef<HTMLElement>(null);
+  const wasInViewportRef = useRef(false);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
@@ -35,7 +39,33 @@ export function AiDemoSection() {
   }, []);
 
   useEffect(() => {
-    if (isPaused || reduceMotion) return;
+    const section = sectionRef.current;
+    if (!section || !("IntersectionObserver" in window)) {
+      setIsInViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const isVisible = entry?.isIntersecting ?? false;
+        setIsInViewport(isVisible);
+
+        if (isVisible && !wasInViewportRef.current) {
+          setCycle((current) => current + 1);
+        }
+        wasInViewportRef.current = isVisible;
+      },
+      { rootMargin: "120px 0px", threshold: 0.08 },
+    );
+
+    observer.observe(section);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isPaused || reduceMotion || !isInViewport) return;
 
     const interval = window.setInterval(() => {
       setCycle((current) => current + 1);
@@ -44,7 +74,7 @@ export function AiDemoSection() {
     return () => {
       window.clearInterval(interval);
     };
-  }, [isPaused, reduceMotion]);
+  }, [isInViewport, isPaused, reduceMotion]);
 
   const togglePlayback = () => {
     if (isPaused) setCycle((current) => current + 1);
@@ -60,9 +90,13 @@ export function AiDemoSection() {
     <section
       aria-labelledby="marketing-ai-demo-title"
       className="marketing-section marketing-ai-demo"
+      ref={sectionRef}
     >
       <div className="marketing-section-shell marketing-ai-demo__layout">
-        <div className="marketing-ai-demo__copy">
+        <div
+          className="marketing-ai-demo__copy marketing-motion-reveal marketing-motion-reveal--up"
+          data-marketing-reveal
+        >
           <span className="marketing-ai-demo__eyebrow">
             <Sparkles aria-hidden="true" />
             Intelligence, in motion
@@ -72,18 +106,29 @@ export function AiDemoSection() {
             Describe your project in one sentence. TaskMiner instantly creates
             tasks, priorities, milestones and next actions.
           </p>
-          <PromptAnimation
-            cycle={cycle}
-            isPaused={isPaused}
-            reduceMotion={reduceMotion}
-          />
+          <div
+            className="marketing-motion-reveal marketing-motion-reveal--up"
+            data-marketing-reveal
+            style={{ "--reveal-delay": "100ms" } as CSSProperties}
+          >
+            <PromptAnimation
+              cycle={cycle}
+              isPaused={isPaused}
+              reduceMotion={reduceMotion}
+            />
+          </div>
         </div>
 
         <figure
-          className={cn("marketing-ai-demo__card", {
-            "marketing-ai-demo__card--paused": isPaused,
-            "marketing-ai-demo__card--reduced": reduceMotion,
-          })}
+          className={cn(
+            "marketing-ai-demo__card marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur",
+            {
+              "marketing-ai-demo__card--paused": isPaused,
+              "marketing-ai-demo__card--reduced": reduceMotion,
+            },
+          )}
+          data-marketing-reveal
+          style={{ "--reveal-delay": "190ms" } as CSSProperties}
         >
           <div className="marketing-ai-demo__header">
             <div>

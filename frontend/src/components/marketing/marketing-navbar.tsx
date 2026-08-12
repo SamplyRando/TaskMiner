@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { BrandMark } from "@/components/brand-logo";
+import { useActiveMarketingSection } from "@/components/marketing/use-active-marketing-section";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
@@ -15,6 +16,7 @@ const navigationItems = [
 export function MarketingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const activeSection = useActiveMarketingSection();
 
   useEffect(() => {
     const updateScrolledState = () => {
@@ -65,7 +67,17 @@ export function MarketingNavbar() {
 
         <div className="marketing-nav__links">
           {navigationItems.map((item) => (
-            <a href={item.href} key={item.href}>
+            <a
+              aria-current={
+                activeSection === item.href.slice(1) ? "location" : undefined
+              }
+              className={cn({
+                "marketing-nav__link--active":
+                  activeSection === item.href.slice(1),
+              })}
+              href={item.href}
+              key={item.href}
+            >
               {item.label}
             </a>
           ))}
@@ -109,7 +121,18 @@ export function MarketingNavbar() {
       >
         <div className="marketing-mobile-menu__links">
           {navigationItems.map((item) => (
-            <a href={item.href} key={item.href} onClick={closeMenu}>
+            <a
+              aria-current={
+                activeSection === item.href.slice(1) ? "location" : undefined
+              }
+              className={cn({
+                "marketing-nav__link--active":
+                  activeSection === item.href.slice(1),
+              })}
+              href={item.href}
+              key={item.href}
+              onClick={closeMenu}
+            >
               {item.label}
             </a>
           ))}

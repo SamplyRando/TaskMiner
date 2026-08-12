@@ -6,6 +6,7 @@ import {
   FolderKanban,
   UsersRound,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 
 import { SectionHeading } from "@/components/marketing/section-heading";
 
@@ -56,14 +57,23 @@ export function FeaturesSection() {
       id="features"
     >
       <div className="marketing-section-shell">
-        <SectionHeading eyebrow="One workspace. Total clarity.">
+        <SectionHeading eyebrow="One workspace. Total clarity." reveal>
           <span id="marketing-features-title">Everything your team needs.</span>
           <span>Nothing you don&apos;t.</span>
         </SectionHeading>
 
         <div className="marketing-feature-grid">
           {features.map(({ description, icon: Icon, title }, index) => (
-            <article className="marketing-feature-card" key={title}>
+            <article
+              className="marketing-feature-card marketing-motion-reveal marketing-motion-reveal--up"
+              data-marketing-reveal
+              key={title}
+              style={
+                {
+                  "--reveal-delay": `${String(index * 60)}ms`,
+                } as CSSProperties
+              }
+            >
               <div className="marketing-feature-card__topline">
                 <span className="marketing-feature-card__icon">
                   <Icon aria-hidden="true" />

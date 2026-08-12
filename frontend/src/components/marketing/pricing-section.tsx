@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -54,7 +55,10 @@ export function PricingSection() {
       id="pricing"
     >
       <div className="marketing-section-shell">
-        <div className="marketing-pricing__intro">
+        <div
+          className="marketing-pricing__intro marketing-motion-reveal marketing-motion-reveal--up"
+          data-marketing-reveal
+        >
           <SectionHeading
             description="Start with the essentials, then scale your workspace when your team is ready."
             eyebrow="Simple, transparent pricing"
@@ -96,7 +100,7 @@ export function PricingSection() {
         </div>
 
         <div className="marketing-pricing-grid">
-          {plans.map((plan) => {
+          {plans.map((plan, index) => {
             const isPro = plan.name === "Pro";
             const isEnterprise = plan.name === "Enterprise";
             const numericPrice = isYearly
@@ -105,10 +109,20 @@ export function PricingSection() {
 
             return (
               <article
-                className={cn("marketing-pricing-card", {
-                  "marketing-pricing-card--featured": isPro,
-                })}
+                className={cn(
+                  "marketing-pricing-card",
+                  {
+                    "marketing-pricing-card--featured": isPro,
+                  },
+                  "marketing-motion-reveal marketing-motion-reveal--up",
+                )}
+                data-marketing-reveal
                 key={plan.name}
+                style={
+                  {
+                    "--reveal-delay": `${String(index * 90)}ms`,
+                  } as CSSProperties
+                }
               >
                 {isPro ? (
                   <span className="marketing-pricing-card__badge">
