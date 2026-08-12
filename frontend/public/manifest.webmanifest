@@ -1,11 +1,13 @@
 {
   "name": "TaskMiner",
   "short_name": "TaskMiner",
-  "description": "L’espace de travail SaaS pour organiser projets, tâches et collaboration.",
-  "lang": "fr-FR",
-  "start_url": "/app",
+  "description": "AI-assisted project management for organized tasks, priorities, and team execution.",
+  "lang": "en-US",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#050408",
   "theme_color": "#6d28d9",
   "icons": [
     {

@@ -116,6 +116,7 @@ export function HowItWorks() {
     <section
       aria-labelledby="marketing-how-title"
       className="marketing-section marketing-how"
+      id="how-it-works"
     >
       <div className="marketing-section-shell">
         <SectionHeading

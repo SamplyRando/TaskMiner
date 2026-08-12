@@ -101,6 +101,7 @@ export function StatsSection() {
     <section
       aria-labelledby="marketing-stats-title"
       className="marketing-stats"
+      id="product-proof"
       ref={sectionRef}
     >
       <div

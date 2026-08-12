@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { BrandMark } from "@/components/brand-logo";
@@ -17,6 +17,8 @@ export function MarketingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const activeSection = useActiveMarketingSection();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const firstMenuLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const updateScrolledState = () => {
@@ -33,12 +35,23 @@ export function MarketingNavbar() {
   useEffect(() => {
     if (!isMenuOpen) return;
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => {
+      firstMenuLinkRef.current?.focus();
+    });
+
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsMenuOpen(false);
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
     };
 
     document.addEventListener("keydown", closeOnEscape);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [isMenuOpen]);
@@ -103,6 +116,7 @@ export function MarketingNavbar() {
           onClick={() => {
             setIsMenuOpen((current) => !current);
           }}
+          ref={menuButtonRef}
           type="button"
         >
           {isMenuOpen ? (
@@ -114,13 +128,15 @@ export function MarketingNavbar() {
       </nav>
 
       <div
+        aria-hidden={!isMenuOpen}
         className={cn("marketing-mobile-menu", {
           "marketing-mobile-menu--open": isMenuOpen,
         })}
         id="marketing-mobile-menu"
+        inert={!isMenuOpen}
       >
         <div className="marketing-mobile-menu__links">
-          {navigationItems.map((item) => (
+          {navigationItems.map((item, index) => (
             <a
               aria-current={
                 activeSection === item.href.slice(1) ? "location" : undefined
@@ -132,6 +148,7 @@ export function MarketingNavbar() {
               href={item.href}
               key={item.href}
               onClick={closeMenu}
+              ref={index === 0 ? firstMenuLinkRef : undefined}
             >
               {item.label}
             </a>

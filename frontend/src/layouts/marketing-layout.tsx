@@ -10,6 +10,9 @@ import "@/styles/marketing.css";
 export function MarketingLayout() {
   return (
     <div className="marketing-shell">
+      <a className="marketing-skip-link" href="#marketing-content">
+        Skip to content
+      </a>
       <div aria-hidden="true" className="marketing-backdrop" />
       <MarketingNavbar />
       <Outlet />

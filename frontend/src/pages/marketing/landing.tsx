@@ -14,15 +14,17 @@ export function LandingPage() {
   return (
     <>
       <MarketingMotionController />
-      <HeroSection />
-      <TrustedTeams />
-      <FeaturesSection />
-      <HowItWorks />
-      <AiDemoSection />
-      <StatsSection />
-      <PricingSection />
-      <FaqSection />
-      <FinalCta />
+      <main id="marketing-content" tabIndex={-1}>
+        <HeroSection />
+        <TrustedTeams />
+        <FeaturesSection />
+        <HowItWorks />
+        <AiDemoSection />
+        <StatsSection />
+        <PricingSection />
+        <FaqSection />
+        <FinalCta />
+      </main>
       <MarketingFooter />
     </>
   );

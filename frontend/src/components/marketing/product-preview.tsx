@@ -52,7 +52,7 @@ export function ProductPreview() {
           </div>
           <div className="marketing-preview__address">
             <span className="marketing-preview__lock" />
-            app.taskminer.io
+            app.taskminer.app
           </div>
           <MoreHorizontal className="size-4" />
         </div>

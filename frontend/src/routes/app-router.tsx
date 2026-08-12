@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { Spinner } from "@/components/ui/spinner";
 import { BrandMark } from "@/components/brand-logo";
+import { RouteIndexingPolicy } from "@/components/route-indexing-policy";
+import { Spinner } from "@/components/ui/spinner";
 import { MainLayout } from "@/layouts/main-layout";
 import { ProtectedRoute } from "@/routes/protected-route";
 import { PublicRoute } from "@/routes/public-route";
@@ -56,32 +57,35 @@ const routeFallback = (
 
 export function AppRouter() {
   return (
-    <Suspense fallback={routeFallback}>
-      <Routes>
-        <Route element={<MarketingLayout />}>
-          <Route element={<LandingPage />} path="/" />
-        </Route>
-
-        <Route element={<PublicRoute />}>
-          <Route element={<LoginPage />} path="/login" />
-          <Route element={<RegisterPage />} path="/register" />
-        </Route>
-
-        <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />} path="/app">
-            <Route element={<HomePage />} index />
-            <Route element={<ProjectsPage />} path="projects" />
-            <Route element={<TasksPage />} path="tasks" />
-            <Route element={<SettingsPage />} path="settings" />
-            <Route element={<WorkspacePage />} path="workspace" />
-            <Route element={<ActivityPage />} path="activity" />
-            <Route element={<AuditPage />} path="audit" />
-            <Route element={<InvitationsPage />} path="invitations" />
+    <>
+      <RouteIndexingPolicy />
+      <Suspense fallback={routeFallback}>
+        <Routes>
+          <Route element={<MarketingLayout />}>
+            <Route element={<LandingPage />} path="/" />
           </Route>
-        </Route>
 
-        <Route element={<Navigate replace to="/app" />} path="*" />
-      </Routes>
-    </Suspense>
+          <Route element={<PublicRoute />}>
+            <Route element={<LoginPage />} path="/login" />
+            <Route element={<RegisterPage />} path="/register" />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />} path="/app">
+              <Route element={<HomePage />} index />
+              <Route element={<ProjectsPage />} path="projects" />
+              <Route element={<TasksPage />} path="tasks" />
+              <Route element={<SettingsPage />} path="settings" />
+              <Route element={<WorkspacePage />} path="workspace" />
+              <Route element={<ActivityPage />} path="activity" />
+              <Route element={<AuditPage />} path="audit" />
+              <Route element={<InvitationsPage />} path="invitations" />
+            </Route>
+          </Route>
+
+          <Route element={<Navigate replace to="/app" />} path="*" />
+        </Routes>
+      </Suspense>
+    </>
   );
 }

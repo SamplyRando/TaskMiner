@@ -21,11 +21,11 @@ const footerColumns = [
   },
   {
     links: [
-      { href: "/app/projects", label: "Projects" },
-      { href: "/app/tasks", label: "Tasks" },
-      { href: "/app/activity", label: "Activity" },
+      { href: "#how-it-works", label: "How it works" },
+      { href: "#product-proof", label: "Product proof" },
+      { href: "#demo", label: "AI planning demo" },
     ],
-    title: "Workspace",
+    title: "Explore",
   },
   {
     links: [

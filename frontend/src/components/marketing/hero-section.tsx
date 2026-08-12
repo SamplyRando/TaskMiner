@@ -8,7 +8,7 @@ export function HeroSection() {
   const heroRef = useHeroParallax<HTMLElement>();
 
   return (
-    <main
+    <section
       aria-labelledby="marketing-hero-title"
       className="marketing-hero"
       ref={heroRef}
@@ -75,6 +75,6 @@ export function HeroSection() {
 
         <ProductPreview />
       </div>
-    </main>
+    </section>
   );
 }

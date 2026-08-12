@@ -16,13 +16,13 @@ export function TrustedTeams() {
       className="marketing-trust-bar"
     >
       <div className="marketing-section-shell">
-        <p
+        <h2
           className="marketing-motion-reveal marketing-motion-reveal--up"
           data-marketing-reveal
           id="trusted-teams-title"
         >
           One workspace for every part of delivery
-        </p>
+        </h2>
         <ul
           aria-label="Disciplines connected by TaskMiner"
           className="marketing-logos marketing-motion-reveal marketing-motion-reveal--up"

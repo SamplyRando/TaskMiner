@@ -101,7 +101,7 @@ export function PricingSection() {
                 ) : null}
 
                 <header>
-                  <p>{plan.name}</p>
+                  <h3>{plan.name}</h3>
                   <span>{plan.summary}</span>
                 </header>
 

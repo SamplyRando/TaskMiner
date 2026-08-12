@@ -1,14 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#111827"/>
-      <stop offset="1" stop-color="#4c1d95"/>
+    <radialGradient id="bg" cx="72%" cy="14%" r="90%">
+      <stop stop-color="#21143f"/>
+      <stop offset="0.48" stop-color="#0c0913"/>
+      <stop offset="1" stop-color="#050408"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#b79aff"/>
+      <stop offset="1" stop-color="#7245db"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect x="112" y="153" width="170" height="170" rx="48" fill="#7c3aed"/>
-  <path d="M155 204h84M197 204v76M169 230h56" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="15"/>
-  <path d="m220 260 9 9 20-26" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="11"/>
-  <text x="112" y="420" fill="#fff" font-family="Inter,system-ui,sans-serif" font-size="86" font-weight="800">TaskMiner</text>
-  <text x="112" y="493" fill="#ddd6fe" font-family="Inter,system-ui,sans-serif" font-size="34">Pilotez vos projets avec clarté.</text>
+  <path d="M0 520 1200 150M0 610 1200 240M160 0 0 50M430 0 0 130M700 0 0 215M970 0 0 298M1200 0 0 370" opacity=".08" stroke="#c4b5fd"/>
+  <circle cx="930" cy="95" r="280" fill="#7c3aed" opacity=".08"/>
+  <rect x="104" y="94" width="96" height="96" rx="28" fill="url(#mark)"/>
+  <path d="M130 124h48M154 124v42M139 139h31" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="8"/>
+  <path d="m166 153 6 6 14-18" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <text x="228" y="159" fill="#fbfaff" font-family="Inter,system-ui,sans-serif" font-size="56" font-weight="750">TaskMiner</text>
+  <text x="104" y="355" fill="#fbfaff" font-family="Inter,system-ui,sans-serif" font-size="67" font-weight="720">From project context</text>
+  <text x="104" y="433" fill="#bba7f1" font-family="Inter,system-ui,sans-serif" font-size="67" font-weight="720">to prioritized work.</text>
+  <text x="106" y="510" fill="#aaa6b6" font-family="Inter,system-ui,sans-serif" font-size="27">AI-assisted project planning for focused teams.</text>
 </svg>

@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /login
+Disallow: /register
 
+Sitemap: https://www.taskminer.app/sitemap.xml

@@ -6,6 +6,7 @@
   --marketing-border-strong: rgba(181, 156, 255, 0.28);
   --marketing-text: #fbfaff;
   --marketing-muted: #aaa6b6;
+  --marketing-subtle: #85808e;
   --marketing-purple: #9068f4;
   --marketing-purple-light: #d2c5ff;
   --motion-fast: 180ms;
@@ -16,10 +17,36 @@
   position: relative;
   isolation: isolate;
   min-height: 100svh;
+  overflow-x: hidden;
   overflow-x: clip;
   color: var(--marketing-text);
   background: var(--marketing-bg);
   color-scheme: dark;
+}
+
+.marketing-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(214, 202, 255, 0.5);
+  border-radius: 0.65rem;
+  color: #fff;
+  background: #171121;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+  transform: translateY(calc(-100% - 1.5rem));
+  transition: transform var(--motion-fast) var(--ease-out-premium);
+}
+
+.marketing-skip-link:focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
+#marketing-content:focus {
+  outline: none;
 }
 
 html:has(.marketing-shell) {
@@ -28,6 +55,8 @@ html:has(.marketing-shell) {
 }
 
 #features,
+#how-it-works,
+#product-proof,
 #pricing,
 #demo,
 #faq {
@@ -68,6 +97,11 @@ html:has(.marketing-shell) {
     linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-position: center top;
   background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 78% 62% at 58% 18%,
+    black,
+    transparent
+  );
   mask-image: radial-gradient(ellipse 78% 62% at 58% 18%, black, transparent);
   transform: perspective(900px) rotateX(62deg) translateY(-22%);
   transform-origin: center top;
@@ -83,6 +117,7 @@ html:has(.marketing-shell) {
     transparent 0.65px
   );
   background-size: 3px 3px;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 92%);
   mask-image: linear-gradient(to bottom, black, transparent 92%);
   mix-blend-mode: soft-light;
 }
@@ -384,6 +419,12 @@ html:has(.marketing-shell) {
   height: min(48rem, 70vh);
   overflow: hidden;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 18%,
+    transparent 92%
+  );
   mask-image: linear-gradient(
     to bottom,
     transparent,
@@ -1620,9 +1661,9 @@ html:has(.marketing-shell) {
   position: relative;
 }
 
-.marketing-trust-bar p {
+.marketing-trust-bar h2 {
   margin-bottom: 2rem;
-  color: #706b79;
+  color: var(--marketing-subtle);
   font-size: 0.67rem;
   font-weight: 650;
   letter-spacing: 0.12em;
@@ -1643,7 +1684,7 @@ html:has(.marketing-shell) {
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  color: #68636f;
+  color: var(--marketing-subtle);
   filter: grayscale(1);
   transition:
     color 220ms ease,
@@ -1994,6 +2035,7 @@ html:has(.marketing-shell) {
     linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
   background-size: 38px 38px;
+  -webkit-mask-image: radial-gradient(circle at center, black, transparent 76%);
   mask-image: radial-gradient(circle at center, black, transparent 76%);
 }
 
@@ -2338,7 +2380,7 @@ html:has(.marketing-shell) {
 
 .marketing-stats__grid dt {
   margin-top: 0.4rem;
-  color: #77717f;
+  color: var(--marketing-subtle);
   font-size: 0.76rem;
   font-weight: 550;
 }
@@ -2453,7 +2495,7 @@ html:has(.marketing-shell) {
 .marketing-final-cta__note {
   display: block;
   margin-top: 1.2rem;
-  color: #6f6977;
+  color: var(--marketing-subtle);
   font-size: 0.72rem;
 }
 
@@ -3390,73 +3432,6 @@ html:has(.marketing-shell) {
   margin-bottom: 0;
 }
 
-.marketing-billing-toggle {
-  position: relative;
-  display: grid;
-  flex: 0 0 auto;
-  padding: 0.28rem;
-  border: 1px solid rgba(255, 255, 255, 0.085);
-  border-radius: 0.78rem;
-  background: rgba(255, 255, 255, 0.025);
-  box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.14),
-    inset 0 1px rgba(255, 255, 255, 0.035);
-  grid-template-columns: repeat(2, 5.25rem);
-  backdrop-filter: blur(14px);
-}
-
-.marketing-billing-toggle__thumb {
-  position: absolute;
-  z-index: 0;
-  top: 0.28rem;
-  bottom: 0.28rem;
-  left: 0.28rem;
-  width: 5.25rem;
-  border: 1px solid rgba(194, 175, 250, 0.15);
-  border-radius: 0.56rem;
-  background: linear-gradient(
-    145deg,
-    rgba(139, 92, 246, 0.17),
-    rgba(100, 61, 192, 0.07)
-  );
-  box-shadow:
-    0 7px 18px rgba(64, 30, 133, 0.18),
-    inset 0 1px rgba(255, 255, 255, 0.06);
-  transition: transform 260ms var(--ease-spring-soft);
-}
-
-.marketing-billing-toggle--yearly .marketing-billing-toggle__thumb {
-  transform: translateX(5.25rem);
-}
-
-.marketing-billing-toggle button {
-  position: relative;
-  z-index: 1;
-  min-height: 2.35rem;
-  border-radius: 0.56rem;
-  color: #716b79;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 620;
-  transition:
-    color 220ms ease,
-    transform 180ms ease;
-}
-
-.marketing-billing-toggle button[aria-pressed="true"] {
-  color: #ddd5ef;
-}
-
-.marketing-billing-toggle button:active {
-  transform: scale(0.96);
-}
-
-.marketing-billing-toggle button:focus-visible {
-  outline: 2px solid #c4b5fd;
-  outline-offset: 2px;
-}
-
 .marketing-pricing-grid {
   display: grid;
   align-items: stretch;
@@ -3508,6 +3483,10 @@ html:has(.marketing-shell) {
   mask:
     linear-gradient(#fff 0 0) padding-box,
     linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
   mask-composite: exclude;
   transition: opacity 300ms ease;
   pointer-events: none;
@@ -3565,7 +3544,7 @@ html:has(.marketing-shell) {
   text-transform: uppercase;
 }
 
-.marketing-pricing-card > header p {
+.marketing-pricing-card > header h3 {
   color: #e8e3ed;
   font-size: 1rem;
   font-weight: 660;
@@ -3607,7 +3586,7 @@ html:has(.marketing-shell) {
 
 .marketing-pricing-card__price small {
   margin-bottom: 0.65rem;
-  color: #716b79;
+  color: var(--marketing-subtle);
   font-size: 0.68rem;
 }
 
@@ -3615,7 +3594,7 @@ html:has(.marketing-shell) {
 .marketing-pricing-card__enterprise-rate {
   min-height: 1.2rem;
   margin-top: 0.4rem;
-  color: #625c69;
+  color: var(--marketing-subtle);
   font-size: 0.65rem;
 }
 
@@ -3890,48 +3869,9 @@ html:has(.marketing-shell) {
 .marketing-footer__brand-column > p {
   max-width: 24rem;
   margin-top: 1.3rem;
-  color: #77717f;
+  color: var(--marketing-subtle);
   font-size: 0.82rem;
   line-height: 1.7;
-}
-
-.marketing-footer__socials {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1.6rem;
-}
-
-.marketing-footer__socials a {
-  display: inline-flex;
-  width: 2.35rem;
-  height: 2.35rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 0.62rem;
-  color: #77717f;
-  background: rgba(255, 255, 255, 0.022);
-  transition:
-    color 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    box-shadow 220ms ease,
-    transform 180ms ease;
-}
-
-.marketing-footer__socials a:hover {
-  border-color: rgba(190, 165, 249, 0.2);
-  color: #c4b2f2;
-  background: rgba(139, 92, 246, 0.07);
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.2),
-    0 0 22px rgba(111, 69, 209, 0.09);
-  transform: translateY(-2px);
-}
-
-.marketing-footer__socials svg {
-  width: 0.95rem;
-  height: 0.95rem;
 }
 
 .marketing-footer__nav {
@@ -3956,7 +3896,7 @@ html:has(.marketing-shell) {
 
 .marketing-footer__nav a {
   display: inline-flex;
-  color: #6f6977;
+  color: var(--marketing-subtle);
   font-size: 0.76rem;
   transition:
     color 180ms ease,
@@ -3975,7 +3915,7 @@ html:has(.marketing-shell) {
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #5d5764;
+  color: var(--marketing-subtle);
   font-size: 0.68rem;
 }
 
@@ -4587,6 +4527,15 @@ html:has(.marketing-shell) {
 }
 
 @media (max-width: 760px) {
+  .marketing-backdrop::before {
+    opacity: 0.11;
+    background-size: 64px 64px;
+  }
+
+  .marketing-backdrop::after {
+    opacity: 0.08;
+  }
+
   .marketing-nav {
     height: 4.1rem;
   }
@@ -4598,6 +4547,8 @@ html:has(.marketing-shell) {
 
   .marketing-nav__menu-button {
     display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
   }
 
   .marketing-mobile-menu {
@@ -4640,6 +4591,7 @@ html:has(.marketing-shell) {
   }
 
   .marketing-mobile-menu__links a {
+    min-height: 2.75rem;
     padding: 0.72rem 0.65rem;
     border-radius: 0.55rem;
     color: #c3becd;
@@ -4673,7 +4625,7 @@ html:has(.marketing-shell) {
   }
 
   .marketing-hero h1 {
-    font-size: clamp(3rem, 13vw, 4.4rem);
+    font-size: clamp(2.75rem, 13vw, 4.4rem);
   }
 
   .marketing-hero__description {
@@ -4793,6 +4745,16 @@ html:has(.marketing-shell) {
   .marketing-ai-demo__card {
     width: min(100%, 40rem);
     margin-inline: auto;
+  }
+
+  .marketing-ai-demo__controls button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .marketing-hero__orb,
+  .marketing-preview__glow {
+    animation: none;
   }
 }
 
@@ -5126,10 +5088,45 @@ html:has(.marketing-shell) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .marketing-footer__nav a {
+    min-height: 2.75rem;
+    align-items: center;
+  }
+
   .marketing-footer__bottom {
     align-items: flex-start;
     gap: 0.8rem;
     flex-direction: column;
+  }
+}
+
+@media (min-width: 1081px) and (max-height: 800px) {
+  .marketing-hero {
+    min-height: 100svh;
+    padding-top: 7rem;
+    padding-bottom: 3.5rem;
+  }
+}
+
+@media (min-width: 1800px) {
+  .marketing-hero__container {
+    width: min(100%, 96rem);
+    gap: clamp(6rem, 8vw, 10rem);
+  }
+}
+
+@media (hover: none) {
+  .marketing-feature-card:hover,
+  .marketing-pricing-card:hover,
+  .marketing-preview:hover .marketing-preview__window {
+    transform: none;
+  }
+}
+
+@media (hover: none) and (min-width: 901px) {
+  .marketing-pricing-card--featured,
+  .marketing-pricing-card--featured:hover {
+    transform: translateY(-0.75rem);
   }
 }
 
