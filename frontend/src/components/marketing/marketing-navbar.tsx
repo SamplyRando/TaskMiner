@@ -18,6 +18,7 @@ export function MarketingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const activeSection = useActiveMarketingSection();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const firstMenuLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -45,6 +46,25 @@ export function MarketingNavbar() {
       if (event.key === "Escape") {
         setIsMenuOpen(false);
         menuButtonRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const focusableElements = Array.from(
+          mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ) ?? [],
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements.at(-1);
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement?.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement?.focus();
+        }
       }
     };
 
@@ -134,6 +154,7 @@ export function MarketingNavbar() {
         })}
         id="marketing-mobile-menu"
         inert={!isMenuOpen}
+        ref={mobileMenuRef}
       >
         <div className="marketing-mobile-menu__links">
           {navigationItems.map((item, index) => (

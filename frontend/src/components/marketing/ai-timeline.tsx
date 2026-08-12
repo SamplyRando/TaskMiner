@@ -6,7 +6,11 @@ const timelineSteps = [
   "Done",
 ] as const;
 
-export function AiTimeline() {
+type AiTimelineProps = {
+  visibleStepCount: number;
+};
+
+export function AiTimeline({ visibleStepCount }: AiTimelineProps) {
   return (
     <section className="marketing-ai-timeline">
       <header>
@@ -14,7 +18,7 @@ export function AiTimeline() {
         <strong>2 weeks</strong>
       </header>
       <ol>
-        {timelineSteps.map((step) => (
+        {timelineSteps.slice(0, visibleStepCount).map((step) => (
           <li key={step}>
             <span />
             <strong>{step}</strong>

@@ -108,7 +108,11 @@ export function StatsSection() {
         className="marketing-section-shell marketing-stats__inner marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
         data-marketing-reveal
       >
-        <div className="marketing-stats__intro">
+        <div
+          className="marketing-stats__intro"
+          data-marketing-anchor-target
+          tabIndex={-1}
+        >
           <p>Structure you can verify</p>
           <h2 id="marketing-stats-title">
             Clear ownership.

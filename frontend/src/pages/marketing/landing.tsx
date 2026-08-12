@@ -5,6 +5,7 @@ import { FinalCta } from "@/components/marketing/final-cta";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { MarketingAnchorNavigation } from "@/components/marketing/marketing-anchor-navigation";
 import { MarketingMotionController } from "@/components/marketing/marketing-motion-controller";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { StatsSection } from "@/components/marketing/stats-section";
@@ -13,6 +14,7 @@ import { TrustedTeams } from "@/components/marketing/trusted-teams";
 export function LandingPage() {
   return (
     <>
+      <MarketingAnchorNavigation />
       <MarketingMotionController />
       <main id="marketing-content" tabIndex={-1}>
         <HeroSection />

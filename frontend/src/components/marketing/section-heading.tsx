@@ -21,7 +21,9 @@ export function SectionHeading({
         "marketing-motion-reveal marketing-motion-reveal--blur marketing-motion-reveal--up":
           reveal,
       })}
+      data-marketing-anchor-target
       data-marketing-reveal={reveal ? "" : undefined}
+      tabIndex={-1}
     >
       <p>{eyebrow}</p>
       <h2>{children}</h2>

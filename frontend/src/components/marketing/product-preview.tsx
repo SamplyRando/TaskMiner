@@ -41,7 +41,7 @@ const activities = [
 
 export function ProductPreview() {
   return (
-    <figure className="marketing-preview" id="demo">
+    <figure className="marketing-preview">
       <div aria-hidden="true" className="marketing-preview__glow" />
       <div aria-hidden="true" className="marketing-preview__window">
         <div className="marketing-preview__chrome">

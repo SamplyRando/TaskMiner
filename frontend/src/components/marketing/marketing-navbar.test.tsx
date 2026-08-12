@@ -29,6 +29,13 @@ describe("MarketingNavbar", () => {
     expect(document.body.style.overflow).toBe("hidden");
     expect(mobileMenu).toHaveAttribute("aria-hidden", "false");
 
+    await user.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(
+      screen.getAllByRole("link", { name: "Start free" })[1],
+    ).toHaveFocus();
+    await user.tab();
+    expect(screen.getAllByRole("link", { name: "Features" })[1]).toHaveFocus();
+
     await user.keyboard("{Escape}");
 
     expect(menuButton).toHaveFocus();

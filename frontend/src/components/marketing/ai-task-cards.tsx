@@ -8,7 +8,15 @@ const generatedTasks = [
   { priority: "Medium", title: "Launch beta" },
 ] as const;
 
-export function AiTaskCards() {
+type AiTaskCardsProps = {
+  prioritizedTaskCount: number;
+  visibleTaskCount: number;
+};
+
+export function AiTaskCards({
+  prioritizedTaskCount,
+  visibleTaskCount,
+}: AiTaskCardsProps) {
   return (
     <section className="marketing-ai-tasks">
       <header>
@@ -16,19 +24,24 @@ export function AiTaskCards() {
         <strong>5</strong>
       </header>
       <ul>
-        {generatedTasks.map((task) => (
+        {generatedTasks.slice(0, visibleTaskCount).map((task, index) => (
           <li key={task.title}>
             <span className="marketing-ai-task__check">
               <Check />
             </span>
             <strong>{task.title}</strong>
             <span className="marketing-ai-task__priority-wrap">
-              <span className="marketing-ai-task__analyzing">Analyzing...</span>
-              <span
-                className={`marketing-ai-task__priority marketing-ai-task__priority--${task.priority.toLowerCase()}`}
-              >
-                {task.priority}
-              </span>
+              {index < prioritizedTaskCount ? (
+                <span
+                  className={`marketing-ai-task__priority marketing-ai-task__priority--${task.priority.toLowerCase()}`}
+                >
+                  {task.priority}
+                </span>
+              ) : (
+                <span className="marketing-ai-task__analyzing">
+                  Analyzing...
+                </span>
+              )}
             </span>
           </li>
         ))}
