@@ -1,5 +1,4 @@
 import { Plus } from "lucide-react";
-import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import { SectionHeading } from "@/components/marketing/section-heading";
@@ -67,7 +66,7 @@ export function FaqSection() {
           <span>you get started.</span>
         </SectionHeading>
 
-        <div className="marketing-faq__list">
+        <div className="marketing-faq__list" data-testid="faq-list">
           {questions.map((item, index) => {
             const isOpen = openIndex === index;
             const buttonId = `marketing-faq-button-${String(index)}`;
@@ -77,18 +76,10 @@ export function FaqSection() {
               <article
                 className={cn(
                   "marketing-faq__item",
-                  {
-                    "marketing-faq__item--open": isOpen,
-                  },
-                  "marketing-motion-reveal marketing-motion-reveal--up",
+                  isOpen && "marketing-faq__item--open",
                 )}
-                data-marketing-reveal
+                data-testid={`faq-item-${String(index)}`}
                 key={item.question}
-                style={
-                  {
-                    "--reveal-delay": `${String(index * 35)}ms`,
-                  } as CSSProperties
-                }
               >
                 <h3>
                   <button

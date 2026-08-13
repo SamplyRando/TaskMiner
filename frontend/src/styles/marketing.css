@@ -3637,7 +3637,13 @@ html:has(.marketing-shell) {
 }
 
 .marketing-faq__item {
+  display: block;
   border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  opacity: 1;
+  visibility: visible;
+  scale: 1;
+  transform: none;
+  translate: 0 0;
   transition:
     border-color 220ms ease,
     background-color 220ms ease;
