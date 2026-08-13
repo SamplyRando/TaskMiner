@@ -9,6 +9,7 @@ import { Topbar } from "@/layouts/topbar";
 
 const pageTitles: Record<string, string> = {
   "/app": "Dashboard",
+  "/app/ai": "TaskMiner AI",
   "/app/activity": "Activité",
   "/app/audit": "Audit",
   "/app/invitations": "Invitations",

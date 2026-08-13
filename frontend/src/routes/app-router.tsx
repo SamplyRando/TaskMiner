@@ -14,6 +14,9 @@ const ActivityPage = lazy(async () => ({
 const AuditPage = lazy(async () => ({
   default: (await import("@/pages/audit-page")).AuditPage,
 }));
+const AIPage = lazy(async () => ({
+  default: (await import("@/pages/ai-page")).AIPage,
+}));
 const HomePage = lazy(async () => ({
   default: (await import("@/pages/home-page")).HomePage,
 }));
@@ -73,6 +76,7 @@ export function AppRouter() {
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />} path="/app">
               <Route element={<HomePage />} index />
+              <Route element={<AIPage />} path="ai" />
               <Route element={<ProjectsPage />} path="projects" />
               <Route element={<TasksPage />} path="tasks" />
               <Route element={<SettingsPage />} path="settings" />
