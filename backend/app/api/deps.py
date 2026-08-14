@@ -6,6 +6,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
+from app.ai.mock_provider import MockAIProvider
+from app.ai.service import AIService
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
@@ -278,3 +280,20 @@ AuditStreamBrokerDep = Annotated[
     AuditStreamBroker,
     Depends(get_audit_stream_broker),
 ]
+
+
+def get_ai_service(session: SessionDep) -> AIService:
+    member_repository = WorkspaceMemberRepository(session)
+    workspace_repository = WorkspaceRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        workspace_repository,
+    )
+    return AIService(
+        MockAIProvider(),
+        permission_service,
+        ProjectRepository(session),
+    )
+
+
+AIServiceDep = Annotated[AIService, Depends(get_ai_service)]

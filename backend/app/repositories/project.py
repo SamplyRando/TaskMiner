@@ -56,6 +56,25 @@ class ProjectRepository:
         )
         return self.session.scalar(statement)
 
+    def get_active_by_workspace(
+        self,
+        project_id: UUID,
+        workspace_id: UUID,
+    ) -> Project | None:
+        """Return an active project only inside the requested active workspace."""
+
+        statement = (
+            select(Project)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .where(
+                Project.id == project_id,
+                Project.workspace_id == workspace_id,
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
     def list_by_owner(
         self,
         owner: User,
