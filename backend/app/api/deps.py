@@ -7,12 +7,14 @@ from jose import JWTError
 from sqlalchemy.orm import Session
 
 from app.ai.mock_provider import MockAIProvider
+from app.ai.apply_service import AIApplyService
 from app.ai.service import AIService
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
+from app.repositories.ai_plan_application import AIPlanApplicationRepository
 from app.repositories.audit import AuditRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
@@ -297,3 +299,26 @@ def get_ai_service(session: SessionDep) -> AIService:
 
 
 AIServiceDep = Annotated[AIService, Depends(get_ai_service)]
+
+
+def get_ai_apply_service(session: SessionDep) -> AIApplyService:
+    project_repository = ProjectRepository(session)
+    task_repository = TaskRepository(session)
+    workspace_repository = WorkspaceRepository(session)
+    member_repository = WorkspaceMemberRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        workspace_repository,
+    )
+    return AIApplyService(
+        AIPlanApplicationRepository(session),
+        project_repository,
+        member_repository,
+        permission_service,
+        ProjectService(project_repository, workspace_repository),
+        TaskService(task_repository, project_repository),
+        TaskAssignmentService(task_repository, UserRepository(session)),
+    )
+
+
+AIApplyServiceDep = Annotated[AIApplyService, Depends(get_ai_apply_service)]

@@ -19,7 +19,13 @@ class ProjectRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create(self, workspace: Workspace, data: ProjectCreate) -> Project:
+    def create(
+        self,
+        workspace: Workspace,
+        data: ProjectCreate,
+        *,
+        commit: bool = True,
+    ) -> Project:
         project = Project(
             name=data.name,
             description=data.description,
@@ -27,12 +33,15 @@ class ProjectRepository:
         )
         self.session.add(project)
 
-        try:
-            self.session.commit()
-            self.session.refresh(project)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(project)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
 
         return project
 

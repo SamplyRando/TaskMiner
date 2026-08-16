@@ -42,24 +42,63 @@ class TaskAssignmentService:
         previous_assignee_id = task.assigned_user_id
         assigned_task = self.task_repository.assign(task, assigned_user)
         publish(
-            DomainEvent(
-                event_type=ActivityEventType.TASK_ASSIGNED,
-                resource_type=ActivityResourceType.TASK,
-                workspace_id=task.project.workspace_id,
-                resource_id=task.id,
-                actor_id=owner.id,
-                old_values={
-                    "assigned_user_id": (
-                        str(previous_assignee_id)
-                        if previous_assignee_id is not None
-                        else None
-                    )
-                },
-                new_values={"assigned_user_id": str(assigned_user.id)},
-                metadata={"assigned_user_id": str(assigned_user.id)},
+            self.task_assigned_event(
+                owner,
+                task,
+                assigned_user,
+                previous_assignee_id=previous_assignee_id,
             )
         )
         return assigned_task
+
+    def stage_assignment(
+        self,
+        actor: User,
+        task: Task,
+        assigned_user: User,
+        *,
+        source: str,
+    ) -> DomainEvent:
+        """Stage an assignment and its event in a caller-owned transaction."""
+
+        previous_assignee_id = task.assigned_user_id
+        self.task_repository.assign(task, assigned_user, commit=False)
+        return self.task_assigned_event(
+            actor,
+            task,
+            assigned_user,
+            previous_assignee_id=previous_assignee_id,
+            source=source,
+        )
+
+    @staticmethod
+    def task_assigned_event(
+        actor: User,
+        task: Task,
+        assigned_user: User,
+        *,
+        previous_assignee_id: UUID | None,
+        source: str | None = None,
+    ) -> DomainEvent:
+        metadata = {"assigned_user_id": str(assigned_user.id)}
+        if source is not None:
+            metadata["source"] = source
+        return DomainEvent(
+            event_type=ActivityEventType.TASK_ASSIGNED,
+            resource_type=ActivityResourceType.TASK,
+            workspace_id=task.project.workspace_id,
+            resource_id=task.id,
+            actor_id=actor.id,
+            old_values={
+                "assigned_user_id": (
+                    str(previous_assignee_id)
+                    if previous_assignee_id is not None
+                    else None
+                )
+            },
+            new_values={"assigned_user_id": str(assigned_user.id)},
+            metadata=metadata,
+        )
 
     def unassign_task(self, owner: User, task_id: UUID) -> None:
         task = self._get_owned_task(owner, task_id)

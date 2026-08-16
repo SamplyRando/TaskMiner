@@ -206,7 +206,8 @@ export function AIProjectPlannerForm({
 
           <div className="flex flex-col items-start justify-between gap-3 border-t pt-5 sm:flex-row sm:items-center">
             <p className="text-muted-foreground text-xs">
-              TaskMiner AI ne modifiera aucune donnée pendant ce sprint.
+              La génération ne modifie aucune donnée. Seule l’application
+              confirmée du brouillon créera le projet ou les tâches.
             </p>
             <Button
               disabled={isSubmitDisabled}
