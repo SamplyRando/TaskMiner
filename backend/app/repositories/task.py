@@ -19,7 +19,13 @@ class TaskRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create(self, project: Project, data: TaskCreate) -> Task:
+    def create(
+        self,
+        project: Project,
+        data: TaskCreate,
+        *,
+        commit: bool = True,
+    ) -> Task:
         task = Task(
             title=data.title,
             description=data.description,
@@ -30,12 +36,15 @@ class TaskRepository:
         )
         self.session.add(task)
 
-        try:
-            self.session.commit()
-            self.session.refresh(task)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(task)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
 
         return task
 
@@ -143,14 +152,23 @@ class TaskRepository:
 
         return task
 
-    def assign(self, task: Task, assigned_user: User) -> Task:
+    def assign(
+        self,
+        task: Task,
+        assigned_user: User,
+        *,
+        commit: bool = True,
+    ) -> Task:
         task.assigned_user_id = assigned_user.id
-        try:
-            self.session.commit()
-            self.session.refresh(task)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(task)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
         return task
 
     def unassign(self, task: Task) -> Task:

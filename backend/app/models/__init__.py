@@ -1,6 +1,7 @@
 """SQLAlchemy model declarations exposed for Alembic discovery."""
 
 from app.models.activity import Activity
+from app.models.ai_plan_application import AIPlanApplication
 from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.comment import Comment
@@ -14,6 +15,7 @@ from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
 
 __all__ = [
     "Activity",
+    "AIPlanApplication",
     "AuditLog",
     "Attachment",
     "Comment",

@@ -8,6 +8,7 @@ from app.core.events import (
 )
 from app.models.project import Project
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.repositories.project import ProjectRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.pagination import PaginatedResponse
@@ -46,21 +47,50 @@ class ProjectService:
                 WorkspaceCreate(name=DEFAULT_WORKSPACE_NAME),
             )
         project = self.repository.create(workspace, data)
-        publish(
-            DomainEvent(
-                event_type=ActivityEventType.PROJECT_CREATED,
-                resource_type=ActivityResourceType.PROJECT,
-                workspace_id=workspace.id,
-                resource_id=project.id,
-                actor_id=owner.id,
-                new_values={
-                    "description": project.description,
-                    "name": project.name,
-                },
-                metadata={"name": project.name},
-            )
-        )
+        publish(self.project_created_event(owner, workspace, project))
         return project
+
+    def stage_project(
+        self,
+        actor: User,
+        workspace: Workspace,
+        data: ProjectCreate,
+        *,
+        source: str,
+    ) -> tuple[Project, DomainEvent]:
+        """Stage a project and its event inside a caller-owned transaction."""
+
+        project = self.repository.create(workspace, data, commit=False)
+        return project, self.project_created_event(
+            actor,
+            workspace,
+            project,
+            source=source,
+        )
+
+    @staticmethod
+    def project_created_event(
+        actor: User,
+        workspace: Workspace,
+        project: Project,
+        *,
+        source: str | None = None,
+    ) -> DomainEvent:
+        metadata = {"name": project.name}
+        if source is not None:
+            metadata["source"] = source
+        return DomainEvent(
+            event_type=ActivityEventType.PROJECT_CREATED,
+            resource_type=ActivityResourceType.PROJECT,
+            workspace_id=workspace.id,
+            resource_id=project.id,
+            actor_id=actor.id,
+            new_values={
+                "description": project.description,
+                "name": project.name,
+            },
+            metadata=metadata,
+        )
 
     def list_projects(
         self,

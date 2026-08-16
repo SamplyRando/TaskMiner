@@ -70,6 +70,7 @@ def test_project_plan_returns_a_structured_transient_draft(
             "criteria."
         ),
         "priority": "high",
+        "status": "todo",
         "suggested_due_date": "2026-08-18",
         "milestone": "Planning",
         "order": 1,

@@ -42,29 +42,58 @@ class TaskService:
     ) -> Task:
         project = self._get_owned_project(owner, project_id)
         task = self.repository.create(project, data)
-        publish(
-            DomainEvent(
-                event_type=ActivityEventType.TASK_CREATED,
-                resource_type=ActivityResourceType.TASK,
-                workspace_id=project.workspace_id,
-                resource_id=task.id,
-                actor_id=owner.id,
-                new_values={
-                    "description": task.description,
-                    "due_date": (
-                        task.due_date.isoformat() if task.due_date is not None else None
-                    ),
-                    "priority": task.priority.value,
-                    "status": task.status.value,
-                    "title": task.title,
-                },
-                metadata={
-                    "project_id": str(project.id),
-                    "title": task.title,
-                },
-            )
-        )
+        publish(self.task_created_event(owner, project, task))
         return task
+
+    def stage_task(
+        self,
+        actor: User,
+        project: Project,
+        data: TaskCreate,
+        *,
+        source: str,
+    ) -> tuple[Task, DomainEvent]:
+        """Stage a task and its event inside a caller-owned transaction."""
+
+        task = self.repository.create(project, data, commit=False)
+        return task, self.task_created_event(
+            actor,
+            project,
+            task,
+            source=source,
+        )
+
+    @staticmethod
+    def task_created_event(
+        actor: User,
+        project: Project,
+        task: Task,
+        *,
+        source: str | None = None,
+    ) -> DomainEvent:
+        metadata = {
+            "project_id": str(project.id),
+            "title": task.title,
+        }
+        if source is not None:
+            metadata["source"] = source
+        return DomainEvent(
+            event_type=ActivityEventType.TASK_CREATED,
+            resource_type=ActivityResourceType.TASK,
+            workspace_id=project.workspace_id,
+            resource_id=task.id,
+            actor_id=actor.id,
+            new_values={
+                "description": task.description,
+                "due_date": (
+                    task.due_date.isoformat() if task.due_date is not None else None
+                ),
+                "priority": task.priority.value,
+                "status": task.status.value,
+                "title": task.title,
+            },
+            metadata=metadata,
+        )
 
     def list_project_tasks(self, owner: User, project_id: UUID) -> list[Task]:
         project = self._get_owned_project(owner, project_id)

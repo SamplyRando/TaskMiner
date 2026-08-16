@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
+from app.models.user import User
 
 
 class WorkspaceMemberRepository:
@@ -54,6 +55,23 @@ class WorkspaceMemberRepository:
                 WorkspaceMember.workspace_id == workspace.id,
                 WorkspaceMember.user_id == user_id,
                 Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
+    def get_active_user(
+        self,
+        workspace: Workspace,
+        user_id: UUID,
+    ) -> User | None:
+        statement = (
+            select(User)
+            .join(WorkspaceMember, WorkspaceMember.user_id == User.id)
+            .where(
+                WorkspaceMember.workspace_id == workspace.id,
+                WorkspaceMember.user_id == user_id,
+                User.is_active.is_(True),
+                User.deleted_at.is_(None),
             )
         )
         return self.session.scalar(statement)
