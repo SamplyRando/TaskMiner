@@ -4,8 +4,10 @@ import { useCallback, useState } from "react";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AIProjectPlan } from "@/features/ai/ai-project-plan";
 import { AIApplySuccess } from "@/features/ai/ai-apply-success";
+import { AIProjectChangeWorkflow } from "@/features/ai/ai-project-change-workflow";
 import { AIProjectPlannerForm } from "@/features/ai/ai-project-planner-form";
 import {
   useApplyProjectPlan,
@@ -40,6 +42,7 @@ type AppliedPlan = {
 };
 
 const AI_DRAFT_STORAGE_KEY = "taskminer-ai-apply-draft-v1";
+const AI_MODE_STORAGE_KEY = "taskminer-ai-mode-v1";
 
 const suggestProjectName = (prompt: string): string => {
   const firstSentence = prompt.split(/[.!?\n]/, 1)[0]?.trim() ?? "";
@@ -57,6 +60,10 @@ export function AIPage() {
   );
   const [appliedPlan, setAppliedPlan] = useState<AppliedPlan | null>(null);
   const [plannerCycle, setPlannerCycle] = useState(0);
+  const [mode, setMode] = useSessionState<"plan" | "change">(
+    AI_MODE_STORAGE_KEY,
+    "plan",
+  );
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     draft?.workspaceId ?? null,
   );
@@ -157,9 +164,40 @@ export function AIPage() {
             Mock provider
           </div>
         }
-        description="Transformez le contexte d’un projet en un premier plan structuré à réviser."
+        description="Planifiez un nouveau projet ou préparez des modifications sûres sur un projet existant."
         title="TaskMiner AI"
       />
+
+      <div
+        aria-label="Mode TaskMiner AI"
+        className="bg-muted/50 inline-flex w-full rounded-xl border p-1 sm:w-auto"
+        role="tablist"
+      >
+        <Button
+          aria-selected={mode === "plan"}
+          className="flex-1 sm:flex-none"
+          onClick={() => {
+            setMode("plan");
+          }}
+          role="tab"
+          type="button"
+          variant={mode === "plan" ? "default" : "ghost"}
+        >
+          Créer / planifier
+        </Button>
+        <Button
+          aria-selected={mode === "change"}
+          className="flex-1 sm:flex-none"
+          onClick={() => {
+            setMode("change");
+          }}
+          role="tab"
+          type="button"
+          variant={mode === "change" ? "default" : "ghost"}
+        >
+          Modifier un projet
+        </Button>
+      </div>
 
       {!workspaceState.isPending && workspaceState.workspaces.length === 0 ? (
         <Card>
@@ -174,7 +212,7 @@ export function AIPage() {
             </p>
           </CardContent>
         </Card>
-      ) : (
+      ) : mode === "plan" ? (
         <AIProjectPlannerForm
           activeWorkspaceId={effectiveWorkspaceId || null}
           error={generatePlan.error}
@@ -188,9 +226,15 @@ export function AIPage() {
           projects={projectsQuery.data?.items ?? []}
           workspaces={workspaceState.workspaces}
         />
+      ) : (
+        <AIProjectChangeWorkflow
+          activeWorkspaceId={workspaceState.activeWorkspaceId}
+          isWorkspacesPending={workspaceState.isPending}
+          workspaces={workspaceState.workspaces}
+        />
       )}
 
-      {draft && !applyPlan.data ? (
+      {mode === "plan" && draft && !applyPlan.data ? (
         <AIProjectPlan
           error={applyPlan.error}
           existingProjectId={draft.projectId}
@@ -206,7 +250,7 @@ export function AIPage() {
         />
       ) : null}
 
-      {appliedPlan?.result ? (
+      {mode === "plan" && appliedPlan?.result ? (
         <AIApplySuccess
           onCreateNewPlan={handleCreateNewPlan}
           projectName={appliedPlan.projectName}
@@ -214,7 +258,10 @@ export function AIPage() {
         />
       ) : null}
 
-      {!draft && !appliedPlan && workspaceState.workspaces.length > 0 ? (
+      {mode === "plan" &&
+      !draft &&
+      !appliedPlan &&
+      workspaceState.workspaces.length > 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-48 flex-col items-center justify-center px-6 py-10 text-center">
             <BrainCircuit

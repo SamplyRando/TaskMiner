@@ -138,18 +138,74 @@ class TaskService:
             include=changed_fields,
         )
         publish(
-            DomainEvent(
-                event_type=ActivityEventType.TASK_UPDATED,
-                resource_type=ActivityResourceType.TASK,
-                workspace_id=task.project.workspace_id,
-                resource_id=task.id,
-                actor_id=owner.id,
-                old_values=old_values,
-                new_values=new_values,
-                metadata={"fields": sorted(changed_fields)},
+            self.task_updated_event(
+                owner,
+                task,
+                changed_fields,
+                old_values,
+                new_values,
             )
         )
         return updated_task
+
+    def stage_task_update(
+        self,
+        actor: User,
+        project: Project,
+        task: Task,
+        data: TaskUpdate,
+        *,
+        source: str,
+    ) -> tuple[Task, DomainEvent]:
+        """Stage an update and event inside a caller-owned transaction."""
+
+        changed_fields = data.model_fields_set
+        old_values = TaskRead.model_validate(task).model_dump(
+            mode="json",
+            include=changed_fields,
+        )
+        updated_task = self.repository.update(task, data, commit=False)
+        new_values = TaskRead.model_validate(updated_task).model_dump(
+            mode="json",
+            include=changed_fields,
+        )
+        return updated_task, self.task_updated_event(
+            actor,
+            task,
+            changed_fields,
+            old_values,
+            new_values,
+            source=source,
+            project=project,
+        )
+
+    @staticmethod
+    def task_updated_event(
+        actor: User,
+        task: Task,
+        changed_fields: set[str],
+        old_values: dict[str, object],
+        new_values: dict[str, object],
+        *,
+        source: str | None = None,
+        project: Project | None = None,
+    ) -> DomainEvent:
+        metadata: dict[str, object] = {"fields": sorted(changed_fields)}
+        if source is not None:
+            metadata["source"] = source
+        workspace_id = (
+            project.workspace_id if project is not None else task.project.workspace_id
+        )
+        return DomainEvent(
+            event_type=ActivityEventType.TASK_UPDATED,
+            resource_type=ActivityResourceType.TASK,
+            workspace_id=workspace_id,
+            resource_id=task.id,
+            actor_id=actor.id,
+            old_values=old_values,
+            new_values=new_values,
+            metadata=metadata,
+        )
 
     def delete_task(self, owner: User, task_id: UUID) -> None:
         task = self.repository.get_by_id_for_owner(task_id, owner)

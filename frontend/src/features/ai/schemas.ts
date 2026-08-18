@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/types/task";
+import type { AIChangeField } from "@/types/ai";
 
 export const aiProjectPlannerSchema = z.object({
   workspaceId: z.string().min(1, "Sélectionnez un workspace."),
@@ -96,3 +97,86 @@ export const aiPlanReviewSchema = aiPlanReviewDraftSchema.superRefine(
 );
 
 export type AIPlanReviewValues = z.infer<typeof aiPlanReviewSchema>;
+
+export const aiProjectChangeFormSchema = z.object({
+  workspaceId: z.string().min(1, "Sélectionnez un workspace."),
+  projectId: z.string().min(1, "Sélectionnez un projet."),
+  instruction: z
+    .string()
+    .trim()
+    .min(10, "Décrivez la modification en au moins 10 caractères.")
+    .max(5_000, "L’instruction ne peut pas dépasser 5 000 caractères."),
+});
+
+export type AIProjectChangeFormValues = z.infer<
+  typeof aiProjectChangeFormSchema
+>;
+
+const aiChangeStateSchema = z.object({
+  title: z.string().max(255),
+  description: z.string().max(5_000),
+  status: z.enum(TASK_STATUSES),
+  priority: z.enum(TASK_PRIORITIES),
+  dueDate: z.string(),
+});
+
+const aiTaskChangeReviewSchema = z.object({
+  selected: z.boolean(),
+  changeId: z.string(),
+  taskId: z.string(),
+  taskTitle: z.string(),
+  reason: z.string(),
+  changedFields: z.array(
+    z.enum(["title", "description", "status", "priority", "due_date"]),
+  ),
+  before: aiChangeStateSchema,
+  after: aiChangeStateSchema,
+});
+
+export const aiProjectChangeReviewDraftSchema = z.object({
+  changes: z.array(aiTaskChangeReviewSchema).max(50),
+});
+
+const hasActualChange = (
+  change: z.infer<typeof aiTaskChangeReviewSchema>,
+): boolean =>
+  change.changedFields.some((field: AIChangeField) => {
+    const key = field === "due_date" ? "dueDate" : field;
+    if (field === "due_date") {
+      return change.before.dueDate.slice(0, 10) !== change.after.dueDate;
+    }
+    return change.before[key] !== change.after[key];
+  });
+
+export const aiProjectChangeReviewSchema =
+  aiProjectChangeReviewDraftSchema.superRefine((values, context) => {
+    const selected = values.changes.filter((change) => change.selected);
+    if (selected.length === 0) {
+      context.addIssue({
+        code: "custom",
+        message: "Sélectionnez au moins une modification.",
+        path: ["changes"],
+      });
+    }
+    values.changes.forEach((change, index) => {
+      if (!change.selected) return;
+      if (!change.after.title.trim()) {
+        context.addIssue({
+          code: "custom",
+          message: "Le titre est obligatoire.",
+          path: ["changes", index, "after", "title"],
+        });
+      }
+      if (!hasActualChange(change)) {
+        context.addIssue({
+          code: "custom",
+          message: "Conservez au moins une différence pour cette tâche.",
+          path: ["changes", index, "after"],
+        });
+      }
+    });
+  });
+
+export type AIProjectChangeReviewValues = z.infer<
+  typeof aiProjectChangeReviewSchema
+>;

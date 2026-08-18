@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyProjectPlan, generateProjectPlan } from "@/api/ai";
+import {
+  applyProjectChangePlan,
+  applyProjectPlan,
+  generateProjectChangePlan,
+  generateProjectPlan,
+} from "@/api/ai";
 import { apiClient } from "@/api/client";
-import { aiApplyFixture, aiPlanFixture } from "@/test/ai-fixtures";
+import {
+  aiApplyFixture,
+  aiChangeApplyFixture,
+  aiChangePlanFixture,
+  aiPlanFixture,
+} from "@/test/ai-fixtures";
 import { projectId, workspaceId } from "@/test/resource-fixtures";
 
 describe("TaskMiner AI API", () => {
@@ -52,5 +62,49 @@ describe("TaskMiner AI API", () => {
 
     await expect(applyProjectPlan(request)).resolves.toEqual(aiApplyFixture);
     expect(post).toHaveBeenCalledWith("/ai/project-plan/apply", request);
+  });
+
+  it("generates a read-only project change plan", async () => {
+    const post = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValue({ data: aiChangePlanFixture });
+    const request = {
+      workspace_id: workspaceId,
+      project_id: projectId,
+      instruction: "Décale toutes les tâches API d’une semaine.",
+    };
+
+    await expect(generateProjectChangePlan(request)).resolves.toEqual(
+      aiChangePlanFixture,
+    );
+    expect(post).toHaveBeenCalledWith("/ai/project-change-plan", request);
+  });
+
+  it("applies only reviewed project changes", async () => {
+    const post = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValue({ data: aiChangeApplyFixture });
+    const change = aiChangePlanFixture.changes[0];
+    if (!change) throw new Error("Expected a change fixture");
+    const request = {
+      workspace_id: workspaceId,
+      project_id: projectId,
+      source_change_count: 3,
+      changes: [
+        {
+          change_id: change.change_id,
+          task_id: change.task_id,
+          before: change.before,
+          after: change.after,
+          changed_fields: change.changed_fields,
+        },
+      ],
+      idempotency_key: "60000000-0000-4000-8000-000000000001",
+    };
+
+    await expect(applyProjectChangePlan(request)).resolves.toEqual(
+      aiChangeApplyFixture,
+    );
+    expect(post).toHaveBeenCalledWith("/ai/project-change-plan/apply", request);
   });
 });

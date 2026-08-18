@@ -67,3 +67,63 @@ export type AIProjectPlanResponse = {
   milestones: AIGeneratedMilestone[];
   warnings: string[];
 };
+
+export type AIChangeField =
+  "title" | "description" | "status" | "priority" | "due_date";
+
+export type AITaskChangeState = {
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_date: string | null;
+};
+
+export type AIProjectChangePlanRequest = {
+  workspace_id: string;
+  project_id: string;
+  instruction: string;
+};
+
+export type AIProjectTaskChange = {
+  change_id: string;
+  entity_type: "task";
+  task_id: string;
+  task_title: string;
+  before: AITaskChangeState;
+  after: AITaskChangeState;
+  changed_fields: AIChangeField[];
+  reason: string;
+};
+
+export type AIProjectChangePlanResponse = {
+  summary: string;
+  project_id: string;
+  changes: AIProjectTaskChange[];
+  warnings: string[];
+};
+
+export type AIApprovedTaskChange = {
+  change_id: string;
+  task_id: string;
+  before: AITaskChangeState;
+  after: AITaskChangeState;
+  changed_fields: AIChangeField[];
+};
+
+export type AIApplyProjectChangePlanRequest = {
+  workspace_id: string;
+  project_id: string;
+  source_change_count: number;
+  changes: AIApprovedTaskChange[];
+  idempotency_key: string;
+};
+
+export type AIApplyProjectChangePlanResponse = {
+  project_id: string;
+  modified_task_ids: string[];
+  modified_task_count: number;
+  changed_field_count: number;
+  skipped_change_count: number;
+  idempotent_replay: boolean;
+};
