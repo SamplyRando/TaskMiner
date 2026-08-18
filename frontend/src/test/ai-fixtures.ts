@@ -1,7 +1,10 @@
 import type {
+  AIApplyProjectChangePlanResponse,
   AIApplyProjectPlanResponse,
+  AIProjectChangePlanResponse,
   AIProjectPlanResponse,
 } from "@/types/ai";
+import { projectId } from "@/test/resource-fixtures";
 
 export const aiPlanFixture: AIProjectPlanResponse = {
   milestones: [
@@ -68,4 +71,90 @@ export const aiApplyFixture: AIApplyProjectPlanResponse = {
   project_id: "10000000-0000-4000-8000-000000000001",
   skipped_task_count: 0,
   warnings: [],
+};
+
+export const aiChangePlanFixture: AIProjectChangePlanResponse = {
+  summary: "3 tâches à réviser dans le projet « TEST AI SPRINT 3 ».",
+  project_id: projectId,
+  warnings: [],
+  changes: [
+    {
+      change_id: "40000000-0000-4000-8000-000000000001",
+      entity_type: "task",
+      task_id: "50000000-0000-4000-8000-000000000001",
+      task_title: "API authentication",
+      before: {
+        title: "API authentication",
+        description: "Authentication API",
+        status: "todo",
+        priority: "medium",
+        due_date: "2026-09-20T12:00:00Z",
+      },
+      after: {
+        title: "API authentication",
+        description: "Authentication API",
+        status: "todo",
+        priority: "high",
+        due_date: "2026-09-27T12:00:00Z",
+      },
+      changed_fields: ["priority", "due_date"],
+      reason: "Priorité haute et échéance décalée de 7 jours.",
+    },
+    {
+      change_id: "40000000-0000-4000-8000-000000000002",
+      entity_type: "task",
+      task_id: "50000000-0000-4000-8000-000000000002",
+      task_title: "API payments",
+      before: {
+        title: "API payments",
+        description: "Payments API",
+        status: "in_progress",
+        priority: "medium",
+        due_date: "2026-09-22T12:00:00Z",
+      },
+      after: {
+        title: "API payments",
+        description: "Payments API",
+        status: "in_progress",
+        priority: "high",
+        due_date: "2026-09-29T12:00:00Z",
+      },
+      changed_fields: ["priority", "due_date"],
+      reason: "Priorité haute et échéance décalée de 7 jours.",
+    },
+    {
+      change_id: "40000000-0000-4000-8000-000000000003",
+      entity_type: "task",
+      task_id: "50000000-0000-4000-8000-000000000003",
+      task_title: "Préparer la documentation",
+      before: {
+        title: "Préparer la documentation",
+        description: "Documentation",
+        status: "todo",
+        priority: "low",
+        due_date: "2026-09-25T12:00:00Z",
+      },
+      after: {
+        title: "Préparer la documentation",
+        description: "Documentation",
+        status: "in_progress",
+        priority: "low",
+        due_date: "2026-09-25T12:00:00Z",
+      },
+      changed_fields: ["status"],
+      reason: "Statut proposé : in_progress.",
+    },
+  ],
+};
+
+export const aiChangeApplyFixture: AIApplyProjectChangePlanResponse = {
+  project_id: projectId,
+  modified_task_ids: [
+    "50000000-0000-4000-8000-000000000001",
+    "50000000-0000-4000-8000-000000000003",
+  ],
+  modified_task_count: 2,
+  changed_field_count: 3,
+  skipped_change_count: 1,
+  idempotent_replay: false,
 };

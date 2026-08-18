@@ -5,19 +5,109 @@ from app.ai.apply_service import (
     AIApplyProjectNotFoundError,
     AIIdempotencyConflictError,
 )
+from app.ai.change_apply_service import (
+    AIProjectChangeConflictError,
+    AIProjectChangeTaskNotFoundError,
+)
 from app.ai.schemas import (
+    AIApplyProjectChangePlanRequest,
+    AIApplyProjectChangePlanResponse,
     AIApplyProjectPlanRequest,
     AIApplyProjectPlanResponse,
+    AIProjectChangePlanRequest,
+    AIProjectChangePlanResponse,
     AIProjectPlanRequest,
     AIProjectPlanResponse,
 )
 from app.ai.service import AIProjectNotFoundError
-from app.api.deps import AIApplyServiceDep, AIServiceDep, CurrentUserDep
+from app.api.deps import (
+    AIApplyServiceDep,
+    AIProjectChangeApplyServiceDep,
+    AIProjectChangePlanServiceDep,
+    AIServiceDep,
+    CurrentUserDep,
+)
 from app.services.permission import PermissionDeniedError
 from app.services.workspace import WorkspaceNotFoundError
 
 
 router = APIRouter()
+
+
+@router.post(
+    "/project-change-plan/apply",
+    response_model=AIApplyProjectChangePlanResponse,
+)
+def apply_project_change_plan(
+    data: AIApplyProjectChangePlanRequest,
+    current_user: CurrentUserDep,
+    service: AIProjectChangeApplyServiceDep,
+) -> AIApplyProjectChangePlanResponse:
+    try:
+        return service.apply_project_change_plan(current_user, data)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
+    except AIProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        ) from exc
+    except AIProjectChangeTaskNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
+    except AIProjectChangeConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "AI_CHANGE_CONFLICT",
+                "conflicts": [
+                    conflict.model_dump(mode="json") for conflict in exc.conflicts
+                ],
+            },
+        ) from exc
+    except AIIdempotencyConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Idempotency key already used with another payload.",
+        ) from exc
+
+
+@router.post(
+    "/project-change-plan",
+    response_model=AIProjectChangePlanResponse,
+)
+async def generate_project_change_plan(
+    data: AIProjectChangePlanRequest,
+    current_user: CurrentUserDep,
+    service: AIProjectChangePlanServiceDep,
+) -> AIProjectChangePlanResponse:
+    try:
+        return await service.generate_project_change_plan(current_user, data)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
+    except AIProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.post(

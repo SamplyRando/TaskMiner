@@ -4,13 +4,20 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/api/client";
-import { applyProjectPlan, generateProjectPlan } from "@/api/ai";
+import {
+  applyProjectChangePlan,
+  applyProjectPlan,
+  generateProjectChangePlan,
+  generateProjectPlan,
+} from "@/api/ai";
 import { listProjects } from "@/api/projects";
 import { listWorkspaces } from "@/api/workspace";
 import { AIPage } from "@/pages/ai-page";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import {
   aiApplyFixture,
+  aiChangeApplyFixture,
+  aiChangePlanFixture,
   aiPlanFixture,
   aiSevenTaskPlanFixture,
 } from "@/test/ai-fixtures";
@@ -18,7 +25,9 @@ import { renderWithQuery } from "@/test/query-wrapper";
 import { projectFixture, workspaceFixture } from "@/test/resource-fixtures";
 
 vi.mock("@/api/ai", () => ({
+  applyProjectChangePlan: vi.fn(),
   applyProjectPlan: vi.fn(),
+  generateProjectChangePlan: vi.fn(),
   generateProjectPlan: vi.fn(),
 }));
 vi.mock("@/api/projects", () => ({
@@ -36,6 +45,8 @@ vi.mock("@/api/workspace", () => ({
 
 const mockedGenerate = vi.mocked(generateProjectPlan);
 const mockedApply = vi.mocked(applyProjectPlan);
+const mockedGenerateChanges = vi.mocked(generateProjectChangePlan);
+const mockedApplyChanges = vi.mocked(applyProjectChangePlan);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 
@@ -54,6 +65,8 @@ describe("AIPage", () => {
     });
     mockedGenerate.mockResolvedValue(aiPlanFixture);
     mockedApply.mockResolvedValue(aiApplyFixture);
+    mockedGenerateChanges.mockResolvedValue(aiChangePlanFixture);
+    mockedApplyChanges.mockResolvedValue(aiChangeApplyFixture);
   });
 
   it("renders the AI planner route content and workspace-scoped project query", async () => {
@@ -312,5 +325,161 @@ describe("AIPage", () => {
     expect(screen.getByText("6 sur 7 sélectionnées")).toBeInTheDocument();
     expect(mockedGenerate).toHaveBeenCalledTimes(1);
     expect(mockedApply).not.toHaveBeenCalled();
+  });
+
+  it("reviews and applies selected natural-language project changes", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(
+      <MemoryRouter>
+        <AIPage />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("tab", { name: "Modifier un projet" }));
+    const projectSelect = await screen.findByLabelText("Projet");
+    await waitFor(() => {
+      expect(projectSelect).toBeEnabled();
+    });
+    await user.selectOptions(projectSelect, projectFixture.id);
+    await user.type(
+      screen.getByLabelText("Instruction"),
+      "Décale toutes les tâches API d’une semaine et change leur priorité.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    );
+
+    expect(
+      await screen.findByText("3 sur 3 sélectionnées"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByLabelText("Inclure les modifications de API payments"),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Appliquer les modifications" }),
+    );
+    expect(mockedApplyChanges).not.toHaveBeenCalled();
+    await user.click(
+      screen.getByRole("button", { name: "Confirmer et modifier" }),
+    );
+
+    expect(
+      await screen.findByText("Modifications appliquées avec succès"),
+    ).toBeInTheDocument();
+    expect(mockedGenerateChanges).toHaveBeenCalledWith(
+      {
+        workspace_id: workspaceFixture.id,
+        project_id: projectFixture.id,
+        instruction:
+          "Décale toutes les tâches API d’une semaine et change leur priorité.",
+      },
+      expect.anything(),
+    );
+    const request = mockedApplyChanges.mock.calls[0]?.[0];
+    expect(request?.changes).toHaveLength(2);
+    expect(
+      request?.changes.some(
+        (change) => change.task_id === "50000000-0000-4000-8000-000000000002",
+      ),
+    ).toBe(false);
+    expect(sessionStorage.getItem("taskminer-ai-change-draft-v1")).toBe("null");
+
+    await user.click(
+      screen.getByRole("button", { name: "Nouvelle instruction" }),
+    );
+    expect(
+      screen.getByText("Le comparatif apparaîtra ici"),
+    ).toBeInTheDocument();
+  });
+
+  it("restores an edited project-change draft within the browser tab", async () => {
+    const user = userEvent.setup();
+    const firstRender = renderWithQuery(<AIPage />);
+    await user.click(screen.getByRole("tab", { name: "Modifier un projet" }));
+    const projectSelect = await screen.findByLabelText("Projet");
+    await waitFor(() => {
+      expect(projectSelect).toBeEnabled();
+    });
+    await user.selectOptions(projectSelect, projectFixture.id);
+    await user.type(
+      screen.getByLabelText("Instruction"),
+      "Décale toutes les tâches API d’une semaine et change leur priorité.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    );
+    await user.click(
+      await screen.findByLabelText("Inclure les modifications de API payments"),
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),
+      "urgent",
+    );
+    await waitFor(() => {
+      expect(sessionStorage.getItem("taskminer-ai-change-draft-v1")).toContain(
+        '"priority":"urgent"',
+      );
+    });
+    firstRender.unmount();
+
+    renderWithQuery(<AIPage />);
+
+    expect(
+      await screen.findByText("2 sur 3 sélectionnées"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),
+    ).toHaveValue("urgent");
+    expect(mockedGenerateChanges).toHaveBeenCalledTimes(1);
+    expect(mockedApplyChanges).not.toHaveBeenCalled();
+  });
+
+  it("preserves the reviewed draft and exposes a stale-data conflict", async () => {
+    const user = userEvent.setup();
+    mockedApplyChanges.mockRejectedValue(
+      new ApiError("Une erreur inattendue est survenue.", 409, {
+        detail: {
+          code: "AI_CHANGE_CONFLICT",
+          conflicts: [
+            {
+              task_id: "50000000-0000-4000-8000-000000000001",
+            },
+          ],
+        },
+      }),
+    );
+    renderWithQuery(
+      <MemoryRouter>
+        <AIPage />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("tab", { name: "Modifier un projet" }));
+    const projectSelect = await screen.findByLabelText("Projet");
+    await waitFor(() => {
+      expect(projectSelect).toBeEnabled();
+    });
+    await user.selectOptions(projectSelect, projectFixture.id);
+    await user.type(
+      screen.getByLabelText("Instruction"),
+      "Décale toutes les tâches API d’une semaine et change leur priorité.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Appliquer les modifications",
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Confirmer et modifier" }),
+    );
+
+    expect(
+      await screen.findByText(/Une tâche a changé depuis l’analyse/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("3 sur 3 sélectionnées")).toBeInTheDocument();
+    expect(sessionStorage.getItem("taskminer-ai-change-draft-v1")).toContain(
+      aiChangePlanFixture.summary,
+    );
   });
 });

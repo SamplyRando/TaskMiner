@@ -6,8 +6,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.ai.mock_provider import MockAIProvider
 from app.ai.apply_service import AIApplyService
+from app.ai.change_apply_service import AIProjectChangeApplyService
+from app.ai.change_service import AIProjectChangePlanService
+from app.ai.mock_provider import MockAIProvider
 from app.ai.service import AIService
 from app.core.config import settings
 from app.core.security import decode_access_token
@@ -322,3 +324,48 @@ def get_ai_apply_service(session: SessionDep) -> AIApplyService:
 
 
 AIApplyServiceDep = Annotated[AIApplyService, Depends(get_ai_apply_service)]
+
+
+def get_ai_change_plan_service(session: SessionDep) -> AIProjectChangePlanService:
+    member_repository = WorkspaceMemberRepository(session)
+    workspace_repository = WorkspaceRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        workspace_repository,
+    )
+    return AIProjectChangePlanService(
+        MockAIProvider(),
+        permission_service,
+        ProjectRepository(session),
+        TaskRepository(session),
+    )
+
+
+AIProjectChangePlanServiceDep = Annotated[
+    AIProjectChangePlanService,
+    Depends(get_ai_change_plan_service),
+]
+
+
+def get_ai_change_apply_service(session: SessionDep) -> AIProjectChangeApplyService:
+    project_repository = ProjectRepository(session)
+    task_repository = TaskRepository(session)
+    workspace_repository = WorkspaceRepository(session)
+    member_repository = WorkspaceMemberRepository(session)
+    permission_service = PermissionService(
+        member_repository,
+        workspace_repository,
+    )
+    return AIProjectChangeApplyService(
+        AIPlanApplicationRepository(session),
+        project_repository,
+        task_repository,
+        permission_service,
+        TaskService(task_repository, project_repository),
+    )
+
+
+AIProjectChangeApplyServiceDep = Annotated[
+    AIProjectChangeApplyService,
+    Depends(get_ai_change_apply_service),
+]

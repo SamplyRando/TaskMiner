@@ -78,6 +78,22 @@ class TaskRepository:
         )
         return list(self.session.scalars(statement).all())
 
+    def get_active_by_project_for_update(
+        self,
+        task_id: UUID,
+        project: Project,
+    ) -> Task | None:
+        statement = (
+            select(Task)
+            .where(
+                Task.id == task_id,
+                Task.project_id == project.id,
+                Task.deleted_at.is_(None),
+            )
+            .with_for_update()
+        )
+        return self.session.scalar(statement)
+
     def list_by_owner(
         self,
         owner: User,
@@ -137,18 +153,27 @@ class TaskRepository:
         tasks = list(self.session.scalars(statement).all())
         return tasks, total
 
-    def update(self, task: Task, data: TaskUpdate) -> Task:
+    def update(
+        self,
+        task: Task,
+        data: TaskUpdate,
+        *,
+        commit: bool = True,
+    ) -> Task:
         updates = data.model_dump(exclude_unset=True)
         for field in ("title", "description", "status", "priority", "due_date"):
             if field in updates:
                 setattr(task, field, updates[field])
 
-        try:
-            self.session.commit()
-            self.session.refresh(task)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(task)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
 
         return task
 
