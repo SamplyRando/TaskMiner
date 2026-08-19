@@ -1,13 +1,26 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   applyProjectChangePlan,
   applyProjectPlan,
   generateProjectChangePlan,
   generateProjectPlan,
+  getAICapabilities,
 } from "@/api/ai";
 import { projectKeys } from "@/features/projects/hooks";
 import { taskKeys } from "@/features/tasks/hooks";
+
+export const aiKeys = {
+  all: ["ai"] as const,
+  capabilities: () => [...aiKeys.all, "capabilities"] as const,
+};
+
+export const useAICapabilities = () =>
+  useQuery({
+    queryFn: getAICapabilities,
+    queryKey: aiKeys.capabilities(),
+    staleTime: 5 * 60 * 1_000,
+  });
 
 export const useGenerateProjectPlan = () =>
   useMutation({ mutationFn: generateProjectPlan });

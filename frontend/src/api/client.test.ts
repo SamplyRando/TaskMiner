@@ -45,6 +45,10 @@ describe("apiClient", () => {
     resetAuthStore();
   });
 
+  it("keeps the normal API timeout at 15 seconds", () => {
+    expect(apiClient.defaults.timeout).toBe(15_000);
+  });
+
   it("clears the session and publishes a redirect event after a 401", async () => {
     authenticateStore();
     const unauthorizedListener = vi.fn();

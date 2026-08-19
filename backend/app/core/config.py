@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -52,6 +52,19 @@ class Settings(BaseSettings):
     cors_origin_regex: str | None = Field(
         default=None,
         validation_alias="CORS_ORIGIN_REGEX",
+    )
+    ai_provider: Literal["mock", "openai"] = Field(
+        default="mock",
+        validation_alias="TASKMINER_AI_PROVIDER",
+    )
+    openai_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="OPENAI_API_KEY",
+    )
+    openai_model: str = Field(
+        default="gpt-5.6-luna",
+        min_length=1,
+        validation_alias="TASKMINER_OPENAI_MODEL",
     )
 
     @field_validator("database_url", "migration_database_url", mode="before")

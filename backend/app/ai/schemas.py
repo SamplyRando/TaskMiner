@@ -11,6 +11,17 @@ from app.schemas.project import ProjectCreate
 from app.schemas.task import TaskCreate
 
 
+class AICapabilitiesResponse(BaseModel):
+    """Safe provider metadata exposed to authenticated clients."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    project_planning: bool = True
+    project_editing: bool = True
+    provider: Literal["mock", "openai"]
+    provider_label: str
+
+
 class AIProjectPlanRequest(BaseModel):
     """Validated context used to generate a transient project-plan draft."""
 

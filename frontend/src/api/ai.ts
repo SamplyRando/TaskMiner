@@ -1,5 +1,6 @@
 import { apiClient } from "@/api/client";
 import type {
+  AICapabilities,
   AIApplyProjectChangePlanRequest,
   AIApplyProjectChangePlanResponse,
   AIApplyProjectPlanRequest,
@@ -10,12 +11,20 @@ import type {
   AIProjectPlanResponse,
 } from "@/types/ai";
 
+const AI_GENERATION_TIMEOUT_MS = 60_000;
+
+export const getAICapabilities = async (): Promise<AICapabilities> => {
+  const response = await apiClient.get<AICapabilities>("/ai/capabilities");
+  return response.data;
+};
+
 export const generateProjectPlan = async (
   data: AIProjectPlanRequest,
 ): Promise<AIProjectPlanResponse> => {
   const response = await apiClient.post<AIProjectPlanResponse>(
     "/ai/project-plan",
     data,
+    { timeout: AI_GENERATION_TIMEOUT_MS },
   );
   return response.data;
 };
@@ -36,6 +45,7 @@ export const generateProjectChangePlan = async (
   const response = await apiClient.post<AIProjectChangePlanResponse>(
     "/ai/project-change-plan",
     data,
+    { timeout: AI_GENERATION_TIMEOUT_MS },
   );
   return response.data;
 };

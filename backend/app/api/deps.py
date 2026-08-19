@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from app.ai.apply_service import AIApplyService
 from app.ai.change_apply_service import AIProjectChangeApplyService
 from app.ai.change_service import AIProjectChangePlanService
-from app.ai.mock_provider import MockAIProvider
+from app.ai.factory import get_ai_provider
+from app.ai.provider import AIProvider, AIProviderConfigurationError
 from app.ai.service import AIService
 from app.core.config import settings
 from app.core.security import decode_access_token
@@ -286,7 +287,20 @@ AuditStreamBrokerDep = Annotated[
 ]
 
 
-def get_ai_service(session: SessionDep) -> AIService:
+def get_ai_provider_dependency() -> AIProvider:
+    try:
+        return get_ai_provider()
+    except AIProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="TaskMiner AI is not configured.",
+        ) from exc
+
+
+AIProviderDep = Annotated[AIProvider, Depends(get_ai_provider_dependency)]
+
+
+def get_ai_service(session: SessionDep, provider: AIProviderDep) -> AIService:
     member_repository = WorkspaceMemberRepository(session)
     workspace_repository = WorkspaceRepository(session)
     permission_service = PermissionService(
@@ -294,7 +308,7 @@ def get_ai_service(session: SessionDep) -> AIService:
         workspace_repository,
     )
     return AIService(
-        MockAIProvider(),
+        provider,
         permission_service,
         ProjectRepository(session),
     )
@@ -326,7 +340,10 @@ def get_ai_apply_service(session: SessionDep) -> AIApplyService:
 AIApplyServiceDep = Annotated[AIApplyService, Depends(get_ai_apply_service)]
 
 
-def get_ai_change_plan_service(session: SessionDep) -> AIProjectChangePlanService:
+def get_ai_change_plan_service(
+    session: SessionDep,
+    provider: AIProviderDep,
+) -> AIProjectChangePlanService:
     member_repository = WorkspaceMemberRepository(session)
     workspace_repository = WorkspaceRepository(session)
     permission_service = PermissionService(
@@ -334,7 +351,7 @@ def get_ai_change_plan_service(session: SessionDep) -> AIProjectChangePlanServic
         workspace_repository,
     )
     return AIProjectChangePlanService(
-        MockAIProvider(),
+        provider,
         permission_service,
         ProjectRepository(session),
         TaskRepository(session),

@@ -1,5 +1,12 @@
 import type { TaskPriority, TaskStatus } from "@/types/task";
 
+export type AICapabilities = {
+  project_planning: boolean;
+  project_editing: boolean;
+  provider: "mock" | "openai";
+  provider_label: string;
+};
+
 export type AIProjectPlanRequest = {
   workspace_id: string;
   project_id: string | null;
