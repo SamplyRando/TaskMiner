@@ -10,6 +10,7 @@ import { AIApplySuccess } from "@/features/ai/ai-apply-success";
 import { AIProjectChangeWorkflow } from "@/features/ai/ai-project-change-workflow";
 import { AIProjectPlannerForm } from "@/features/ai/ai-project-planner-form";
 import {
+  useAICapabilities,
   useApplyProjectPlan,
   useGenerateProjectPlan,
 } from "@/features/ai/hooks";
@@ -51,6 +52,7 @@ const suggestProjectName = (prompt: string): string => {
 
 export function AIPage() {
   const workspaceState = useActiveWorkspace();
+  const capabilitiesQuery = useAICapabilities();
   const generatePlan = useGenerateProjectPlan();
   const applyPlan = useApplyProjectPlan();
   const resetApplyPlan = applyPlan.reset;
@@ -161,7 +163,7 @@ export function AIPage() {
         actions={
           <div className="border-primary/20 bg-primary/5 text-primary flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
             <Sparkles aria-hidden="true" className="size-3.5" />
-            Mock provider
+            {capabilitiesQuery.data?.provider_label ?? "TaskMiner AI"}
           </div>
         }
         description="Planifiez un nouveau projet ou préparez des modifications sûres sur un projet existant."

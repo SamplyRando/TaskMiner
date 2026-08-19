@@ -9,7 +9,16 @@ from app.ai.change_apply_service import (
     AIProjectChangeConflictError,
     AIProjectChangeTaskNotFoundError,
 )
+from app.ai.provider import (
+    AIProviderAuthenticationError,
+    AIProviderError,
+    AIProviderRateLimitError,
+    AIProviderRefusalError,
+    AIProviderResponseError,
+    AIProviderTimeoutError,
+)
 from app.ai.schemas import (
+    AICapabilitiesResponse,
     AIApplyProjectChangePlanRequest,
     AIApplyProjectChangePlanResponse,
     AIApplyProjectPlanRequest,
@@ -24,6 +33,7 @@ from app.api.deps import (
     AIApplyServiceDep,
     AIProjectChangeApplyServiceDep,
     AIProjectChangePlanServiceDep,
+    AIProviderDep,
     AIServiceDep,
     CurrentUserDep,
 )
@@ -32,6 +42,49 @@ from app.services.workspace import WorkspaceNotFoundError
 
 
 router = APIRouter()
+
+
+def _provider_http_exception(error: AIProviderError) -> HTTPException:
+    if isinstance(error, AIProviderTimeoutError):
+        return HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="TaskMiner AI took too long to respond. Please try again.",
+        )
+    if isinstance(
+        error,
+        (
+            AIProviderAuthenticationError,
+            AIProviderRateLimitError,
+        ),
+    ):
+        return HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="TaskMiner AI is temporarily unavailable. Please try again.",
+        )
+    if isinstance(error, (AIProviderRefusalError, AIProviderResponseError)):
+        return HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "TaskMiner AI could not produce a valid proposal. "
+                "Please revise your request."
+            ),
+        )
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="TaskMiner AI is temporarily unavailable. Please try again.",
+    )
+
+
+@router.get("/capabilities", response_model=AICapabilitiesResponse)
+def get_ai_capabilities(
+    current_user: CurrentUserDep,
+    provider: AIProviderDep,
+) -> AICapabilitiesResponse:
+    del current_user
+    return AICapabilitiesResponse(
+        provider=provider.provider_name,
+        provider_label=provider.display_name,
+    )
 
 
 @router.post(
@@ -108,6 +161,8 @@ async def generate_project_change_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except AIProviderError as exc:
+        raise _provider_http_exception(exc) from exc
 
 
 @router.post(
@@ -171,3 +226,5 @@ async def generate_project_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except AIProviderError as exc:
+        raise _provider_http_exception(exc) from exc

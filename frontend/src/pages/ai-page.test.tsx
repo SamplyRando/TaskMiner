@@ -9,6 +9,7 @@ import {
   applyProjectPlan,
   generateProjectChangePlan,
   generateProjectPlan,
+  getAICapabilities,
 } from "@/api/ai";
 import { listProjects } from "@/api/projects";
 import { listWorkspaces } from "@/api/workspace";
@@ -29,6 +30,7 @@ vi.mock("@/api/ai", () => ({
   applyProjectPlan: vi.fn(),
   generateProjectChangePlan: vi.fn(),
   generateProjectPlan: vi.fn(),
+  getAICapabilities: vi.fn(),
 }));
 vi.mock("@/api/projects", () => ({
   createProject: vi.fn(),
@@ -44,6 +46,7 @@ vi.mock("@/api/workspace", () => ({
 }));
 
 const mockedGenerate = vi.mocked(generateProjectPlan);
+const mockedCapabilities = vi.mocked(getAICapabilities);
 const mockedApply = vi.mocked(applyProjectPlan);
 const mockedGenerateChanges = vi.mocked(generateProjectChangePlan);
 const mockedApplyChanges = vi.mocked(applyProjectChangePlan);
@@ -64,6 +67,12 @@ describe("AIPage", () => {
       total: 1,
     });
     mockedGenerate.mockResolvedValue(aiPlanFixture);
+    mockedCapabilities.mockResolvedValue({
+      project_editing: true,
+      project_planning: true,
+      provider: "openai",
+      provider_label: "OpenAI",
+    });
     mockedApply.mockResolvedValue(aiApplyFixture);
     mockedGenerateChanges.mockResolvedValue(aiChangePlanFixture);
     mockedApplyChanges.mockResolvedValue(aiChangeApplyFixture);
@@ -75,6 +84,7 @@ describe("AIPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "TaskMiner AI" }),
     ).toBeInTheDocument();
+    expect(await screen.findByText("OpenAI")).toBeInTheDocument();
     expect(
       await screen.findByText("Votre brouillon apparaîtra ici"),
     ).toBeInTheDocument();

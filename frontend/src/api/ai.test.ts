@@ -5,6 +5,7 @@ import {
   applyProjectPlan,
   generateProjectChangePlan,
   generateProjectPlan,
+  getAICapabilities,
 } from "@/api/ai";
 import { apiClient } from "@/api/client";
 import {
@@ -20,6 +21,21 @@ describe("TaskMiner AI API", () => {
     vi.restoreAllMocks();
   });
 
+  it("loads safe provider capabilities through the authenticated client", async () => {
+    const capabilities = {
+      project_editing: true,
+      project_planning: true,
+      provider: "openai" as const,
+      provider_label: "OpenAI",
+    };
+    const get = vi
+      .spyOn(apiClient, "get")
+      .mockResolvedValue({ data: capabilities });
+
+    await expect(getAICapabilities()).resolves.toEqual(capabilities);
+    expect(get).toHaveBeenCalledWith("/ai/capabilities");
+  });
+
   it("uses the authenticated API client and structured project-plan contract", async () => {
     const post = vi
       .spyOn(apiClient, "post")
@@ -32,10 +48,12 @@ describe("TaskMiner AI API", () => {
     };
 
     await expect(generateProjectPlan(request)).resolves.toEqual(aiPlanFixture);
-    expect(post).toHaveBeenCalledWith("/ai/project-plan", request);
+    expect(post).toHaveBeenCalledWith("/ai/project-plan", request, {
+      timeout: 60_000,
+    });
   });
 
-  it("applies only the explicitly approved plan through the mutation endpoint", async () => {
+  it("keeps project-plan apply on the normal client timeout", async () => {
     const post = vi
       .spyOn(apiClient, "post")
       .mockResolvedValue({ data: aiApplyFixture });
@@ -77,10 +95,12 @@ describe("TaskMiner AI API", () => {
     await expect(generateProjectChangePlan(request)).resolves.toEqual(
       aiChangePlanFixture,
     );
-    expect(post).toHaveBeenCalledWith("/ai/project-change-plan", request);
+    expect(post).toHaveBeenCalledWith("/ai/project-change-plan", request, {
+      timeout: 60_000,
+    });
   });
 
-  it("applies only reviewed project changes", async () => {
+  it("keeps project-change apply on the normal client timeout", async () => {
     const post = vi
       .spyOn(apiClient, "post")
       .mockResolvedValue({ data: aiChangeApplyFixture });

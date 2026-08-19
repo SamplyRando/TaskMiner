@@ -4,6 +4,7 @@ import re
 import unicodedata
 from uuid import NAMESPACE_URL, UUID, uuid5
 
+from app.ai.provider import AIProviderName
 from app.ai.schemas import (
     AIChangeField,
     AIGeneratedMilestone,
@@ -207,6 +208,9 @@ _CHANGE_FIELDS: tuple[AIChangeField, ...] = (
 
 class MockAIProvider:
     """Deterministic provider used until a remote LLM is introduced."""
+
+    provider_name: AIProviderName = "mock"
+    display_name = "Mock provider"
 
     async def generate_project_plan(
         self,

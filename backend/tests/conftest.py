@@ -27,6 +27,7 @@ os.environ["SECRET_KEY"] = "taskminer-tests-only-secret-key-at-least-32-characte
 os.environ["ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["TASKMINER_LOG_LEVEL"] = "WARNING"
+os.environ["TASKMINER_AI_PROVIDER"] = "mock"
 TEST_STORAGE_PATH = Path(tempfile.gettempdir()) / (
     f"taskminer-tests-storage-{os.getpid()}"
 )
