@@ -27,6 +27,9 @@ export const invitationFixture: WorkspaceInvitation = {
   accepted_at: null,
   created_at: "2026-08-01T09:00:00Z",
   email: "ada@example.com",
+  email_delivery_status: "sent",
+  email_last_attempted_at: "2026-08-01T09:00:01Z",
+  email_sent_at: "2026-08-01T09:00:02Z",
   expires_at: "2026-08-08T09:00:00Z",
   id: "00000000-0000-4000-8000-000000000016",
   invited_by: {

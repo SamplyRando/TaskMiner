@@ -6,6 +6,7 @@ import {
   createWorkspaceInvitation,
   getInvitation,
   listWorkspaceInvitations,
+  resendWorkspaceInvitation,
   revokeInvitation,
 } from "@/api/invitations";
 import {
@@ -62,6 +63,18 @@ describe("invitations API", () => {
     await getInvitation("token/with spaces");
 
     expect(get).toHaveBeenCalledWith("/invitations/token%2Fwith%20spaces");
+  });
+
+  it("resends through the permission-protected workspace endpoint", async () => {
+    const post = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValue({ data: invitationFixture });
+
+    await resendWorkspaceInvitation(firstWorkspace.id, invitationFixture.id);
+
+    expect(post).toHaveBeenCalledWith(
+      `/workspaces/${firstWorkspace.id}/invitations/${invitationFixture.id}/resend`,
+    );
   });
 
   it("accepts an invitation through the existing action endpoint", async () => {

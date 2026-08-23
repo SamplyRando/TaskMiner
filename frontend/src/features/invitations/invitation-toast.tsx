@@ -2,7 +2,7 @@ import { NoticeToast } from "@/components/ui/notice-toast";
 
 export type InvitationNotice = {
   message: string;
-  type: "success" | "error";
+  type: "success" | "error" | "info";
 };
 
 type InvitationToastProps = {

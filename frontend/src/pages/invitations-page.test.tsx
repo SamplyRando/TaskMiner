@@ -9,6 +9,7 @@ import {
   createWorkspaceInvitation,
   getInvitation,
   listWorkspaceInvitations,
+  resendWorkspaceInvitation,
   revokeInvitation,
 } from "@/api/invitations";
 import { getUserPreferences } from "@/api/settings";
@@ -33,6 +34,7 @@ vi.mock("@/api/invitations", () => ({
   createWorkspaceInvitation: vi.fn(),
   getInvitation: vi.fn(),
   listWorkspaceInvitations: vi.fn(),
+  resendWorkspaceInvitation: vi.fn(),
   revokeInvitation: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
@@ -55,6 +57,7 @@ const mockedList = vi.mocked(listWorkspaceInvitations);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
 const mockedRevoke = vi.mocked(revokeInvitation);
+const mockedResend = vi.mocked(resendWorkspaceInvitation);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
 
 const setMobileViewport = (matches: boolean) => {
@@ -116,6 +119,7 @@ describe("InvitationsPage", () => {
       revoked_at: "2026-08-01T10:00:00Z",
       status: "revoked",
     });
+    mockedResend.mockResolvedValue(invitationFixture);
   });
 
   it("loads the invitation table from the active workspace", async () => {
@@ -215,9 +219,81 @@ describe("InvitationsPage", () => {
         role: "viewer",
       });
     });
-    expect(await screen.findByText("Invitation envoyée.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Invitation créée et e-mail envoyé."),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("dialog", { name: "Inviter un membre" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reports a stable delivery failure while keeping the invitation recoverable", async () => {
+    const user = userEvent.setup();
+    mockedCreate.mockRejectedValue(
+      new ApiError("provider-internal-message", 502),
+    );
+    renderPage();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Inviter un membre" }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Inviter un membre" });
+    await user.type(
+      within(dialog).getByLabelText("Adresse email"),
+      "new@example.com",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: "Envoyer l’invitation" }),
+    );
+
+    expect(
+      await screen.findAllByText(
+        "L’invitation a été créée, mais l’e-mail n’a pas pu être envoyé. Vous pouvez le renvoyer.",
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      screen.queryByText("provider-internal-message"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("resends a pending invitation without exposing its token", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Renvoyer l’invitation à ${invitationFixture.email}`,
+      }),
+    );
+
+    expect(mockedResend).toHaveBeenCalledWith(
+      firstWorkspace.id,
+      invitationFixture.id,
+    );
+    expect(
+      await screen.findByText("E-mail d’invitation renvoyé."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(invitationFixture.token)).not.toBeInTheDocument();
+  });
+
+  it("shows a stable resend failure message", async () => {
+    const user = userEvent.setup();
+    mockedResend.mockRejectedValue(
+      new ApiError("provider-internal-message", 502),
+    );
+    renderPage();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Renvoyer l’invitation à ${invitationFixture.email}`,
+      }),
+    );
+
+    expect(
+      await screen.findByText("L’e-mail d’invitation n’a pas pu être renvoyé."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("provider-internal-message"),
     ).not.toBeInTheDocument();
   });
 

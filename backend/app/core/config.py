@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -66,6 +66,22 @@ class Settings(BaseSettings):
         min_length=1,
         validation_alias="TASKMINER_OPENAI_MODEL",
     )
+    email_provider: Literal["noop", "resend"] = Field(
+        default="noop",
+        validation_alias="TASKMINER_EMAIL_PROVIDER",
+    )
+    resend_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="RESEND_API_KEY",
+    )
+    email_from: str | None = Field(
+        default=None,
+        validation_alias="TASKMINER_EMAIL_FROM",
+    )
+    frontend_url: AnyHttpUrl = Field(
+        default=AnyHttpUrl("http://localhost:3000"),
+        validation_alias="TASKMINER_FRONTEND_URL",
+    )
 
     @field_validator("database_url", "migration_database_url", mode="before")
     @classmethod
@@ -79,6 +95,36 @@ class Settings(BaseSettings):
         if value.startswith("postgres://"):
             return value.replace("postgres://", "postgresql+psycopg://", 1)
         return value
+
+    @field_validator("frontend_url")
+    @classmethod
+    def validate_frontend_base_url(cls, value: AnyHttpUrl) -> AnyHttpUrl:
+        if value.query is not None or value.fragment is not None:
+            raise ValueError(
+                "TASKMINER_FRONTEND_URL must not contain a query or fragment."
+            )
+        if value.path not in (None, "/"):
+            raise ValueError("TASKMINER_FRONTEND_URL must be an origin without a path.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_email_provider_configuration(self) -> "Settings":
+        if self.email_provider != "resend":
+            return self
+        if (
+            self.resend_api_key is None
+            or not self.resend_api_key.get_secret_value().strip()
+        ):
+            raise ValueError(
+                "RESEND_API_KEY is required when TASKMINER_EMAIL_PROVIDER=resend."
+            )
+        if self.email_from is None or not self.email_from.strip():
+            raise ValueError(
+                "TASKMINER_EMAIL_FROM is required when TASKMINER_EMAIL_PROVIDER=resend."
+            )
+        if "\n" in self.email_from or "\r" in self.email_from:
+            raise ValueError("TASKMINER_EMAIL_FROM must not contain line breaks.")
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:

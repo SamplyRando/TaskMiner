@@ -36,6 +36,9 @@ def test_owner_creates_invitation(
     assert data["token"]
     assert data["accepted_at"] is None
     assert data["revoked_at"] is None
+    assert data["email_delivery_status"] == "skipped"
+    assert data["email_last_attempted_at"] is not None
+    assert data["email_sent_at"] is None
     assert data["invited_by"] == {
         "id": str(workspace.owner.id),
         "email": workspace.owner.email,
@@ -54,6 +57,9 @@ def test_owner_creates_invitation(
         "expires_at",
         "accepted_at",
         "revoked_at",
+        "email_delivery_status",
+        "email_last_attempted_at",
+        "email_sent_at",
         "invited_by",
         "created_at",
         "updated_at",

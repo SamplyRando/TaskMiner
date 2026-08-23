@@ -51,6 +51,9 @@ def test_invalid_creation_payload_returns_422(
         "workspace_id",
         "invited_by",
         "invited_by_id",
+        "email_delivery_status",
+        "email_last_attempted_at",
+        "email_sent_at",
     ],
 )
 def test_server_fields_are_rejected(
@@ -126,6 +129,9 @@ def test_invitation_read_schema_forbids_extra_fields() -> None:
         "expires_at": now + timedelta(days=7),
         "accepted_at": None,
         "revoked_at": None,
+        "email_delivery_status": "pending",
+        "email_last_attempted_at": None,
+        "email_sent_at": None,
         "created_at": now,
         "updated_at": now,
         "unexpected": True,

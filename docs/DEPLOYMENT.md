@@ -63,6 +63,10 @@ Docker actuel.
 | `CORS_ORIGIN_REGEX` | Optionnel, previews Vercel du projet |
 | `STORAGE_PATH` | `/app/storage` avec un volume Railway |
 | `TASKMINER_LOG_LEVEL` | `INFO` |
+| `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
+| `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
+| `TASKMINER_EMAIL_FROM` | Expéditeur d'un domaine vérifié, ex. `TaskMiner <invitations@taskminer.app>` |
+| `TASKMINER_FRONTEND_URL` | `https://www.taskminer.app`, sans `/` final |
 
 Génération locale d'un secret :
 
@@ -82,6 +86,23 @@ nom du projet :
 ```text
 CORS_ORIGIN_REGEX=^https://task-miner(?:-[a-z0-9-]+)*\.vercel\.app$
 ```
+
+### E-mails transactionnels Resend
+
+1. Ajouter puis vérifier `taskminer.app` dans Resend.
+2. Créer une clé limitée à l'envoi d'e-mails et l'enregistrer dans Railway sous
+   `RESEND_API_KEY`.
+3. Définir `TASKMINER_EMAIL_PROVIDER=resend`, un expéditeur vérifié dans
+   `TASKMINER_EMAIL_FROM` et `TASKMINER_FRONTEND_URL=https://www.taskminer.app`.
+4. Redéployer le backend, puis envoyer une invitation de test. Le lien généré
+   suit le format
+   `https://www.taskminer.app/app/invitations?token=<TOKEN>`.
+
+Le provider `noop` reste la valeur sûre en local et dans les tests : aucune
+requête externe n'est effectuée et la livraison apparaît comme désactivée.
+Une erreur Resend conserve l'invitation en attente, marque la livraison en
+échec et permet à un propriétaire ou administrateur de la renvoyer. Un délai
+de 60 secondes entre deux tentatives est imposé côté base de données.
 
 ## 3. Déploiement Vercel
 

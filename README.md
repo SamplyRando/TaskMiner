@@ -91,6 +91,10 @@ que lorsque cette perte de données est volontaire.
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de validité du token d'accès |
 | `STORAGE_PATH` | Répertoire persistant des pièces jointes |
 | `TASKMINER_LOG_LEVEL` | Niveau de logs backend |
+| `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
+| `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
+| `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |
+| `RESEND_API_KEY` | Clé serveur Resend, jamais exposée à Vite |
 | `VITE_API_URL` | Base URL de l'API côté frontend |
 | `CORS_ORIGINS` | Origines frontend autorisées, séparées par des virgules |
 | `CORS_ORIGIN_REGEX` | Expression régulière optionnelle pour les previews Vercel |

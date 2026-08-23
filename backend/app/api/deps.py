@@ -15,6 +15,9 @@ from app.ai.service import AIService
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
+from app.email.factory import get_email_provider
+from app.email.provider import EmailProvider
+from app.email.service import EmailService
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
 from app.repositories.ai_plan_application import AIPlanApplicationRepository
@@ -231,8 +234,23 @@ PermissionServiceDep = Annotated[
 ]
 
 
+EmailProviderDep = Annotated[EmailProvider, Depends(get_email_provider)]
+
+
+def get_email_service(provider: EmailProviderDep) -> EmailService:
+    return EmailService(
+        provider,
+        sender=settings.email_from or "TaskMiner <no-reply@taskminer.local>",
+        frontend_url=str(settings.frontend_url),
+    )
+
+
+EmailServiceDep = Annotated[EmailService, Depends(get_email_service)]
+
+
 def get_workspace_invitation_service(
     session: SessionDep,
+    email_service: EmailServiceDep,
 ) -> WorkspaceInvitationService:
     member_repository = WorkspaceMemberRepository(session)
     permission_service = PermissionService(
@@ -243,6 +261,7 @@ def get_workspace_invitation_service(
         WorkspaceInvitationRepository(session),
         member_repository,
         permission_service,
+        email_service,
     )
 
 

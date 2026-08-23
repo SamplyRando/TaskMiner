@@ -1,6 +1,8 @@
 import type { WorkspaceRole } from "@/types/permissions";
 
 export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
+export type InvitationDeliveryStatus =
+  "pending" | "sent" | "failed" | "skipped";
 
 export type InvitationInviter = {
   id: string;
@@ -18,6 +20,9 @@ export type WorkspaceInvitation = {
   expires_at: string;
   accepted_at: string | null;
   revoked_at: string | null;
+  email_delivery_status: InvitationDeliveryStatus;
+  email_last_attempted_at: string | null;
+  email_sent_at: string | null;
   invited_by: InvitationInviter | null;
   created_at: string;
   updated_at: string;

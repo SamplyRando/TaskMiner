@@ -1,4 +1,8 @@
-import type { InvitationStatus, WorkspaceInvitation } from "@/types/invitation";
+import type {
+  InvitationDeliveryStatus,
+  InvitationStatus,
+  WorkspaceInvitation,
+} from "@/types/invitation";
 import type { WorkspaceRole } from "@/types/permissions";
 
 export const invitationRoleLabels: Record<WorkspaceRole, string> = {
@@ -20,6 +24,26 @@ export const invitationStatusClasses: Record<InvitationStatus, string> = {
   accepted: "border-emerald-200 bg-emerald-50 text-emerald-800",
   expired: "border-slate-200 bg-slate-100 text-slate-700",
   revoked: "border-rose-200 bg-rose-50 text-rose-800",
+};
+
+export const invitationDeliveryLabels: Record<
+  InvitationDeliveryStatus,
+  string
+> = {
+  pending: "Envoi en cours",
+  sent: "E-mail envoyé",
+  failed: "Échec d’envoi",
+  skipped: "Envoi désactivé",
+};
+
+export const invitationDeliveryClasses: Record<
+  InvitationDeliveryStatus,
+  string
+> = {
+  pending: "border-amber-200 bg-amber-50 text-amber-800",
+  sent: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  failed: "border-rose-200 bg-rose-50 text-rose-800",
+  skipped: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
 export const getInviterLabel = (invitation: WorkspaceInvitation): string =>

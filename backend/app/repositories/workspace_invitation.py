@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -8,7 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.workspace import Workspace
-from app.models.workspace_invitation import InvitationStatus, WorkspaceInvitation
+from app.models.workspace_invitation import (
+    InvitationEmailDeliveryStatus,
+    InvitationStatus,
+    WorkspaceInvitation,
+)
 from app.models.workspace_member import WorkspaceMember
 from app.schemas.workspace_invitation import InvitationCreate, InvitationListParams
 
@@ -129,6 +134,53 @@ class WorkspaceInvitationRepository:
             statement = statement.with_for_update(of=WorkspaceInvitation)
         return self.session.scalar(statement)
 
+    def get_by_id_for_workspace(
+        self,
+        invitation_id: UUID,
+        workspace: Workspace,
+        *,
+        for_update: bool = False,
+    ) -> WorkspaceInvitation | None:
+        statement = select(WorkspaceInvitation).where(
+            WorkspaceInvitation.id == invitation_id,
+            WorkspaceInvitation.workspace_id == workspace.id,
+        )
+        if for_update:
+            statement = statement.with_for_update(of=WorkspaceInvitation)
+        return self.session.scalar(statement)
+
+    def reserve_email_delivery(
+        self,
+        invitation: WorkspaceInvitation,
+        now: datetime,
+    ) -> WorkspaceInvitation:
+        invitation.email_delivery_status = InvitationEmailDeliveryStatus.PENDING
+        invitation.email_last_attempted_at = now
+        return self._commit(invitation)
+
+    def mark_email_sent(
+        self,
+        invitation: WorkspaceInvitation,
+        now: datetime,
+    ) -> WorkspaceInvitation:
+        invitation.email_delivery_status = InvitationEmailDeliveryStatus.SENT
+        invitation.email_sent_at = now
+        return self._commit(invitation)
+
+    def mark_email_failed(
+        self,
+        invitation: WorkspaceInvitation,
+    ) -> WorkspaceInvitation:
+        invitation.email_delivery_status = InvitationEmailDeliveryStatus.FAILED
+        return self._commit(invitation)
+
+    def mark_email_skipped(
+        self,
+        invitation: WorkspaceInvitation,
+    ) -> WorkspaceInvitation:
+        invitation.email_delivery_status = InvitationEmailDeliveryStatus.SKIPPED
+        return self._commit(invitation)
+
     def expire_pending_for_workspace(
         self,
         workspace: Workspace,
@@ -200,6 +252,18 @@ class WorkspaceInvitationRepository:
     ) -> WorkspaceInvitation:
         invitation.status = InvitationStatus.REVOKED
         invitation.revoked_at = now
+        try:
+            self.session.commit()
+            self.session.refresh(invitation)
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+        return invitation
+
+    def _commit(
+        self,
+        invitation: WorkspaceInvitation,
+    ) -> WorkspaceInvitation:
         try:
             self.session.commit()
             self.session.refresh(invitation)

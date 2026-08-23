@@ -17,10 +17,12 @@ from app.services.workspace import WorkspaceNotFoundError
 from app.services.workspace_invitation import (
     InvitationAlreadyAcceptedError,
     InvitationEmailMismatchError,
+    InvitationEmailDeliveryError,
     InvitationExpiredError,
     InvitationMemberAlreadyExistsError,
     InvitationNotFoundError,
     InvitationOwnerRoleError,
+    InvitationResendCooldownError,
     InvitationRevokedError,
 )
 
@@ -56,6 +58,67 @@ def create_workspace_invitation(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A workspace can only have one owner.",
+        ) from exc
+    except InvitationEmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Invitation created, but email delivery failed. You can resend it."
+            ),
+        ) from exc
+
+
+@workspace_router.post(
+    "/{workspace_id}/invitations/{invitation_id}/resend",
+    response_model=InvitationRead,
+)
+def resend_workspace_invitation(
+    workspace_id: UUID,
+    invitation_id: UUID,
+    current_user: CurrentUserDep,
+    service: WorkspaceInvitationServiceDep,
+) -> WorkspaceInvitation:
+    try:
+        return service.resend_invitation(
+            current_user,
+            workspace_id,
+            invitation_id,
+        )
+    except (InvitationNotFoundError, WorkspaceNotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invitation not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
+    except InvitationExpiredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation has expired.",
+        ) from exc
+    except InvitationRevokedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation has been revoked.",
+        ) from exc
+    except InvitationAlreadyAcceptedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Accepted invitations cannot be resent.",
+        ) from exc
+    except InvitationResendCooldownError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Please wait before resending this invitation.",
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
+    except InvitationEmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Invitation email delivery failed. Please try again later.",
         ) from exc
 
 
