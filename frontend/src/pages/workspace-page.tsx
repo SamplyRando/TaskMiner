@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useSessionState } from "@/hooks/use-session-state";
+import { useAuthStore } from "@/store/auth-store";
 import {
   useCreateWorkspace,
   useDeleteWorkspace,
@@ -23,6 +24,7 @@ import type { Workspace, WorkspaceInput } from "@/types/workspace";
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 
 export function WorkspacePage() {
+  const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
   const [search, setSearch] = useSessionState(
@@ -76,6 +78,7 @@ export function WorkspacePage() {
   const columns = useMemo(
     () =>
       getWorkspaceColumns({
+        currentUserId,
         onDelete: (workspace) => {
           deleteWorkspace.reset();
           setSelectedWorkspace(workspace);
@@ -87,7 +90,7 @@ export function WorkspacePage() {
           setFormOpen(true);
         },
       }),
-    [deleteWorkspace, updateWorkspace],
+    [currentUserId, deleteWorkspace, updateWorkspace],
   );
 
   const handleSubmit = async (data: WorkspaceInput) => {

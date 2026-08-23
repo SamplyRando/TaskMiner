@@ -10,6 +10,7 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember
 from app.schemas.task import TaskCreate, TaskListParams, TaskUpdate
 
 
@@ -60,6 +61,27 @@ class TaskRepository:
             .where(
                 Task.id == task_id,
                 Workspace.owner_id == owner.id,
+                Task.deleted_at.is_(None),
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
+    def get_by_id_for_user(self, task_id: UUID, user: User) -> Task | None:
+        """Return an active task only from a workspace visible to the user."""
+
+        statement = (
+            select(Task)
+            .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                Task.id == task_id,
+                WorkspaceMember.user_id == user.id,
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),
                 Workspace.deleted_at.is_(None),
@@ -152,6 +174,68 @@ class TaskRepository:
         )
         tasks = list(self.session.scalars(statement).all())
         return tasks, total
+
+    def list_for_user(
+        self,
+        user: User,
+        params: TaskListParams,
+    ) -> tuple[list[Task], int]:
+        """List active tasks from all workspaces visible to the current member."""
+
+        filters = [
+            WorkspaceMember.user_id == user.id,
+            Workspace.deleted_at.is_(None),
+            Project.deleted_at.is_(None),
+            Task.deleted_at.is_(None),
+        ]
+        if params.search is not None:
+            pattern = f"%{params.search}%"
+            filters.append(
+                or_(
+                    Task.title.ilike(pattern),
+                    Task.description.ilike(pattern),
+                )
+            )
+        if params.status is not None:
+            filters.append(Task.status == params.status)
+        if params.priority is not None:
+            filters.append(Task.priority == params.priority)
+        if params.project_id is not None:
+            filters.append(Task.project_id == params.project_id)
+        if params.workspace_id is not None:
+            filters.append(Project.workspace_id == params.workspace_id)
+
+        base = (
+            select(Task)
+            .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+        )
+        total_statement = select(func.count()).select_from(
+            base.where(*filters).subquery()
+        )
+        total = int(self.session.scalar(total_statement) or 0)
+
+        sort_columns: dict[str, Any] = {
+            "created_at": Task.created_at,
+            "updated_at": Task.updated_at,
+            "title": Task.title,
+        }
+        sort_field = params.sort.removeprefix("-")
+        sort_column = sort_columns[sort_field]
+        sort_expression = (
+            sort_column.desc() if params.sort.startswith("-") else sort_column.asc()
+        )
+        statement = (
+            base.where(*filters)
+            .order_by(sort_expression, Task.id.asc())
+            .offset(params.skip)
+            .limit(params.limit)
+        )
+        return list(self.session.scalars(statement).unique().all()), total
 
     def update(
         self,

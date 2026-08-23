@@ -15,6 +15,7 @@ from app.models.task import Task
 from app.models.user import User
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.task import TaskRepository
+from app.services.permission import PermissionService
 
 
 ALLOWED_EXTENSIONS = frozenset({"pdf", "png", "jpg", "jpeg", "txt", "csv", "zip"})
@@ -52,10 +53,12 @@ class AttachmentService:
         self,
         repository: AttachmentRepository,
         task_repository: TaskRepository,
+        permission_service: PermissionService,
         storage_path: Path,
     ) -> None:
         self.repository = repository
         self.task_repository = task_repository
+        self.permission_service = permission_service
         self.storage_path = storage_path
 
     def upload_attachment(
@@ -64,7 +67,11 @@ class AttachmentService:
         task_id: UUID,
         upload: UploadFile,
     ) -> Attachment:
-        task = self._get_owned_task(owner, task_id)
+        task = self._get_accessible_task(owner, task_id)
+        self.permission_service.require_task_management(
+            owner,
+            task.project.workspace_id,
+        )
         filename, extension = self._validate_filename(upload.filename)
         stored_filename = f"{uuid4()}.{extension}"
         destination = self.storage_path / stored_filename
@@ -104,7 +111,7 @@ class AttachmentService:
         return attachment
 
     def list_attachments(self, owner: User, task_id: UUID) -> list[Attachment]:
-        task = self._get_owned_task(owner, task_id)
+        task = self._get_accessible_task(owner, task_id)
         return self.repository.list_by_task(task)
 
     def get_download(
@@ -112,7 +119,7 @@ class AttachmentService:
         owner: User,
         attachment_id: UUID,
     ) -> AttachmentDownload:
-        attachment = self.repository.get_by_id_for_owner(attachment_id, owner)
+        attachment = self.repository.get_by_id_for_user(attachment_id, owner)
         if attachment is None:
             raise AttachmentNotFoundError
 
@@ -128,13 +135,17 @@ class AttachmentService:
         )
 
     def delete_attachment(self, owner: User, attachment_id: UUID) -> None:
-        attachment = self.repository.get_by_id_for_owner(attachment_id, owner)
+        attachment = self.repository.get_by_id_for_user(attachment_id, owner)
         if attachment is None:
             raise AttachmentNotFoundError
+        self.permission_service.require_task_management(
+            owner,
+            attachment.task.project.workspace_id,
+        )
         self.repository.delete(attachment)
 
-    def _get_owned_task(self, owner: User, task_id: UUID) -> Task:
-        task = self.task_repository.get_by_id_for_owner(task_id, owner)
+    def _get_accessible_task(self, owner: User, task_id: UUID) -> Task:
+        task = self.task_repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise AttachmentTaskNotFoundError
         return task

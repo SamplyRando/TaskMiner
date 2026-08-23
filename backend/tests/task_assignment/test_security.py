@@ -3,10 +3,12 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 import pytest
 
+from app.models.workspace_member import WorkspaceMemberRole
 from tests.factories import (
     CreatedTask,
     RegisteredUser,
     UserFactory,
+    WorkspaceMemberFactory,
 )
 
 
@@ -70,12 +72,54 @@ def test_missing_assignee_returns_404(
     assert response.json() == {"detail": "User not found."}
 
 
+def test_active_user_outside_workspace_cannot_be_assigned(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+) -> None:
+    response = client.patch(
+        f"/api/v1/tasks/{task.id}/assign",
+        headers=task.project.owner.headers,
+        json={"assigned_user_id": str(other_user.id)},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "User not found."}
+
+
+def test_viewer_cannot_assign_a_task(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+        role=WorkspaceMemberRole.VIEWER,
+    )
+
+    response = client.patch(
+        f"/api/v1/tasks/{task.id}/assign",
+        headers=other_user.headers,
+        json={"assigned_user_id": str(task.project.owner.id)},
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Insufficient permissions."}
+
+
 def test_inactive_assignee_returns_404(
     client: TestClient,
     task: CreatedTask,
     other_user: RegisteredUser,
     user_factory: UserFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
     user_factory.set_active(other_user, is_active=False)
 
     response = client.patch(
@@ -93,7 +137,12 @@ def test_deleted_assignee_returns_404(
     task: CreatedTask,
     other_user: RegisteredUser,
     user_factory: UserFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
     user_factory.delete(other_user)
 
     response = client.patch(

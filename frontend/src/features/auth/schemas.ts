@@ -2,8 +2,12 @@ import { z } from "zod";
 
 const registerPasswordSchema = z
   .string()
-  .min(8, "Le mot de passe doit contenir au moins 8 caractères.")
-  .max(128, "Le mot de passe ne peut pas dépasser 128 caractères.");
+  .min(12, "Le mot de passe doit contenir au moins 12 caractères.")
+  .max(128, "Le mot de passe ne peut pas dépasser 128 caractères.")
+  .regex(/[a-z]/, "Ajoutez au moins une lettre minuscule.")
+  .regex(/[A-Z]/, "Ajoutez au moins une lettre majuscule.")
+  .regex(/[0-9]/, "Ajoutez au moins un chiffre.")
+  .regex(/[^A-Za-z0-9]/, "Ajoutez au moins un caractère spécial.");
 
 export const loginSchema = z.object({
   email: z.email("Saisissez une adresse e-mail valide."),

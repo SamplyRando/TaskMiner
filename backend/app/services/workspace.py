@@ -26,8 +26,8 @@ class WorkspaceService:
     def list_workspaces(self, user: User) -> list[Workspace]:
         return self.repository.list_for_user(user)
 
-    def get_workspace(self, owner: User, workspace_id: UUID) -> Workspace:
-        workspace = self.repository.get_by_id_for_owner(workspace_id, owner)
+    def get_workspace(self, user: User, workspace_id: UUID) -> Workspace:
+        workspace = self.repository.get_for_user(workspace_id, user)
         if workspace is None:
             raise WorkspaceNotFoundError
         return workspace

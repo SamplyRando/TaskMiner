@@ -24,6 +24,7 @@ import { TaskKanban } from "@/features/tasks/kanban/task-kanban";
 import { TaskAssignmentDialog } from "@/features/tasks/task-assignment-dialog";
 import { getTaskColumns } from "@/features/tasks/task-columns";
 import { TaskFormDialog } from "@/features/tasks/task-form-dialog";
+import { useAssignableWorkspaceMembers } from "@/features/workspaces/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -109,6 +110,12 @@ export function TasksPage() {
     workspace.activeWorkspaceId !== null,
   );
   const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
+  const canManageTasks =
+    permissionsQuery.data?.permissions.manage_tasks ?? false;
+  const assignableMembersQuery = useAssignableWorkspaceMembers(
+    workspace.activeWorkspaceId,
+    assignmentOpen && canManageTasks,
+  );
   const projects = useMemo(
     () => projectsQuery.data?.items ?? [],
     [projectsQuery.data?.items],
@@ -144,6 +151,7 @@ export function TasksPage() {
   const columns = useMemo(
     () =>
       getTaskColumns({
+        canManage: canManageTasks,
         onAssign: (task) => {
           assignTask.reset();
           setSelectedTask(task);
@@ -161,7 +169,7 @@ export function TasksPage() {
         },
         projects,
       }),
-    [assignTask, deleteTask, projects, updateTask],
+    [assignTask, canManageTasks, deleteTask, projects, updateTask],
   );
 
   const resetPage = () => {
@@ -247,16 +255,18 @@ export function TasksPage() {
               </Button>
             </div>
             <Button
-              disabled={projects.length === 0}
+              disabled={!canManageTasks || projects.length === 0}
               onClick={() => {
                 createTask.reset();
                 setSelectedTask(null);
                 setFormOpen(true);
               }}
               title={
-                projects.length === 0
-                  ? "Créez d’abord un projet"
-                  : "Créer une tâche"
+                !canManageTasks
+                  ? "Vous n’avez pas la permission de gérer les tâches"
+                  : projects.length === 0
+                    ? "Créez d’abord un projet"
+                    : "Créer une tâche"
               }
               type="button"
             >
@@ -366,12 +376,10 @@ export function TasksPage() {
         />
       ) : mode === "kanban" ? (
         <TaskKanban
-          canManageTasks={
-            permissionsQuery.data?.permissions.manage_tasks ?? false
-          }
+          canManageTasks={canManageTasks}
           currentUserId={currentUserId}
           emptyAction={
-            projects.length > 0 ? (
+            projects.length > 0 && canManageTasks ? (
               <Button
                 onClick={() => {
                   createTask.reset();
@@ -410,7 +418,8 @@ export function TasksPage() {
             status ||
             priority ||
             projectId ||
-            projects.length === 0 ? undefined : (
+            projects.length === 0 ||
+            !canManageTasks ? undefined : (
               <Button
                 onClick={() => {
                   createTask.reset();
@@ -472,8 +481,14 @@ export function TasksPage() {
       <TaskAssignmentDialog
         currentUserId={currentUserId}
         error={assignTask.error}
+        isMembersLoading={assignableMembersQuery.isPending}
         isPending={assignTask.isPending}
+        members={assignableMembersQuery.data?.items ?? []}
+        membersError={assignableMembersQuery.error}
         onOpenChange={setAssignmentOpen}
+        onRetryMembers={() => {
+          void assignableMembersQuery.refetch();
+        }}
         onSubmit={handleAssignment}
         open={assignmentOpen}
         task={selectedTask}

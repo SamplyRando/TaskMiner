@@ -10,6 +10,7 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember
 
 
 class AttachmentRepository:
@@ -69,6 +70,31 @@ class AttachmentRepository:
             .where(
                 Attachment.id == attachment_id,
                 Workspace.owner_id == owner.id,
+                Attachment.deleted_at.is_(None),
+                Task.deleted_at.is_(None),
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
+    def get_by_id_for_user(
+        self,
+        attachment_id: UUID,
+        user: User,
+    ) -> Attachment | None:
+        statement = (
+            select(Attachment)
+            .join(Task, Attachment.task_id == Task.id)
+            .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                Attachment.id == attachment_id,
+                WorkspaceMember.user_id == user.id,
                 Attachment.deleted_at.is_(None),
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),

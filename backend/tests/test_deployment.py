@@ -85,6 +85,14 @@ def test_cors_origins_are_normalized() -> None:
     ]
 
 
+def test_cors_preview_regex_is_loaded_from_deployment_configuration() -> None:
+    regex = r"^https://task-miner(?:-[a-z0-9-]+)*\.vercel\.app$"
+
+    deployment_settings = build_settings(CORS_ORIGIN_REGEX=regex)
+
+    assert deployment_settings.cors_origin_regex == regex
+
+
 def test_cors_preflight_allows_configured_frontend(client: TestClient) -> None:
     response = client.options(
         "/api/v1/auth/login",

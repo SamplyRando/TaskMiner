@@ -4,7 +4,10 @@ import pytest
 from tests.factories import CreatedComment, CreatedTask
 
 
-@pytest.mark.parametrize("payload", [{}, {"content": ""}, {"content": "x" * 2001}])
+@pytest.mark.parametrize(
+    "payload",
+    [{}, {"content": ""}, {"content": "   "}, {"content": "x" * 2001}],
+)
 def test_create_rejects_invalid_content(
     client: TestClient,
     task: CreatedTask,

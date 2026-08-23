@@ -124,9 +124,12 @@ SettingsServiceDep = Annotated[SettingsService, Depends(get_settings_service)]
 
 
 def get_project_service(session: SessionDep) -> ProjectService:
+    workspace_repository = WorkspaceRepository(session)
+    member_repository = WorkspaceMemberRepository(session)
     return ProjectService(
         ProjectRepository(session),
-        WorkspaceRepository(session),
+        workspace_repository,
+        PermissionService(member_repository, workspace_repository),
     )
 
 
@@ -134,9 +137,14 @@ ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
 
 
 def get_task_service(session: SessionDep) -> TaskService:
+    workspace_repository = WorkspaceRepository(session)
     return TaskService(
         TaskRepository(session),
         ProjectRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
     )
 
 
@@ -144,9 +152,14 @@ TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
 
 
 def get_attachment_service(session: SessionDep) -> AttachmentService:
+    workspace_repository = WorkspaceRepository(session)
     return AttachmentService(
         AttachmentRepository(session),
         TaskRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
         settings.storage_path,
     )
 
@@ -155,9 +168,14 @@ AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_servi
 
 
 def get_comment_service(session: SessionDep) -> CommentService:
+    workspace_repository = WorkspaceRepository(session)
     return CommentService(
         CommentRepository(session),
         TaskRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
     )
 
 
@@ -165,9 +183,12 @@ CommentServiceDep = Annotated[CommentService, Depends(get_comment_service)]
 
 
 def get_task_assignment_service(session: SessionDep) -> TaskAssignmentService:
+    workspace_repository = WorkspaceRepository(session)
+    member_repository = WorkspaceMemberRepository(session)
     return TaskAssignmentService(
         TaskRepository(session),
-        UserRepository(session),
+        member_repository,
+        PermissionService(member_repository, workspace_repository),
     )
 
 
@@ -331,9 +352,17 @@ def get_ai_apply_service(session: SessionDep) -> AIApplyService:
         project_repository,
         member_repository,
         permission_service,
-        ProjectService(project_repository, workspace_repository),
-        TaskService(task_repository, project_repository),
-        TaskAssignmentService(task_repository, UserRepository(session)),
+        ProjectService(
+            project_repository,
+            workspace_repository,
+            permission_service,
+        ),
+        TaskService(task_repository, project_repository, permission_service),
+        TaskAssignmentService(
+            task_repository,
+            member_repository,
+            permission_service,
+        ),
     )
 
 
@@ -378,7 +407,7 @@ def get_ai_change_apply_service(session: SessionDep) -> AIProjectChangeApplyServ
         project_repository,
         task_repository,
         permission_service,
-        TaskService(task_repository, project_repository),
+        TaskService(task_repository, project_repository, permission_service),
     )
 
 

@@ -6,6 +6,7 @@ from app.api.deps import CommentServiceDep, CurrentUserDep
 from app.models.comment import Comment
 from app.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.services.comment import CommentNotFoundError, CommentTaskNotFoundError
+from app.services.permission import PermissionDeniedError
 
 
 router = APIRouter()
@@ -29,6 +30,11 @@ def create_comment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc
 
 
@@ -79,6 +85,11 @@ def update_comment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment not found.",
         ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.delete(
@@ -96,4 +107,9 @@ def delete_comment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc

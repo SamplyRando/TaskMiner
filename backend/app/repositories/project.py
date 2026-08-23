@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models.project import Project
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember
 from app.schemas.project import ProjectCreate, ProjectListParams, ProjectUpdate
 
 
@@ -84,6 +85,29 @@ class ProjectRepository:
         )
         return self.session.scalar(statement)
 
+    def get_by_id_for_user(
+        self,
+        project_id: UUID,
+        user: User,
+    ) -> Project | None:
+        """Return an active project only when the user belongs to its workspace."""
+
+        statement = (
+            select(Project)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                Project.id == project_id,
+                WorkspaceMember.user_id == user.id,
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
     def list_by_owner(
         self,
         owner: User,
@@ -133,6 +157,60 @@ class ProjectRepository:
         )
         projects = list(self.session.scalars(statement).all())
         return projects, total
+
+    def list_for_user(
+        self,
+        user: User,
+        params: ProjectListParams,
+    ) -> tuple[list[Project], int]:
+        """List active projects from workspaces visible to the current member."""
+
+        filters = [
+            WorkspaceMember.user_id == user.id,
+            Project.deleted_at.is_(None),
+            Workspace.deleted_at.is_(None),
+        ]
+        if params.workspace_id is not None:
+            filters.append(Project.workspace_id == params.workspace_id)
+        if params.search is not None:
+            pattern = f"%{params.search}%"
+            filters.append(
+                or_(
+                    Project.name.ilike(pattern),
+                    Project.description.ilike(pattern),
+                )
+            )
+
+        joins = (
+            select(Project)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+        )
+        total_statement = select(func.count()).select_from(
+            joins.where(*filters).subquery()
+        )
+        total = int(self.session.scalar(total_statement) or 0)
+
+        sort_columns: dict[str, Any] = {
+            "created_at": Project.created_at,
+            "updated_at": Project.updated_at,
+            "name": Project.name,
+        }
+        sort_field = params.sort.removeprefix("-")
+        sort_column = sort_columns[sort_field]
+        sort_expression = (
+            sort_column.desc() if params.sort.startswith("-") else sort_column.asc()
+        )
+        statement = (
+            joins.where(*filters)
+            .order_by(sort_expression, Project.id.asc())
+            .offset(params.skip)
+            .limit(params.limit)
+        )
+        return list(self.session.scalars(statement).unique().all()), total
 
     def list(self, *, offset: int = 0, limit: int = 100) -> Sequence[Project]:
         raise NotImplementedError

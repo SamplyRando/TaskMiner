@@ -9,8 +9,9 @@ from app.core.events import (
 from app.models.task import Task
 from app.models.user import User
 from app.repositories.task import TaskRepository
-from app.repositories.user import UserRepository
+from app.repositories.workspace_member import WorkspaceMemberRepository
 from app.schemas.task_assignment import TaskAssignmentUpdate
+from app.services.permission import PermissionService
 from app.services.task import TaskNotFoundError
 
 
@@ -24,10 +25,12 @@ class TaskAssignmentService:
     def __init__(
         self,
         task_repository: TaskRepository,
-        user_repository: UserRepository,
+        member_repository: WorkspaceMemberRepository,
+        permission_service: PermissionService,
     ) -> None:
         self.task_repository = task_repository
-        self.user_repository = user_repository
+        self.member_repository = member_repository
+        self.permission_service = permission_service
 
     def assign_task(
         self,
@@ -35,9 +38,12 @@ class TaskAssignmentService:
         task_id: UUID,
         data: TaskAssignmentUpdate,
     ) -> Task:
-        task = self._get_owned_task(owner, task_id)
-        assigned_user = self.user_repository.get(data.assigned_user_id)
-        if assigned_user is None or not assigned_user.is_active:
+        task = self._get_manageable_task(owner, task_id)
+        assigned_user = self.member_repository.get_active_user(
+            task.project.workspace,
+            data.assigned_user_id,
+        )
+        if assigned_user is None:
             raise TaskAssigneeNotFoundError
         previous_assignee_id = task.assigned_user_id
         assigned_task = self.task_repository.assign(task, assigned_user)
@@ -101,11 +107,15 @@ class TaskAssignmentService:
         )
 
     def unassign_task(self, owner: User, task_id: UUID) -> None:
-        task = self._get_owned_task(owner, task_id)
+        task = self._get_manageable_task(owner, task_id)
         self.task_repository.unassign(task)
 
-    def _get_owned_task(self, owner: User, task_id: UUID) -> Task:
-        task = self.task_repository.get_by_id_for_owner(task_id, owner)
+    def _get_manageable_task(self, owner: User, task_id: UUID) -> Task:
+        task = self.task_repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise TaskNotFoundError
+        self.permission_service.require_task_management(
+            owner,
+            task.project.workspace_id,
+        )
         return task

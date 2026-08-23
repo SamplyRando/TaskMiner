@@ -30,11 +30,17 @@ export const useProjects = (params: ProjectListParams, enabled = true) =>
     placeholderData: keepPreviousData,
   });
 
+type CreateProjectVariables = {
+  data: ProjectInput;
+  workspaceId?: string;
+};
+
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createProject,
+    mutationFn: ({ data, workspaceId }: CreateProjectVariables) =>
+      createProject(data, workspaceId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),

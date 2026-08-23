@@ -41,3 +41,20 @@ class WorkspaceMemberFactory:
             user=user,
             role=member.role,
         )
+
+    def create_for_workspace_id(
+        self,
+        workspace_id: UUID,
+        user: RegisteredUser,
+        *,
+        role: WorkspaceMemberRole = WorkspaceMemberRole.MEMBER,
+    ) -> WorkspaceMember:
+        member = WorkspaceMember(
+            workspace_id=workspace_id,
+            user_id=user.id,
+            role=role,
+        )
+        self.session.add(member)
+        self.session.commit()
+        self.session.refresh(member)
+        return member

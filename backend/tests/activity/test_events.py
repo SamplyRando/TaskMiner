@@ -139,9 +139,14 @@ def test_task_assignment_event(
     other_user: RegisteredUser,
     project_factory: ProjectFactory,
     task_factory: TaskFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
     project = project_factory.create(user)
     task = task_factory.create(project)
+    workspace_member_factory.create_for_workspace_id(
+        project.workspace_id,
+        other_user,
+    )
 
     response = client.patch(
         f"/api/v1/tasks/{task.id}/assign",

@@ -22,6 +22,21 @@ class WorkspaceMemberList(BaseModel):
     items: list[WorkspaceMemberRead]
 
 
+class AssignableWorkspaceMemberRead(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: UUID
+    email: str
+    full_name: str | None
+    role: WorkspaceMemberRole
+
+
+class AssignableWorkspaceMemberList(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[AssignableWorkspaceMemberRead]
+
+
 class WorkspaceMemberRoleUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

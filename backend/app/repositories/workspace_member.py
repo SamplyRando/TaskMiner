@@ -2,7 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
@@ -24,6 +24,27 @@ class WorkspaceMemberRepository:
                 Workspace.deleted_at.is_(None),
             )
             .order_by(WorkspaceMember.created_at.asc(), WorkspaceMember.id.asc())
+        )
+        return list(self.session.scalars(statement).all())
+
+    def list_active_by_workspace(
+        self,
+        workspace: Workspace,
+    ) -> list[WorkspaceMember]:
+        statement = (
+            select(WorkspaceMember)
+            .join(User, WorkspaceMember.user_id == User.id)
+            .options(selectinload(WorkspaceMember.user))
+            .where(
+                WorkspaceMember.workspace_id == workspace.id,
+                User.is_active.is_(True),
+                User.deleted_at.is_(None),
+            )
+            .order_by(
+                func.lower(User.full_name).asc(),
+                func.lower(User.email).asc(),
+                WorkspaceMember.id.asc(),
+            )
         )
         return list(self.session.scalars(statement).all())
 

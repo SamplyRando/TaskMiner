@@ -5,7 +5,12 @@ from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember
 from app.repositories.workspace import WorkspaceRepository
 from app.repositories.workspace_member import WorkspaceMemberRepository
-from app.schemas.workspace_member import WorkspaceMemberList, WorkspaceMemberRead
+from app.schemas.workspace_member import (
+    AssignableWorkspaceMemberList,
+    AssignableWorkspaceMemberRead,
+    WorkspaceMemberList,
+    WorkspaceMemberRead,
+)
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -46,6 +51,23 @@ class WorkspaceMemberService:
         if member is None:
             raise WorkspaceMemberNotFoundError
         return member
+
+    def list_assignable_members(
+        self,
+        workspace: Workspace,
+    ) -> AssignableWorkspaceMemberList:
+        members = self.repository.list_active_by_workspace(workspace)
+        return AssignableWorkspaceMemberList(
+            items=[
+                AssignableWorkspaceMemberRead(
+                    user_id=member.user_id,
+                    email=member.user.email,
+                    full_name=member.user.full_name,
+                    role=member.role,
+                )
+                for member in members
+            ]
+        )
 
     def _get_owned_workspace(self, owner: User, workspace_id: UUID) -> Workspace:
         workspace = self.workspace_repository.get_by_id_for_owner(

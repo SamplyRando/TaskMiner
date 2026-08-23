@@ -13,6 +13,7 @@ from app.services.attachment import (
     AttachmentTaskNotFoundError,
     AttachmentTooLargeError,
 )
+from app.services.permission import PermissionDeniedError
 
 
 router = APIRouter()
@@ -47,6 +48,11 @@ def upload_attachment(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="File extension is not allowed.",
         ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @task_router.get(
@@ -80,7 +86,6 @@ def download_attachment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Attachment not found.",
         ) from exc
-
     return FileResponse(
         path=download.path,
         filename=download.filename,
@@ -103,4 +108,9 @@ def delete_attachment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Attachment not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc

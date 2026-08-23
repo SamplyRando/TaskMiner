@@ -16,17 +16,47 @@ from app.models.user_preference import UserAccent, UserMotion, UserTheme
 from app.models.workspace_member import WorkspaceMemberRole
 
 
+def validate_password_strength(value: str) -> str:
+    requirements = (
+        any(character.isupper() for character in value),
+        any(character.islower() for character in value),
+        any(character.isdigit() for character in value),
+        any(not character.isalnum() for character in value),
+    )
+    if not all(requirements):
+        raise ValueError(
+            "password must contain uppercase, lowercase, digit, and special characters"
+        )
+    return value
+
+
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=12, max_length=128)
     full_name: str = Field(min_length=1, max_length=255)
+
+    _validate_password = field_validator("password")(validate_password_strength)
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def trim_full_name(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr | None = None
-    password: str | None = Field(default=None, min_length=8, max_length=128)
+    password: str | None = Field(default=None, min_length=12, max_length=128)
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
     is_active: bool | None = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_optional_password(cls, value: str | None) -> str | None:
+        return validate_password_strength(value) if value is not None else None
 
 
 class UserRead(BaseModel):
@@ -81,18 +111,7 @@ class PasswordChange(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_password_strength(cls, value: str) -> str:
-        requirements = (
-            any(character.isupper() for character in value),
-            any(character.islower() for character in value),
-            any(character.isdigit() for character in value),
-            any(not character.isalnum() for character in value),
-        )
-        if not all(requirements):
-            raise ValueError(
-                "new_password must contain uppercase, lowercase, digit, "
-                "and special characters"
-            )
-        return value
+        return validate_password_strength(value)
 
     @model_validator(mode="after")
     def validate_confirmation(self) -> Self:

@@ -62,7 +62,17 @@ def test_register_rejects_invalid_email(
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("password", ["short", "x" * 129])
+@pytest.mark.parametrize(
+    "password",
+    [
+        "short",
+        "alllowercase123!",
+        "ALLUPPERCASE123!",
+        "NoDigitsHere!",
+        "NoSpecial1234",
+        "x" * 129,
+    ],
+)
 def test_register_rejects_invalid_password(
     client: TestClient,
     user_factory: UserFactory,
@@ -74,3 +84,21 @@ def test_register_rejects_invalid_password(
     response = client.post("/api/v1/auth/register", json=payload)
 
     assert response.status_code == 422
+
+
+def test_register_trims_name_and_forbids_extra_fields(
+    client: TestClient,
+    user_factory: UserFactory,
+) -> None:
+    payload = user_factory.build_payload()
+    payload["full_name"] = "  Ada Lovelace  "
+
+    response = client.post("/api/v1/auth/register", json=payload)
+    injected = client.post(
+        "/api/v1/auth/register",
+        json={**user_factory.build_payload(), "is_active": True},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["full_name"] == "Ada Lovelace"
+    assert injected.status_code == 422

@@ -19,6 +19,7 @@ from app.schemas.project import (
     ProjectUpdate,
 )
 from app.schemas.workspace import WorkspaceCreate
+from app.services.permission import PermissionService
 
 
 DEFAULT_WORKSPACE_NAME = "My Workspace"
@@ -35,12 +36,23 @@ class ProjectService:
         self,
         repository: ProjectRepository,
         workspace_repository: WorkspaceRepository,
+        permission_service: PermissionService,
     ) -> None:
         self.repository = repository
         self.workspace_repository = workspace_repository
+        self.permission_service = permission_service
 
-    def create_project(self, owner: User, data: ProjectCreate) -> Project:
-        workspace = self.workspace_repository.get_first_active_by_owner(owner)
+    def create_project(
+        self,
+        owner: User,
+        data: ProjectCreate,
+        workspace_id: UUID | None = None,
+    ) -> Project:
+        workspace = (
+            self.permission_service.require_project_creation(owner, workspace_id)
+            if workspace_id is not None
+            else self.workspace_repository.get_first_active_by_owner(owner)
+        )
         if workspace is None:
             workspace = self.workspace_repository.create(
                 owner,
@@ -97,7 +109,7 @@ class ProjectService:
         owner: User,
         params: ProjectListParams,
     ) -> PaginatedResponse[ProjectRead]:
-        projects, total = self.repository.list_by_owner(owner, params)
+        projects, total = self.repository.list_for_user(owner, params)
         return PaginatedResponse[ProjectRead](
             items=[ProjectRead.model_validate(project) for project in projects],
             total=total,
@@ -106,7 +118,7 @@ class ProjectService:
         )
 
     def get_project(self, owner: User, project_id: UUID) -> Project:
-        project = self.repository.get_by_id_for_owner(project_id, owner)
+        project = self.repository.get_by_id_for_user(project_id, owner)
         if project is None:
             raise ProjectNotFoundError
         return project
@@ -117,15 +129,17 @@ class ProjectService:
         project_id: UUID,
         data: ProjectUpdate,
     ) -> Project:
-        project = self.repository.get_by_id_for_owner(project_id, owner)
+        project = self.repository.get_by_id_for_user(project_id, owner)
         if project is None:
             raise ProjectNotFoundError
+        self.permission_service.require_project_management(owner, project.workspace_id)
         return self.repository.update(project, data)
 
     def delete_project(self, owner: User, project_id: UUID) -> None:
-        project = self.repository.get_by_id_for_owner(project_id, owner)
+        project = self.repository.get_by_id_for_user(project_id, owner)
         if project is None:
             raise ProjectNotFoundError
+        self.permission_service.require_project_management(owner, project.workspace_id)
         self.repository.delete(project)
         publish(
             DomainEvent(
