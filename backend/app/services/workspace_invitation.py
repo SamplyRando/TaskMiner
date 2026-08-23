@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+import logging
+import math
 import secrets
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.core.events import (
     ActivityEventType,
@@ -8,6 +10,8 @@ from app.core.events import (
     DomainEvent,
     publish,
 )
+from app.email.provider import EmailProviderError
+from app.email.service import EmailService
 from app.models.user import User
 from app.models.workspace_invitation import InvitationStatus, WorkspaceInvitation
 from app.models.workspace_member import WorkspaceMemberRole
@@ -28,7 +32,9 @@ from app.services.workspace import WorkspaceNotFoundError
 
 
 INVITATION_LIFETIME = timedelta(days=7)
+INVITATION_RESEND_COOLDOWN = timedelta(seconds=60)
 TOKEN_GENERATION_ATTEMPTS = 5
+logger = logging.getLogger(__name__)
 
 
 class InvitationNotFoundError(Exception):
@@ -63,6 +69,18 @@ class InvitationOwnerRoleError(Exception):
     """Raised when an invitation attempts to create a second owner."""
 
 
+class InvitationEmailDeliveryError(Exception):
+    """Raised after an invitation persists but its email delivery fails."""
+
+
+class InvitationResendCooldownError(Exception):
+    """Raised when another delivery attempt is requested too quickly."""
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__("Invitation email resend cooldown is active.")
+
+
 class WorkspaceInvitationService:
     """Application service for workspace invitation use cases."""
 
@@ -71,10 +89,12 @@ class WorkspaceInvitationService:
         repository: WorkspaceInvitationRepository,
         member_repository: WorkspaceMemberRepository,
         permission_service: PermissionService,
+        email_service: EmailService,
     ) -> None:
         self.repository = repository
         self.member_repository = member_repository
         self.permission_service = permission_service
+        self.email_service = email_service
 
     def create_invitation(
         self,
@@ -123,8 +143,30 @@ class WorkspaceInvitationService:
                     },
                 )
             )
-            return invitation
+            return self._deliver_invitation_email(invitation, actor)
         raise InvitationTokenGenerationError
+
+    def resend_invitation(
+        self,
+        actor: User,
+        workspace_id: UUID,
+        invitation_id: UUID,
+    ) -> WorkspaceInvitation:
+        workspace = self.permission_service.require_invitation_management(
+            actor,
+            workspace_id,
+        )
+        invitation = self.repository.get_by_id_for_workspace(
+            invitation_id,
+            workspace,
+            for_update=True,
+        )
+        if invitation is None:
+            raise InvitationNotFoundError
+        invitation = self._expire_if_needed(invitation)
+        self._ensure_pending(invitation)
+        self._ensure_resend_cooldown_elapsed(invitation)
+        return self._deliver_invitation_email(invitation, actor)
 
     def list_invitations(
         self,
@@ -245,6 +287,53 @@ class WorkspaceInvitationService:
         ):
             return self.repository.expire(invitation, now)
         return invitation
+
+    def _deliver_invitation_email(
+        self,
+        invitation: WorkspaceInvitation,
+        actor: User,
+    ) -> WorkspaceInvitation:
+        attempted_at = self._now()
+        invitation = self.repository.reserve_email_delivery(
+            invitation,
+            attempted_at,
+        )
+        inviter = invitation.invited_by or actor
+        try:
+            result = self.email_service.send_workspace_invitation(
+                recipient=invitation.email,
+                token=invitation.token,
+                workspace_name=invitation.workspace.name,
+                inviter_name=inviter.full_name,
+                inviter_email=inviter.email,
+                role=invitation.role,
+                expires_at=invitation.expires_at,
+                idempotency_key=(f"workspace-invitation/{invitation.id}/{uuid4()}"),
+            )
+        except EmailProviderError as exc:
+            self.repository.mark_email_failed(invitation)
+            logger.warning(
+                "Workspace invitation email delivery failed for invitation_id=%s",
+                invitation.id,
+            )
+            raise InvitationEmailDeliveryError from exc
+
+        if result.delivered:
+            return self.repository.mark_email_sent(invitation, self._now())
+        return self.repository.mark_email_skipped(invitation)
+
+    def _ensure_resend_cooldown_elapsed(
+        self,
+        invitation: WorkspaceInvitation,
+    ) -> None:
+        attempted_at = invitation.email_last_attempted_at
+        if attempted_at is None:
+            return
+        remaining = INVITATION_RESEND_COOLDOWN - (self._now() - attempted_at)
+        if remaining.total_seconds() > 0:
+            raise InvitationResendCooldownError(
+                max(1, math.ceil(remaining.total_seconds()))
+            )
 
     @staticmethod
     def _ensure_pending(invitation: WorkspaceInvitation) -> None:

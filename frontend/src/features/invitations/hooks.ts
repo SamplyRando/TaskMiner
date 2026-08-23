@@ -10,6 +10,7 @@ import {
   createWorkspaceInvitation,
   getInvitation,
   listWorkspaceInvitations,
+  resendWorkspaceInvitation,
   revokeInvitation,
 } from "@/api/invitations";
 import { listWorkspaces } from "@/api/workspace";
@@ -60,13 +61,30 @@ export const useCreateInvitation = () => {
   return useMutation({
     mutationFn: ({ data, workspaceId }: CreateInvitationVariables) =>
       createWorkspaceInvitation(workspaceId, data),
-    onSuccess: async (_invitation, { workspaceId }) => {
+    onSettled: async (_invitation, _error, { workspaceId }) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: invitationKeys.lists() }),
         queryClient.invalidateQueries({
           queryKey: ["activities", workspaceId],
         }),
       ]);
+    },
+  });
+};
+
+type ResendInvitationVariables = {
+  invitationId: string;
+  workspaceId: string;
+};
+
+export const useResendInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ invitationId, workspaceId }: ResendInvitationVariables) =>
+      resendWorkspaceInvitation(workspaceId, invitationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: invitationKeys.lists() });
     },
   });
 };

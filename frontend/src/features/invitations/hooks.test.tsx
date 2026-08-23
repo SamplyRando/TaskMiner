@@ -8,6 +8,7 @@ import {
   createWorkspaceInvitation,
   getInvitation,
   listWorkspaceInvitations,
+  resendWorkspaceInvitation,
   revokeInvitation,
 } from "@/api/invitations";
 import { listWorkspaces } from "@/api/workspace";
@@ -16,6 +17,7 @@ import {
   useAcceptInvitation,
   useCreateInvitation,
   useInvitation,
+  useResendInvitation,
   useRevokeInvitation,
   useWorkspaceInvitations,
 } from "@/features/invitations/hooks";
@@ -32,6 +34,7 @@ vi.mock("@/api/invitations", () => ({
   createWorkspaceInvitation: vi.fn(),
   getInvitation: vi.fn(),
   listWorkspaceInvitations: vi.fn(),
+  resendWorkspaceInvitation: vi.fn(),
   revokeInvitation: vi.fn(),
 }));
 
@@ -48,6 +51,7 @@ const mockedGet = vi.mocked(getInvitation);
 const mockedList = vi.mocked(listWorkspaceInvitations);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedRevoke = vi.mocked(revokeInvitation);
+const mockedResend = vi.mocked(resendWorkspaceInvitation);
 const params = { limit: 20, skip: 0, sort: "-created_at" } as const;
 
 const createWrapper = () => {
@@ -146,6 +150,28 @@ describe("invitation hooks", () => {
     expect(
       queryClient.getQueryData(invitationKeys.detail(invitationFixture.token)),
     ).toEqual(revokedInvitation);
+  });
+
+  it("resends an invitation and refreshes invitation lists", async () => {
+    mockedResend.mockResolvedValue(invitationFixture);
+    const { queryClient, wrapper } = createWrapper();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useResendInvitation(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        invitationId: invitationFixture.id,
+        workspaceId: firstWorkspace.id,
+      });
+    });
+
+    expect(mockedResend).toHaveBeenCalledWith(
+      firstWorkspace.id,
+      invitationFixture.id,
+    );
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: invitationKeys.lists(),
+    });
   });
 
   it("refreshes workspaces and activates the accepted workspace", async () => {

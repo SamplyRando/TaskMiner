@@ -28,6 +28,16 @@ export const createWorkspaceInvitation = async (
   return response.data;
 };
 
+export const resendWorkspaceInvitation = async (
+  workspaceId: string,
+  invitationId: string,
+): Promise<WorkspaceInvitation> => {
+  const response = await apiClient.post<WorkspaceInvitation>(
+    `/workspaces/${workspaceId}/invitations/${invitationId}/resend`,
+  );
+  return response.data;
+};
+
 export const getInvitation = async (
   token: string,
 ): Promise<WorkspaceInvitation> => {

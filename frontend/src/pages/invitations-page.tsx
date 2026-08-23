@@ -1,6 +1,6 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, MailPlus, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
@@ -25,6 +25,7 @@ import {
   useAcceptInvitation,
   useCreateInvitation,
   useInvitation,
+  useResendInvitation,
   useRevokeInvitation,
   useWorkspaceInvitations,
 } from "@/features/invitations/hooks";
@@ -66,6 +67,9 @@ const getServerSort = (sorting: SortingState): InvitationSort => {
 
 const isAccessError = (error: unknown): boolean =>
   error instanceof ApiError && (error.status === 403 || error.status === 404);
+
+const isEmailDeliveryError = (error: unknown): boolean =>
+  error instanceof ApiError && error.status === 502;
 
 export function InvitationsPage() {
   const navigate = useNavigate();
@@ -135,20 +139,60 @@ export function InvitationsPage() {
   const invitationQuery = useInvitation(invitationToken);
   const createInvitation = useCreateInvitation();
   const revokeInvitation = useRevokeInvitation();
+  const resendInvitation = useResendInvitation();
   const acceptInvitation = useAcceptInvitation();
   const total = invitationsQuery.data?.total ?? 0;
   const pageCount = Math.ceil(total / pagination.pageSize);
+  const createInvitationError = isEmailDeliveryError(createInvitation.error)
+    ? new ApiError(
+        "L’invitation a été créée, mais l’e-mail n’a pas pu être envoyé. Vous pouvez le renvoyer.",
+        502,
+      )
+    : createInvitation.error;
+  const handleResend = useCallback(
+    async (invitation: WorkspaceInvitation) => {
+      try {
+        const result = await resendInvitation.mutateAsync({
+          invitationId: invitation.id,
+          workspaceId: invitation.workspace_id,
+        });
+        setNotice(
+          result.email_delivery_status === "sent"
+            ? { message: "E-mail d’invitation renvoyé.", type: "success" }
+            : {
+                message: "L’envoi e-mail est désactivé dans cet environnement.",
+                type: "info",
+              },
+        );
+      } catch (error) {
+        setNotice({
+          message:
+            error instanceof ApiError && error.status === 429
+              ? "Veuillez patienter avant de renvoyer cette invitation."
+              : "L’e-mail d’invitation n’a pas pu être renvoyé.",
+          type: "error",
+        });
+      }
+    },
+    [resendInvitation],
+  );
   const columns = useMemo(
     () =>
       getInvitationColumns({
         canManage,
+        isResending: (invitation) =>
+          resendInvitation.isPending &&
+          resendInvitation.variables.invitationId === invitation.id,
         onRevoke: (invitation) => {
           revokeInvitation.reset();
           setSelectedInvitation(invitation);
           setRevokeOpen(true);
         },
+        onResend: (invitation) => {
+          void handleResend(invitation);
+        },
       }),
-    [canManage, revokeInvitation],
+    [canManage, handleResend, resendInvitation, revokeInvitation],
   );
 
   const setPage = (pageIndex: number) => {
@@ -164,15 +208,28 @@ export function InvitationsPage() {
       return;
     }
     try {
-      await createInvitation.mutateAsync({
+      const invitation = await createInvitation.mutateAsync({
         data,
         workspaceId: workspace.activeWorkspaceId,
       });
       setFormOpen(false);
-      setNotice({ message: "Invitation envoyée.", type: "success" });
-    } catch {
+      setNotice(
+        invitation.email_delivery_status === "sent"
+          ? {
+              message: "Invitation créée et e-mail envoyé.",
+              type: "success",
+            }
+          : {
+              message:
+                "Invitation créée. L’envoi e-mail est désactivé dans cet environnement.",
+              type: "info",
+            },
+      );
+    } catch (error) {
       setNotice({
-        message: "L’invitation n’a pas pu être envoyée.",
+        message: isEmailDeliveryError(error)
+          ? "L’invitation a été créée, mais l’e-mail n’a pas pu être envoyé. Vous pouvez le renvoyer."
+          : "L’invitation n’a pas pu être créée.",
         type: "error",
       });
     }
@@ -399,11 +456,19 @@ export function InvitationsPage() {
                       <InvitationCard
                         canManage={canManage}
                         invitation={invitation}
+                        isResending={
+                          resendInvitation.isPending &&
+                          resendInvitation.variables.invitationId ===
+                            invitation.id
+                        }
                         key={invitation.id}
                         onRevoke={(item) => {
                           revokeInvitation.reset();
                           setSelectedInvitation(item);
                           setRevokeOpen(true);
+                        }}
+                        onResend={(item) => {
+                          void handleResend(item);
                         }}
                       />
                     ))
@@ -490,6 +555,7 @@ export function InvitationsPage() {
                 mobileLabels={{
                   created_at: "Créée le",
                   email: "E-mail",
+                  email_delivery_status: "Livraison",
                   expires_at: "Expiration",
                   invited_by: "Invité par",
                   role: "Rôle",
@@ -524,7 +590,7 @@ export function InvitationsPage() {
       ) : null}
 
       <InvitationFormDialog
-        error={createInvitation.error}
+        error={createInvitationError}
         isPending={createInvitation.isPending}
         onOpenChange={setFormOpen}
         onSubmit={handleCreate}

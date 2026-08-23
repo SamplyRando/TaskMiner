@@ -4,7 +4,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models.workspace_invitation import InvitationStatus
+from app.models.workspace_invitation import (
+    InvitationEmailDeliveryStatus,
+    InvitationStatus,
+)
 from app.models.workspace_member import WorkspaceMemberRole
 
 
@@ -55,6 +58,9 @@ class InvitationRead(BaseModel):
     expires_at: datetime
     accepted_at: datetime | None
     revoked_at: datetime | None
+    email_delivery_status: InvitationEmailDeliveryStatus
+    email_last_attempted_at: datetime | None
+    email_sent_at: datetime | None
     invited_by: InvitationInviterRead | None
     created_at: datetime
     updated_at: datetime

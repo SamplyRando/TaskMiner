@@ -89,6 +89,9 @@ def test_invitation_migration_upgrades_and_downgrades() -> None:
             "expires_at",
             "accepted_at",
             "revoked_at",
+            "email_delivery_status",
+            "email_last_attempted_at",
+            "email_sent_at",
             "created_at",
             "updated_at",
         }
@@ -126,7 +129,9 @@ def test_invitation_migration_upgrades_and_downgrades() -> None:
             invitation = connection.execute(
                 text(
                     """
-                    SELECT role, status, accepted_at, revoked_at
+                    SELECT role, status, accepted_at, revoked_at,
+                           email_delivery_status, email_last_attempted_at,
+                           email_sent_at
                     FROM workspace_invitations
                     WHERE id = :id
                     """
@@ -144,11 +149,31 @@ def test_invitation_migration_upgrades_and_downgrades() -> None:
                     """
                 )
             ).all()
+            delivery_status_labels = connection.scalars(
+                text(
+                    """
+                    SELECT enumlabel
+                    FROM pg_enum
+                    JOIN pg_type ON pg_type.oid = pg_enum.enumtypid
+                    WHERE pg_type.typname = 'invitation_email_delivery_status'
+                    ORDER BY enumsortorder
+                    """
+                )
+            ).all()
         assert invitation.role == "member"
         assert invitation.status == "pending"
         assert invitation.accepted_at is None
         assert invitation.revoked_at is None
+        assert invitation.email_delivery_status == "pending"
+        assert invitation.email_last_attempted_at is None
+        assert invitation.email_sent_at is None
         assert list(status_labels) == ["pending", "accepted", "expired", "revoked"]
+        assert list(delivery_status_labels) == [
+            "pending",
+            "sent",
+            "failed",
+            "skipped",
+        ]
 
         run_alembic(migration_url, "downgrade", PRE_INVITATIONS_REVISION)
 

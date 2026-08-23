@@ -26,6 +26,13 @@ class InvitationStatus(str, Enum):
     REVOKED = "revoked"
 
 
+class InvitationEmailDeliveryStatus(str, Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
 class WorkspaceInvitation(TimestampMixin, Base):
     """Invitation to join a workspace with a predefined role."""
 
@@ -94,6 +101,24 @@ class WorkspaceInvitation(TimestampMixin, Base):
         nullable=True,
     )
     revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    email_delivery_status: Mapped[InvitationEmailDeliveryStatus] = mapped_column(
+        SQLAlchemyEnum(
+            InvitationEmailDeliveryStatus,
+            name="invitation_email_delivery_status",
+            values_callable=lambda enum_class: [member.value for member in enum_class],
+        ),
+        nullable=False,
+        default=InvitationEmailDeliveryStatus.PENDING,
+        server_default=text("'pending'"),
+    )
+    email_last_attempted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    email_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )

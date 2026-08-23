@@ -1,10 +1,12 @@
-import { Ban, CalendarClock, UserRound } from "lucide-react";
+import { Ban, CalendarClock, MailCheck, Send, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   getInviterLabel,
+  invitationDeliveryClasses,
+  invitationDeliveryLabels,
   invitationRoleLabels,
   invitationStatusClasses,
   invitationStatusLabels,
@@ -16,12 +18,16 @@ type InvitationCardProps = {
   canManage: boolean;
   invitation: WorkspaceInvitation;
   onRevoke: (invitation: WorkspaceInvitation) => void;
+  onResend: (invitation: WorkspaceInvitation) => void;
+  isResending: boolean;
 };
 
 export function InvitationCard({
   canManage,
   invitation,
+  isResending,
   onRevoke,
+  onResend,
 }: InvitationCardProps) {
   return (
     <Card>
@@ -53,18 +59,43 @@ export function InvitationCard({
         <p className="text-muted-foreground text-xs">
           Créée le {formatDateTime(invitation.created_at)}
         </p>
-        {canManage && invitation.status === "pending" ? (
-          <Button
-            className="w-full"
-            onClick={() => {
-              onRevoke(invitation);
-            }}
-            type="button"
-            variant="outline"
+        <div className="flex items-center gap-2">
+          <MailCheck
+            aria-hidden="true"
+            className="text-muted-foreground size-4"
+          />
+          <Badge
+            className={
+              invitationDeliveryClasses[invitation.email_delivery_status]
+            }
           >
-            <Ban aria-hidden="true" className="size-4" />
-            Révoquer
-          </Button>
+            {invitationDeliveryLabels[invitation.email_delivery_status]}
+          </Badge>
+        </div>
+        {canManage && invitation.status === "pending" ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              disabled={isResending}
+              onClick={() => {
+                onResend(invitation);
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Send aria-hidden="true" className="size-4" />
+              {isResending ? "Envoi…" : "Renvoyer"}
+            </Button>
+            <Button
+              onClick={() => {
+                onRevoke(invitation);
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Ban aria-hidden="true" className="size-4" />
+              Révoquer
+            </Button>
+          </div>
         ) : null}
       </CardContent>
     </Card>
