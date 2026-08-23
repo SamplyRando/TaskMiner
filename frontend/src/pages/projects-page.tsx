@@ -8,6 +8,7 @@ import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { WorkspaceSelector } from "@/components/workspace-selector";
 import {
   useCreateProject,
   useDeleteProject,
@@ -17,6 +18,8 @@ import {
 import { getProjectColumns } from "@/features/projects/project-columns";
 import { ProjectFormDialog } from "@/features/projects/project-form-dialog";
 import { useUserPreferences } from "@/features/settings/hooks";
+import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useSessionState } from "@/hooks/use-session-state";
 import type { Project, ProjectInput, ProjectSort } from "@/types/project";
@@ -37,6 +40,10 @@ function getSortParameter(sorting: SortingState): ProjectSort {
 }
 
 export function ProjectsPage() {
+  const workspace = useActiveWorkspace();
+  const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
+  const canManageProjects =
+    permissionsQuery.data?.permissions.manage_projects ?? false;
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
   const [search, setSearch] = useSessionState("taskminer-projects-search", "");
@@ -64,12 +71,18 @@ export function ProjectsPage() {
     );
   }, [preferences.data, setPagination]);
 
-  const projectsQuery = useProjects({
-    limit: pagination.pageSize,
-    skip: pagination.pageIndex * pagination.pageSize,
-    sort: getSortParameter(sorting),
-    ...(normalizedSearch ? { search: normalizedSearch } : {}),
-  });
+  const projectsQuery = useProjects(
+    {
+      limit: pagination.pageSize,
+      skip: pagination.pageIndex * pagination.pageSize,
+      sort: getSortParameter(sorting),
+      ...(normalizedSearch ? { search: normalizedSearch } : {}),
+      ...(workspace.activeWorkspaceId
+        ? { workspace_id: workspace.activeWorkspaceId }
+        : {}),
+    },
+    workspace.activeWorkspaceId !== null,
+  );
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
@@ -77,6 +90,7 @@ export function ProjectsPage() {
   const columns = useMemo(
     () =>
       getProjectColumns({
+        canManage: canManageProjects,
         onDelete: (project) => {
           deleteProject.reset();
           setSelectedProject(project);
@@ -88,7 +102,7 @@ export function ProjectsPage() {
           setFormOpen(true);
         },
       }),
-    [deleteProject, updateProject],
+    [canManageProjects, deleteProject, updateProject],
   );
 
   const handleSubmit = async (data: ProjectInput) => {
@@ -99,7 +113,12 @@ export function ProjectsPage() {
           projectId: selectedProject.id,
         });
       } else {
-        await createProject.mutateAsync(data);
+        await createProject.mutateAsync({
+          data,
+          ...(workspace.activeWorkspaceId
+            ? { workspaceId: workspace.activeWorkspaceId }
+            : {}),
+        });
       }
       setFormOpen(false);
     } catch {
@@ -126,6 +145,7 @@ export function ProjectsPage() {
       <EntityPageHeader
         actions={
           <Button
+            disabled={!canManageProjects}
             onClick={() => {
               createProject.reset();
               setSelectedProject(null);
@@ -139,6 +159,16 @@ export function ProjectsPage() {
         }
         description="Créez et suivez les projets de votre workspace."
         title="Projets"
+      />
+
+      <WorkspaceSelector
+        disabled={workspace.isPending}
+        onValueChange={(workspaceId) => {
+          workspace.selectWorkspace(workspaceId);
+          setPagination((current) => ({ ...current, pageIndex: 0 }));
+        }}
+        value={workspace.activeWorkspaceId}
+        workspaces={workspace.workspaces}
       />
 
       <div className="relative max-w-md">
@@ -158,17 +188,25 @@ export function ProjectsPage() {
         />
       </div>
 
-      {projectsQuery.isError ? (
+      {projectsQuery.isError ||
+      workspace.isError ||
+      permissionsQuery.isError ? (
         <ErrorState
-          error={projectsQuery.error}
-          onRetry={() => void projectsQuery.refetch()}
+          error={
+            projectsQuery.error ?? workspace.error ?? permissionsQuery.error
+          }
+          onRetry={() => {
+            void projectsQuery.refetch();
+            void workspace.refetch();
+            void permissionsQuery.refetch();
+          }}
         />
       ) : (
         <DataTable
           columns={columns}
           data={projectsQuery.data?.items ?? []}
           emptyAction={
-            search ? undefined : (
+            search || !canManageProjects ? undefined : (
               <Button
                 onClick={() => {
                   createProject.reset();

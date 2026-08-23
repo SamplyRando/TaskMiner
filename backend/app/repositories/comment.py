@@ -10,6 +10,7 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.models.workspace_member import WorkspaceMember
 from app.schemas.comment import CommentCreate, CommentUpdate
 
 
@@ -65,6 +66,31 @@ class CommentRepository:
             .where(
                 Comment.id == comment_id,
                 Workspace.owner_id == owner.id,
+                Comment.deleted_at.is_(None),
+                Task.deleted_at.is_(None),
+                Project.deleted_at.is_(None),
+                Workspace.deleted_at.is_(None),
+            )
+        )
+        return self.session.scalar(statement)
+
+    def get_by_id_for_user(
+        self,
+        comment_id: UUID,
+        user: User,
+    ) -> Comment | None:
+        statement = (
+            select(Comment)
+            .join(Task, Comment.task_id == Task.id)
+            .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .join(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                Comment.id == comment_id,
+                WorkspaceMember.user_id == user.id,
                 Comment.deleted_at.is_(None),
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),

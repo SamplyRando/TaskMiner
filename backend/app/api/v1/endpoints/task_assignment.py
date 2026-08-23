@@ -6,6 +6,7 @@ from app.api.deps import CurrentUserDep, TaskAssignmentServiceDep
 from app.models.task import Task
 from app.schemas.task import TaskRead
 from app.schemas.task_assignment import TaskAssignmentUpdate
+from app.services.permission import PermissionDeniedError
 from app.services.task import TaskNotFoundError
 from app.services.task_assignment import TaskAssigneeNotFoundError
 
@@ -32,6 +33,11 @@ def assign_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",
         ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.delete("/{task_id}/assign", status_code=status.HTTP_204_NO_CONTENT)
@@ -46,4 +52,9 @@ def unassign_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc

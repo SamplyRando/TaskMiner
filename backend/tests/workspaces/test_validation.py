@@ -4,7 +4,10 @@ import pytest
 from tests.factories import CreatedWorkspace, RegisteredUser
 
 
-@pytest.mark.parametrize("payload", [{}, {"name": ""}, {"name": "x" * 256}])
+@pytest.mark.parametrize(
+    "payload",
+    [{}, {"name": ""}, {"name": "   "}, {"name": "x" * 256}],
+)
 def test_create_rejects_invalid_name(
     client: TestClient,
     user: RegisteredUser,
@@ -34,6 +37,19 @@ def test_create_accepts_name_length_boundaries(
     assert response.status_code == 201
     assert response.json()["name"] == name
     assert response.json()["description"] is None
+
+
+def test_create_rejects_oversized_description(
+    client: TestClient,
+    user: RegisteredUser,
+) -> None:
+    response = client.post(
+        "/api/v1/workspaces",
+        headers=user.headers,
+        json={"name": "Valid", "description": "x" * 5_001},
+    )
+
+    assert response.status_code == 422
 
 
 @pytest.mark.parametrize(

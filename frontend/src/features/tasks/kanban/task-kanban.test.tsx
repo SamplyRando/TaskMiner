@@ -90,7 +90,10 @@ describe("TaskKanban", () => {
   });
 
   it("prevents dragging without task management permission", () => {
-    renderKanban({ canManageTasks: false });
+    renderKanban({
+      canManageTasks: false,
+      currentUserId: "00000000-0000-4000-8000-000000000099",
+    });
 
     expect(
       screen.getAllByText(
@@ -103,6 +106,10 @@ describe("TaskKanban", () => {
     expect(
       resolveTaskMove(tasks, taskFixture.id, { status: "done" }, false),
     ).toBeNull();
+    expect(screen.getByText("Assignée à un membre")).toBeInTheDocument();
+    expect(
+      screen.queryByText(`${userId.slice(0, 8)}…`),
+    ).not.toBeInTheDocument();
   });
 
   it("supports a one-column mobile navigation", async () => {

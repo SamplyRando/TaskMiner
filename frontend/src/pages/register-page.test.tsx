@@ -22,10 +22,13 @@ const fillRegisterForm = async (): Promise<void> => {
     screen.getByRole("textbox", { name: "Adresse e-mail" }),
     "ada@example.com",
   );
-  await user.type(screen.getByLabelText("Mot de passe"), "password123");
+  await user.type(
+    screen.getByLabelText("Mot de passe"),
+    "Strong-password-123!",
+  );
   await user.type(
     screen.getByLabelText("Confirmer le mot de passe"),
-    "password123",
+    "Strong-password-123!",
   );
   await user.click(screen.getByRole("button", { name: "Créer mon compte" }));
 };
@@ -56,7 +59,7 @@ describe("RegisterPage", () => {
     expect(mockedRegisterUser).toHaveBeenCalledWith({
       email: "ada@example.com",
       fullName: "Ada Lovelace",
-      password: "password123",
+      password: "Strong-password-123!",
     });
   });
 

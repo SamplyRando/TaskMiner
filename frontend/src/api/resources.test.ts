@@ -17,6 +17,7 @@ import {
 import {
   createWorkspace,
   deleteWorkspace,
+  listAssignableWorkspaceMembers,
   listWorkspaces,
   updateWorkspace,
 } from "@/api/workspace";
@@ -37,9 +38,20 @@ describe("resource API clients", () => {
   });
 
   it("uses the existing workspace endpoints", async () => {
+    const assignableMembers = {
+      items: [
+        {
+          email: "ada@example.com",
+          full_name: "Ada Lovelace",
+          role: "owner" as const,
+          user_id: userId,
+        },
+      ],
+    };
     const get = vi
       .spyOn(apiClient, "get")
-      .mockResolvedValue({ data: [workspaceFixture] });
+      .mockResolvedValueOnce({ data: [workspaceFixture] })
+      .mockResolvedValueOnce({ data: assignableMembers });
     const post = vi
       .spyOn(apiClient, "post")
       .mockResolvedValue({ data: workspaceFixture });
@@ -52,11 +64,18 @@ describe("resource API clients", () => {
     const input = { description: null, name: "Workspace Alpha" };
 
     await expect(listWorkspaces()).resolves.toEqual([workspaceFixture]);
+    await expect(listAssignableWorkspaceMembers(workspaceId)).resolves.toEqual(
+      assignableMembers,
+    );
     await createWorkspace(input);
     await updateWorkspace(workspaceId, input);
     await deleteWorkspace(workspaceId);
 
-    expect(get).toHaveBeenCalledWith("/workspaces");
+    expect(get).toHaveBeenNthCalledWith(1, "/workspaces");
+    expect(get).toHaveBeenNthCalledWith(
+      2,
+      `/workspaces/${workspaceId}/assignable-members`,
+    );
     expect(post).toHaveBeenCalledWith("/workspaces", input);
     expect(patch).toHaveBeenCalledWith(`/workspaces/${workspaceId}`, input);
     expect(remove).toHaveBeenCalledWith(`/workspaces/${workspaceId}`);

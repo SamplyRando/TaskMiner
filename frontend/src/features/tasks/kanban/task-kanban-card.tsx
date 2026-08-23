@@ -38,7 +38,7 @@ const getAssigneeLabel = (task: Task, currentUserId: string): string | null => {
   if (task.assigned_user_id === currentUserId) {
     return "Assignée à vous";
   }
-  return `Assignée à ${task.assigned_user_id.slice(0, 8)}…`;
+  return "Assignée à un membre";
 };
 
 export function TaskKanbanCard({

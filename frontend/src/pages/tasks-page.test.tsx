@@ -5,9 +5,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { listProjects } from "@/api/projects";
 import { getUserPreferences } from "@/api/settings";
-import { assignTask, createTask, listAllTasks, listTasks } from "@/api/tasks";
+import {
+  assignTask,
+  createTask,
+  listAllTasks,
+  listTasks,
+  unassignTask,
+} from "@/api/tasks";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
-import { listWorkspaces } from "@/api/workspace";
+import {
+  listAssignableWorkspaceMembers,
+  listWorkspaces,
+} from "@/api/workspace";
 import { TasksPage } from "@/pages/tasks-page";
 import { useAuthStore } from "@/store/auth-store";
 import { useTaskViewStore } from "@/store/task-view-store";
@@ -42,6 +51,7 @@ vi.mock("@/api/tasks", () => ({
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
+  listAssignableWorkspaceMembers: vi.fn(),
   listWorkspaces: vi.fn(),
   updateWorkspace: vi.fn(),
 }));
@@ -55,6 +65,8 @@ const mockedCreateTask = vi.mocked(createTask);
 const mockedListAllTasks = vi.mocked(listAllTasks);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListTasks = vi.mocked(listTasks);
+const mockedUnassignTask = vi.mocked(unassignTask);
+const mockedListAssignableMembers = vi.mocked(listAssignableWorkspaceMembers);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
@@ -95,6 +107,22 @@ describe("TasksPage", () => {
       total: 1,
     });
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
+    mockedListAssignableMembers.mockResolvedValue({
+      items: [
+        {
+          email: "ada@example.com",
+          full_name: "Ada Lovelace",
+          role: "owner",
+          user_id: userId,
+        },
+        {
+          email: "grace@example.com",
+          full_name: "Grace Hopper",
+          role: "member",
+          user_id: "00000000-0000-4000-8000-000000000020",
+        },
+      ],
+    });
     mockedPermissions.mockResolvedValue({
       permissions: {
         manage_members: true,
@@ -189,6 +217,33 @@ describe("TasksPage", () => {
     });
   });
 
+  it("keeps shared tasks readable without exposing mutations to viewers", async () => {
+    mockedPermissions.mockResolvedValue({
+      permissions: {
+        manage_invitations: false,
+        manage_members: false,
+        manage_projects: false,
+        manage_tasks: false,
+        manage_workspace: false,
+        read: true,
+      },
+      role: "viewer",
+    });
+
+    renderWithQuery(<TasksPage />);
+
+    expect(await screen.findByText(taskFixture.title)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nouvelle tâche" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: `Modifier ${taskFixture.title}` }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: `Assigner ${taskFixture.title}` }),
+    ).not.toBeInTheDocument();
+  });
+
   it("assigns a task to the authenticated user", async () => {
     const user = userEvent.setup();
     mockedAssignTask.mockResolvedValue({
@@ -202,12 +257,64 @@ describe("TasksPage", () => {
       screen.getByRole("button", { name: `Assigner ${taskFixture.title}` }),
     );
     await user.click(
-      screen.getByRole("button", { name: "M’assigner cette tâche" }),
+      await screen.findByRole("button", { name: "M’assigner cette tâche" }),
     );
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
 
     await waitFor(() => {
       expect(mockedAssignTask).toHaveBeenCalledWith(taskFixture.id, userId);
+    });
+  });
+
+  it("assigns the selected workspace member by email", async () => {
+    const user = userEvent.setup();
+    const graceId = "00000000-0000-4000-8000-000000000020";
+    mockedAssignTask.mockResolvedValue({
+      ...taskFixture,
+      assigned_user_id: graceId,
+    });
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByText(taskFixture.title);
+    await user.click(
+      screen.getByRole("button", { name: `Assigner ${taskFixture.title}` }),
+    );
+    const search = await screen.findByRole("combobox", { name: "Membre" });
+    await user.type(search, "grace@example.com");
+    await user.click(
+      screen.getByRole("option", {
+        name: "Grace Hopper — grace@example.com",
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => {
+      expect(mockedAssignTask).toHaveBeenCalledWith(taskFixture.id, graceId);
+    });
+  });
+
+  it("removes the current assignment", async () => {
+    const user = userEvent.setup();
+    mockedListTasks.mockResolvedValue({
+      items: [{ ...taskFixture, assigned_user_id: userId }],
+      limit: 20,
+      skip: 0,
+      total: 1,
+    });
+    mockedUnassignTask.mockResolvedValue();
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByText(taskFixture.title);
+    await user.click(
+      screen.getByRole("button", { name: `Assigner ${taskFixture.title}` }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "Retirer l’assignation" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => {
+      expect(mockedUnassignTask).toHaveBeenCalledWith(taskFixture.id);
     });
   });
 

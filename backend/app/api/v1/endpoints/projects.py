@@ -12,7 +12,9 @@ from app.schemas.project import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.services.permission import PermissionDeniedError
 from app.services.project import ProjectNotFoundError
+from app.services.workspace import WorkspaceNotFoundError
 
 
 router = APIRouter()
@@ -36,8 +38,20 @@ def create_project(
     data: ProjectCreate,
     current_user: CurrentUserDep,
     service: ProjectServiceDep,
+    workspace_id: Annotated[UUID | None, Query()] = None,
 ) -> Project:
-    return service.create_project(current_user, data)
+    try:
+        return service.create_project(current_user, data, workspace_id)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.get("/{project_id}", response_model=ProjectRead)
@@ -69,6 +83,11 @@ def update_project(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found.",
         ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.delete(
@@ -86,4 +105,9 @@ def delete_project(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc

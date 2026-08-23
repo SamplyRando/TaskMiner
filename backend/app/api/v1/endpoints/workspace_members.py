@@ -9,6 +9,7 @@ from app.api.deps import (
 )
 from app.models.workspace_member import WorkspaceMember
 from app.schemas.workspace_member import (
+    AssignableWorkspaceMemberList,
     WorkspaceMemberList,
     WorkspaceMemberRead,
     WorkspaceMemberRoleUpdate,
@@ -24,6 +25,34 @@ from app.services.workspace_member import WorkspaceMemberNotFoundError
 
 
 router = APIRouter()
+
+
+@router.get(
+    "/{workspace_id}/assignable-members",
+    response_model=AssignableWorkspaceMemberList,
+)
+def list_assignable_workspace_members(
+    workspace_id: UUID,
+    current_user: CurrentUserDep,
+    permission_service: PermissionServiceDep,
+    service: WorkspaceMemberServiceDep,
+) -> AssignableWorkspaceMemberList:
+    try:
+        workspace = permission_service.require_task_management(
+            current_user,
+            workspace_id,
+        )
+        return service.list_assignable_members(workspace)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.get(

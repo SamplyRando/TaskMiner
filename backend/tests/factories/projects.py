@@ -10,6 +10,7 @@ from tests.factories.users import RegisteredUser
 @dataclass(frozen=True)
 class CreatedProject:
     id: UUID
+    workspace_id: UUID
     name: str
     description: str | None
     owner: RegisteredUser
@@ -37,6 +38,7 @@ class ProjectFactory:
         data = cast(dict[str, object], response.json())
         return CreatedProject(
             id=UUID(str(data["id"])),
+            workspace_id=UUID(str(data["workspace_id"])),
             name=project_name,
             description=description,
             owner=owner,

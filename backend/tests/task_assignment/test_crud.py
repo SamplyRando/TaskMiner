@@ -2,7 +2,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
-from tests.factories import CreatedTask, RegisteredUser, UserFactory
+from tests.factories import (
+    CreatedTask,
+    RegisteredUser,
+    UserFactory,
+    WorkspaceMemberFactory,
+)
 
 
 def test_task_is_unassigned_by_default(
@@ -23,7 +28,12 @@ def test_assign_task_to_active_user(
     task: CreatedTask,
     other_user: RegisteredUser,
     database_session: Session,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
     response = client.patch(
         f"/api/v1/tasks/{task.id}/assign",
         headers=task.project.owner.headers,
@@ -50,8 +60,17 @@ def test_reassign_task_to_another_active_user(
     task: CreatedTask,
     other_user: RegisteredUser,
     user_factory: UserFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
     third_user = user_factory.create()
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        third_user,
+    )
     first_response = client.patch(
         f"/api/v1/tasks/{task.id}/assign",
         headers=task.project.owner.headers,
@@ -74,7 +93,12 @@ def test_unassign_task(
     task: CreatedTask,
     other_user: RegisteredUser,
     database_session: Session,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
     assign_response = client.patch(
         f"/api/v1/tasks/{task.id}/assign",
         headers=task.project.owner.headers,
@@ -113,7 +137,12 @@ def test_deleting_assignee_sets_assignment_to_null(
     other_user: RegisteredUser,
     user_factory: UserFactory,
     database_session: Session,
+    workspace_member_factory: WorkspaceMemberFactory,
 ) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
     assign_response = client.patch(
         f"/api/v1/tasks/{task.id}/assign",
         headers=task.project.owner.headers,

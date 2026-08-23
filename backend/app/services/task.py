@@ -13,6 +13,7 @@ from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
+from app.services.permission import PermissionService
 
 
 class TaskProjectNotFoundError(Exception):
@@ -30,9 +31,11 @@ class TaskService:
         self,
         repository: TaskRepository,
         project_repository: ProjectRepository,
+        permission_service: PermissionService,
     ) -> None:
         self.repository = repository
         self.project_repository = project_repository
+        self.permission_service = permission_service
 
     def create_task(
         self,
@@ -40,7 +43,8 @@ class TaskService:
         project_id: UUID,
         data: TaskCreate,
     ) -> Task:
-        project = self._get_owned_project(owner, project_id)
+        project = self._get_accessible_project(owner, project_id)
+        self.permission_service.require_task_management(owner, project.workspace_id)
         task = self.repository.create(project, data)
         publish(self.task_created_event(owner, project, task))
         return task
@@ -96,7 +100,7 @@ class TaskService:
         )
 
     def list_project_tasks(self, owner: User, project_id: UUID) -> list[Task]:
-        project = self._get_owned_project(owner, project_id)
+        project = self._get_accessible_project(owner, project_id)
         return self.repository.list_by_project(project)
 
     def list_tasks(
@@ -104,7 +108,7 @@ class TaskService:
         owner: User,
         params: TaskListParams,
     ) -> PaginatedResponse[TaskRead]:
-        tasks, total = self.repository.list_by_owner(owner, params)
+        tasks, total = self.repository.list_for_user(owner, params)
         return PaginatedResponse[TaskRead](
             items=[TaskRead.model_validate(task) for task in tasks],
             total=total,
@@ -113,7 +117,7 @@ class TaskService:
         )
 
     def get_task(self, owner: User, task_id: UUID) -> Task:
-        task = self.repository.get_by_id_for_owner(task_id, owner)
+        task = self.repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise TaskNotFoundError
         return task
@@ -124,9 +128,13 @@ class TaskService:
         task_id: UUID,
         data: TaskUpdate,
     ) -> Task:
-        task = self.repository.get_by_id_for_owner(task_id, owner)
+        task = self.repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise TaskNotFoundError
+        self.permission_service.require_task_management(
+            owner,
+            task.project.workspace_id,
+        )
         changed_fields = data.model_fields_set
         old_values = TaskRead.model_validate(task).model_dump(
             mode="json",
@@ -208,9 +216,13 @@ class TaskService:
         )
 
     def delete_task(self, owner: User, task_id: UUID) -> None:
-        task = self.repository.get_by_id_for_owner(task_id, owner)
+        task = self.repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise TaskNotFoundError
+        self.permission_service.require_task_management(
+            owner,
+            task.project.workspace_id,
+        )
         self.repository.delete(task)
         publish(
             DomainEvent(
@@ -232,8 +244,8 @@ class TaskService:
             )
         )
 
-    def _get_owned_project(self, owner: User, project_id: UUID) -> Project:
-        project = self.project_repository.get_by_id_for_owner(project_id, owner)
+    def _get_accessible_project(self, owner: User, project_id: UUID) -> Project:
+        project = self.project_repository.get_by_id_for_user(project_id, owner)
         if project is None:
             raise TaskProjectNotFoundError
         return project

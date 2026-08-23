@@ -26,6 +26,8 @@ from app.schemas.workspace_invitation import (
     InvitationStatus,
 )
 from app.schemas.workspace_member import (
+    AssignableWorkspaceMemberList,
+    AssignableWorkspaceMemberRead,
     WorkspaceMemberList,
     WorkspaceMemberRead,
     WorkspaceMemberRoleUpdate,
@@ -69,6 +71,8 @@ __all__ = [
     "WorkspaceMemberList",
     "WorkspaceMemberRead",
     "WorkspaceMemberRoleUpdate",
+    "AssignableWorkspaceMemberList",
+    "AssignableWorkspaceMemberRead",
     "WorkspacePermissionFlags",
     "WorkspacePermissionsRead",
 ]

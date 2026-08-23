@@ -1,8 +1,21 @@
 import { apiClient } from "@/api/client";
-import type { Workspace, WorkspaceInput } from "@/types/workspace";
+import type {
+  AssignableWorkspaceMemberList,
+  Workspace,
+  WorkspaceInput,
+} from "@/types/workspace";
 
 export const listWorkspaces = async (): Promise<Workspace[]> => {
   const response = await apiClient.get<Workspace[]>("/workspaces");
+  return response.data;
+};
+
+export const listAssignableWorkspaceMembers = async (
+  workspaceId: string,
+): Promise<AssignableWorkspaceMemberList> => {
+  const response = await apiClient.get<AssignableWorkspaceMemberList>(
+    `/workspaces/${workspaceId}/assignable-members`,
+  );
   return response.data;
 };
 

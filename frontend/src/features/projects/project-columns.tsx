@@ -7,11 +7,13 @@ import { formatDateTime } from "@/lib/format";
 import type { Project } from "@/types/project";
 
 type ProjectColumnActions = {
+  canManage: boolean;
   onDelete: (project: Project) => void;
   onEdit: (project: Project) => void;
 };
 
 export function getProjectColumns({
+  canManage,
   onDelete,
   onEdit,
 }: ProjectColumnActions): ColumnDef<Project>[] {
@@ -46,32 +48,33 @@ export function getProjectColumns({
       id: "actions",
       enableSorting: false,
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <Button
-            aria-label={`Modifier ${row.original.name}`}
-            onClick={() => {
-              onEdit(row.original);
-            }}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <Pencil aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            aria-label={`Supprimer ${row.original.name}`}
-            onClick={() => {
-              onDelete(row.original);
-            }}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <Trash2 aria-hidden="true" className="text-destructive size-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) =>
+        canManage ? (
+          <div className="flex justify-end gap-1">
+            <Button
+              aria-label={`Modifier ${row.original.name}`}
+              onClick={() => {
+                onEdit(row.original);
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Pencil aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              aria-label={`Supprimer ${row.original.name}`}
+              onClick={() => {
+                onDelete(row.original);
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 }

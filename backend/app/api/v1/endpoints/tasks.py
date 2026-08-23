@@ -7,6 +7,7 @@ from app.api.deps import CurrentUserDep, TaskServiceDep
 from app.models.task import Task
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
+from app.services.permission import PermissionDeniedError
 from app.services.task import TaskNotFoundError, TaskProjectNotFoundError
 
 
@@ -40,6 +41,11 @@ def create_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc
 
 
@@ -87,6 +93,11 @@ def update_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found.",
         ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
 
 
 @router.delete(
@@ -104,4 +115,9 @@ def delete_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
         ) from exc

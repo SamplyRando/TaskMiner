@@ -10,8 +10,9 @@ import {
 } from "@/api/workspace";
 import { getUserPreferences } from "@/api/settings";
 import { WorkspacePage } from "@/pages/workspace-page";
+import { useAuthStore } from "@/store/auth-store";
 import { renderWithQuery } from "@/test/query-wrapper";
-import { workspaceFixture } from "@/test/resource-fixtures";
+import { userId, workspaceFixture } from "@/test/resource-fixtures";
 import { settingsPreferencesFixture } from "@/test/settings-fixtures";
 
 vi.mock("@/api/workspace", () => ({
@@ -31,6 +32,16 @@ const mockedGetPreferences = vi.mocked(getUserPreferences);
 describe("WorkspacePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({
+      currentUser: {
+        created_at: null,
+        email: "ada@example.com",
+        full_name: "Ada Lovelace",
+        id: userId,
+        is_active: true,
+        updated_at: null,
+      },
+    });
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
   });

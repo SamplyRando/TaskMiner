@@ -3,8 +3,8 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Date, String, and_, case, cast, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import Date, String, and_, case, cast, exists, func, or_, select
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -821,7 +821,10 @@ class DashboardRepository:
     def _list_workspace_options(self, owner: User) -> list[WorkspaceOptionRecord]:
         statement = (
             select(Workspace.id, Workspace.name)
-            .where(Workspace.owner_id == owner.id, Workspace.deleted_at.is_(None))
+            .where(
+                self._workspace_access_filter(owner),
+                Workspace.deleted_at.is_(None),
+            )
             .order_by(Workspace.name.asc())
         )
         return [
@@ -835,7 +838,7 @@ class DashboardRepository:
         workspace_id: UUID | None,
     ) -> list[ProjectOptionRecord]:
         filters: list[ColumnElement[bool]] = [
-            Workspace.owner_id == owner.id,
+            self._workspace_access_filter(owner),
             Workspace.deleted_at.is_(None),
             Project.deleted_at.is_(None),
         ]
@@ -862,7 +865,7 @@ class DashboardRepository:
         workspace_id: UUID | None,
     ) -> list[UserOptionRecord]:
         filters: list[ColumnElement[bool]] = [
-            Workspace.owner_id == owner.id,
+            self._workspace_access_filter(owner),
             Workspace.deleted_at.is_(None),
             User.is_active.is_(True),
         ]
@@ -882,13 +885,14 @@ class DashboardRepository:
             for row in self.session.execute(statement).all()
         ]
 
-    @staticmethod
+    @classmethod
     def _workspace_filters(
+        cls,
         owner: User,
         filters: DashboardFilters,
     ) -> tuple[ColumnElement[bool], ...]:
         conditions: list[ColumnElement[bool]] = [
-            Workspace.owner_id == owner.id,
+            cls._workspace_access_filter(owner),
             Workspace.deleted_at.is_(None),
         ]
         if filters.workspace_id is not None:
@@ -925,13 +929,14 @@ class DashboardRepository:
             conditions.append(Task.assigned_user_id == filters.user_id)
         return tuple(conditions)
 
-    @staticmethod
+    @classmethod
     def _activity_filters(
+        cls,
         owner: User,
         filters: DashboardFilters,
     ) -> tuple[ColumnElement[bool], ...]:
         conditions: list[ColumnElement[bool]] = [
-            Workspace.owner_id == owner.id,
+            cls._workspace_access_filter(owner),
             Workspace.deleted_at.is_(None),
         ]
         if filters.workspace_id is not None:
@@ -963,6 +968,16 @@ class DashboardRepository:
                 )
             )
         return tuple(conditions)
+
+    @staticmethod
+    def _workspace_access_filter(user: User) -> ColumnElement[bool]:
+        membership = aliased(WorkspaceMember)
+        return exists(
+            select(membership.id).where(
+                membership.workspace_id == Workspace.id,
+                membership.user_id == user.id,
+            )
+        )
 
     @staticmethod
     def _weighted_average(values: list[tuple[float, int]]) -> float:

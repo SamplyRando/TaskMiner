@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createWorkspace,
   deleteWorkspace,
+  listAssignableWorkspaceMembers,
   listWorkspaces,
   updateWorkspace,
 } from "@/api/workspace";
@@ -11,12 +12,24 @@ import type { Workspace, WorkspaceInput } from "@/types/workspace";
 export const workspaceKeys = {
   all: ["workspaces"] as const,
   list: () => [...workspaceKeys.all, "list"] as const,
+  assignableMembers: (workspaceId: string) =>
+    [...workspaceKeys.all, workspaceId, "assignable-members"] as const,
 };
 
 export const useWorkspaces = () =>
   useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: listWorkspaces,
+  });
+
+export const useAssignableWorkspaceMembers = (
+  workspaceId: string | null,
+  enabled = true,
+) =>
+  useQuery({
+    enabled: enabled && workspaceId !== null,
+    queryFn: () => listAssignableWorkspaceMembers(workspaceId ?? ""),
+    queryKey: workspaceKeys.assignableMembers(workspaceId ?? ""),
   });
 
 export const useCreateWorkspace = () => {

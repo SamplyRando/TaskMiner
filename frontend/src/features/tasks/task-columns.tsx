@@ -13,6 +13,7 @@ import type { Project } from "@/types/project";
 import type { Task } from "@/types/task";
 
 type TaskColumnActions = {
+  canManage: boolean;
   onAssign: (task: Task) => void;
   onDelete: (task: Task) => void;
   onEdit: (task: Task) => void;
@@ -20,6 +21,7 @@ type TaskColumnActions = {
 };
 
 export function getTaskColumns({
+  canManage,
   onAssign,
   onDelete,
   onEdit,
@@ -96,43 +98,44 @@ export function getTaskColumns({
       id: "actions",
       enableSorting: false,
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <Button
-            aria-label={`Assigner ${row.original.title}`}
-            onClick={() => {
-              onAssign(row.original);
-            }}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <UserRoundCog aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            aria-label={`Modifier ${row.original.title}`}
-            onClick={() => {
-              onEdit(row.original);
-            }}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <Pencil aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            aria-label={`Supprimer ${row.original.title}`}
-            onClick={() => {
-              onDelete(row.original);
-            }}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <Trash2 aria-hidden="true" className="text-destructive size-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) =>
+        canManage ? (
+          <div className="flex justify-end gap-1">
+            <Button
+              aria-label={`Assigner ${row.original.title}`}
+              onClick={() => {
+                onAssign(row.original);
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <UserRoundCog aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              aria-label={`Modifier ${row.original.title}`}
+              onClick={() => {
+                onEdit(row.original);
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Pencil aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              aria-label={`Supprimer ${row.original.title}`}
+              onClick={() => {
+                onDelete(row.original);
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+            </Button>
+          </div>
+        ) : null,
     },
   ];
 }

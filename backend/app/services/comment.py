@@ -12,6 +12,7 @@ from app.models.user import User
 from app.repositories.comment import CommentRepository
 from app.repositories.task import TaskRepository
 from app.schemas.comment import CommentCreate, CommentUpdate
+from app.services.permission import PermissionService
 
 
 class CommentTaskNotFoundError(Exception):
@@ -29,9 +30,11 @@ class CommentService:
         self,
         repository: CommentRepository,
         task_repository: TaskRepository,
+        permission_service: PermissionService,
     ) -> None:
         self.repository = repository
         self.task_repository = task_repository
+        self.permission_service = permission_service
 
     def create_comment(
         self,
@@ -39,7 +42,11 @@ class CommentService:
         task_id: UUID,
         data: CommentCreate,
     ) -> Comment:
-        task = self._get_owned_task(author, task_id)
+        task = self._get_accessible_task(author, task_id)
+        self.permission_service.require_task_management(
+            author,
+            task.project.workspace_id,
+        )
         comment = self.repository.create(task, author, data)
         publish(
             DomainEvent(
@@ -58,11 +65,11 @@ class CommentService:
         return comment
 
     def list_comments(self, owner: User, task_id: UUID) -> list[Comment]:
-        task = self._get_owned_task(owner, task_id)
+        task = self._get_accessible_task(owner, task_id)
         return self.repository.list_by_task(task)
 
     def get_comment(self, owner: User, comment_id: UUID) -> Comment:
-        comment = self.repository.get_by_id_for_owner(comment_id, owner)
+        comment = self.repository.get_by_id_for_user(comment_id, owner)
         if comment is None:
             raise CommentNotFoundError
         return comment
@@ -80,14 +87,18 @@ class CommentService:
         comment = self._get_authored_comment(author, comment_id)
         self.repository.delete(comment)
 
-    def _get_owned_task(self, owner: User, task_id: UUID) -> Task:
-        task = self.task_repository.get_by_id_for_owner(task_id, owner)
+    def _get_accessible_task(self, owner: User, task_id: UUID) -> Task:
+        task = self.task_repository.get_by_id_for_user(task_id, owner)
         if task is None:
             raise CommentTaskNotFoundError
         return task
 
     def _get_authored_comment(self, author: User, comment_id: UUID) -> Comment:
-        comment = self.repository.get_by_id_for_owner(comment_id, author)
+        comment = self.repository.get_by_id_for_user(comment_id, author)
         if comment is None or comment.author_id != author.id:
             raise CommentNotFoundError
+        self.permission_service.require_task_management(
+            author,
+            comment.task.project.workspace_id,
+        )
         return comment

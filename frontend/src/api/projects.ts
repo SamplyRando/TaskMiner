@@ -12,8 +12,15 @@ export const listProjects = async (
   return response.data;
 };
 
-export const createProject = async (data: ProjectInput): Promise<Project> => {
-  const response = await apiClient.post<Project>("/projects", data);
+export const createProject = async (
+  data: ProjectInput,
+  workspaceId?: string,
+): Promise<Project> => {
+  const response = workspaceId
+    ? await apiClient.post<Project>("/projects", data, {
+        params: { workspace_id: workspaceId },
+      })
+    : await apiClient.post<Project>("/projects", data);
   return response.data;
 };
 

@@ -146,6 +146,16 @@ class PermissionService:
             raise PermissionDeniedError
         return workspace
 
+    def require_project_management(
+        self,
+        user: User,
+        workspace_id: UUID,
+    ) -> Workspace:
+        workspace, membership = self._get_workspace_membership(user, workspace_id)
+        if not permissions.can_manage_projects(membership.role):
+            raise PermissionDeniedError
+        return workspace
+
     def require_task_management(
         self,
         user: User,

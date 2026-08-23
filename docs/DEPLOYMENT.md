@@ -73,14 +73,14 @@ python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 Pour autoriser plusieurs domaines, les séparer par des virgules :
 
 ```text
-CORS_ORIGINS=https://taskminer.vercel.app,https://app.example.com
+CORS_ORIGINS=https://taskminer.app,https://www.taskminer.app
 ```
 
 Une expression régulière peut autoriser uniquement les previews rattachées au
 nom du projet :
 
 ```text
-CORS_ORIGIN_REGEX=^https://taskminer(?:-[a-z0-9-]+)*\.vercel\.app$
+CORS_ORIGIN_REGEX=^https://task-miner(?:-[a-z0-9-]+)*\.vercel\.app$
 ```
 
 ## 3. Déploiement Vercel
