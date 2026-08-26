@@ -63,6 +63,9 @@ Docker actuel.
 | `CORS_ORIGIN_REGEX` | Optionnel, previews Vercel du projet |
 | `STORAGE_PATH` | `/app/storage` avec un volume Railway |
 | `TASKMINER_LOG_LEVEL` | `INFO` |
+| `TASKMINER_AI_PROVIDER` | `openai` en production |
+| `TASKMINER_OPENAI_MODEL` | `gpt-5.6-luna` ou le modèle validé pour la production |
+| `OPENAI_API_KEY` | Clé API OpenAI stockée uniquement dans Railway |
 | `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
 | `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
 | `TASKMINER_EMAIL_FROM` | Expéditeur d'un domaine vérifié, ex. `TaskMiner <invitations@taskminer.app>` |
@@ -86,6 +89,14 @@ nom du projet :
 ```text
 CORS_ORIGIN_REGEX=^https://task-miner(?:-[a-z0-9-]+)*\.vercel\.app$
 ```
+
+### TaskMiner AI en production
+
+Définir explicitement `TASKMINER_AI_PROVIDER=openai`, puis enregistrer
+`OPENAI_API_KEY` et `TASKMINER_OPENAI_MODEL` uniquement dans Railway. Le mode
+`mock` reste volontairement la valeur sûre pour le développement local et les
+tests ; il ne doit pas être utilisé par le service de production. La clé OpenAI
+ne doit jamais être dupliquée dans une variable `VITE_*` ni dans Vercel.
 
 ### E-mails transactionnels Resend
 

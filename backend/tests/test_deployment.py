@@ -105,3 +105,9 @@ def test_cors_preflight_allows_configured_frontend(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == ("http://localhost:3000")
+
+
+def test_unimplemented_user_collection_is_not_exposed(client: TestClient) -> None:
+    response = client.get("/api/v1/users")
+
+    assert response.status_code == 404

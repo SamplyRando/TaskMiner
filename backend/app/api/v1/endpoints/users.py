@@ -26,11 +26,6 @@ from app.services.workspace import WorkspaceNotFoundError
 router = APIRouter()
 
 
-@router.get("")
-def list_users_placeholder() -> dict[str, str]:
-    return {"message": "Not implemented yet"}
-
-
 @router.get("/me", response_model=UserProfileRead)
 def get_current_profile(
     current_user: CurrentUserDep,
