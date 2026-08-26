@@ -91,6 +91,9 @@ que lorsque cette perte de données est volontaire.
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de validité du token d'accès |
 | `STORAGE_PATH` | Répertoire persistant des pièces jointes |
 | `TASKMINER_LOG_LEVEL` | Niveau de logs backend |
+| `TASKMINER_AI_PROVIDER` | Provider IA : `mock` en local/test, `openai` en production |
+| `TASKMINER_OPENAI_MODEL` | Modèle Responses API utilisé par le provider OpenAI |
+| `OPENAI_API_KEY` | Clé serveur OpenAI, jamais exposée à Vite |
 | `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
 | `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
 | `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |

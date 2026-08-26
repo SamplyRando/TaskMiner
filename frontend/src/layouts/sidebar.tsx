@@ -51,13 +51,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   useEffect(() => {
     if (!isOpen || isDesktop) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", closeOnEscape);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscape);
+      previouslyFocused?.focus();
     };
   }, [isDesktop, isOpen, onClose]);
 
