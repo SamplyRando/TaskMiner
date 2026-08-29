@@ -62,6 +62,10 @@ def can_view_audit(role: WorkspaceMemberRole) -> bool:
     return role in {WorkspaceMemberRole.OWNER, WorkspaceMemberRole.ADMIN}
 
 
+def can_view_ai_usage(role: WorkspaceMemberRole) -> bool:
+    return role in {WorkspaceMemberRole.OWNER, WorkspaceMemberRole.ADMIN}
+
+
 def can_comment(role: WorkspaceMemberRole) -> bool:
     return role != WorkspaceMemberRole.VIEWER
 

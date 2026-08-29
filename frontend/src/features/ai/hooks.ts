@@ -6,6 +6,7 @@ import {
   generateProjectChangePlan,
   generateProjectPlan,
   getAICapabilities,
+  getAIWorkspaceUsage,
 } from "@/api/ai";
 import { projectKeys } from "@/features/projects/hooks";
 import { taskKeys } from "@/features/tasks/hooks";
@@ -13,6 +14,8 @@ import { taskKeys } from "@/features/tasks/hooks";
 export const aiKeys = {
   all: ["ai"] as const,
   capabilities: () => [...aiKeys.all, "capabilities"] as const,
+  usage: (workspaceId: string) =>
+    [...aiKeys.all, "usage", workspaceId] as const,
 };
 
 export const useAICapabilities = () =>
@@ -22,8 +25,28 @@ export const useAICapabilities = () =>
     staleTime: 5 * 60 * 1_000,
   });
 
-export const useGenerateProjectPlan = () =>
-  useMutation({ mutationFn: generateProjectPlan });
+export const useAIWorkspaceUsage = (
+  workspaceId: string | null,
+  enabled: boolean,
+) =>
+  useQuery({
+    enabled: enabled && workspaceId !== null,
+    queryFn: () => getAIWorkspaceUsage(workspaceId ?? ""),
+    queryKey: aiKeys.usage(workspaceId ?? ""),
+    staleTime: 30_000,
+  });
+
+export const useGenerateProjectPlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: generateProjectPlan,
+    onSettled: async (_data, _error, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: aiKeys.usage(variables.workspace_id),
+      });
+    },
+  });
+};
 
 export const useApplyProjectPlan = () => {
   const queryClient = useQueryClient();
@@ -42,8 +65,17 @@ export const useApplyProjectPlan = () => {
   });
 };
 
-export const useGenerateProjectChangePlan = () =>
-  useMutation({ mutationFn: generateProjectChangePlan });
+export const useGenerateProjectChangePlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: generateProjectChangePlan,
+    onSettled: async (_data, _error, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: aiKeys.usage(variables.workspace_id),
+      });
+    },
+  });
+};
 
 export const useApplyProjectChangePlan = () => {
   const queryClient = useQueryClient();

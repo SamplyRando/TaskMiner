@@ -79,7 +79,7 @@ def test_project_plan_returns_a_structured_transient_draft(
     assert data["warnings"] == []
 
 
-def test_workspace_member_with_read_access_can_generate(
+def test_viewer_cannot_consume_ai_generation(
     client: TestClient,
     workspace: CreatedWorkspace,
     other_user: RegisteredUser,
@@ -97,7 +97,8 @@ def test_workspace_member_with_read_access_can_generate(
         json=plan_payload(workspace.id),
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Insufficient permissions."}
 
 
 def test_foreign_workspace_is_hidden(

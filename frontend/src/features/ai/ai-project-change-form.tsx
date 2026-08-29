@@ -18,6 +18,7 @@ import {
   type AIProjectChangeFormValues,
   aiProjectChangeFormSchema,
 } from "@/features/ai/schemas";
+import { getAIGenerationErrorMessage } from "@/features/ai/error-message";
 import type { Project } from "@/types/project";
 import type { Workspace } from "@/types/workspace";
 
@@ -31,6 +32,7 @@ type AIProjectChangeFormProps = {
   onSubmit: (values: AIProjectChangeFormValues) => Promise<void>;
   onWorkspaceChange: (workspaceId: string) => void;
   projects: Project[];
+  quotaReachedWorkspaceId?: string | null;
   workspaces: Workspace[];
 };
 
@@ -44,6 +46,7 @@ export function AIProjectChangeForm({
   onSubmit,
   onWorkspaceChange,
   projects,
+  quotaReachedWorkspaceId = null,
   workspaces,
 }: AIProjectChangeFormProps) {
   const form = useForm<AIProjectChangeFormValues>({
@@ -71,6 +74,8 @@ export function AIProjectChangeForm({
   }, [form, onWorkspaceChange, workspaceId]);
 
   const submit = form.handleSubmit(onSubmit);
+  const isQuotaReached =
+    Boolean(workspaceId) && workspaceId === quotaReachedWorkspaceId;
 
   return (
     <Card>
@@ -180,14 +185,23 @@ export function AIProjectChangeForm({
             )}
           </div>
 
-          <FormError error={error} />
+          <FormError
+            error={error}
+            message={getAIGenerationErrorMessage(error)}
+          />
+
+          {isQuotaReached ? (
+            <p className="text-destructive text-sm" role="alert">
+              Le quota mensuel TaskMiner AI de ce workspace est atteint.
+            </p>
+          ) : null}
 
           <div className="flex justify-end border-t pt-5">
             <Button
               aria-label={
                 isPending ? "Analyse des modifications en cours" : undefined
               }
-              disabled={isPending || !form.formState.isValid}
+              disabled={isPending || !form.formState.isValid || isQuotaReached}
               isLoading={isPending}
               loadingLabel="Analyse des modifications en cours"
               type="submit"

@@ -20,10 +20,12 @@ from app.ai.provider import (
     AIProviderAuthenticationError,
     AIProviderName,
     AIProviderRateLimitError,
+    AIProviderResult,
     AIProviderRefusalError,
     AIProviderResponseError,
     AIProviderTimeoutError,
     AIProviderUnavailableError,
+    AIProviderUsage,
 )
 from app.ai.schemas import (
     AIChangeField,
@@ -106,6 +108,7 @@ class OpenAIProvider:
         timeout_seconds: float = 30.0,
     ) -> None:
         self.model = model
+        self.model_name = model
         self.timeout_seconds = timeout_seconds
         self.client = client or AsyncOpenAI(
             api_key=api_key,
@@ -116,7 +119,7 @@ class OpenAIProvider:
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
-    ) -> AIProjectPlanResponse:
+    ) -> AIProviderResult[AIProjectPlanResponse]:
         payload = {
             "brief": request.prompt,
             "target_date": (
@@ -128,19 +131,19 @@ class OpenAIProvider:
                 "existing_project" if request.project_id is not None else "new_project"
             ),
         }
-        plan = await self._generate_structured(
+        result = await self._generate_structured(
             instructions=_PROJECT_PLAN_INSTRUCTIONS,
             payload=payload,
             response_model=AIProjectPlanResponse,
         )
-        self._validate_project_plan(plan, request.target_date)
-        return plan
+        self._validate_project_plan(result.value, request.target_date)
+        return result
 
     async def generate_project_change_plan(
         self,
         request: AIProjectChangePlanRequest,
         context: AIProjectContext,
-    ) -> AIProjectChangePlanResponse:
+    ) -> AIProviderResult[AIProjectChangePlanResponse]:
         payload = {
             "instruction": request.instruction,
             "project": {
@@ -161,7 +164,10 @@ class OpenAIProvider:
             payload=payload,
             response_model=_OpenAIProjectChangeOutput,
         )
-        return self._build_change_plan(output, context)
+        return AIProviderResult(
+            value=self._build_change_plan(output.value, context),
+            usage=output.usage,
+        )
 
     async def _generate_structured(
         self,
@@ -169,7 +175,7 @@ class OpenAIProvider:
         instructions: str,
         payload: Mapping[str, object],
         response_model: type[ResponseModelT],
-    ) -> ResponseModelT:
+    ) -> AIProviderResult[ResponseModelT]:
         try:
             response = await self.client.responses.parse(
                 model=self.model,
@@ -197,7 +203,30 @@ class OpenAIProvider:
 
         parsed = response.output_parsed
         if parsed is not None:
-            return parsed
+            usage = getattr(response, "usage", None)
+            input_details = (
+                getattr(usage, "input_tokens_details", None)
+                if usage is not None
+                else None
+            )
+            return AIProviderResult(
+                value=parsed,
+                usage=(
+                    AIProviderUsage(
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                        total_tokens=usage.total_tokens,
+                        cached_input_tokens=(
+                            getattr(input_details, "cached_tokens", 0) or 0
+                        ),
+                        cache_write_input_tokens=(
+                            getattr(input_details, "cache_write_tokens", 0) or 0
+                        ),
+                    )
+                    if usage is not None
+                    else None
+                ),
+            )
         if any(
             content.type == "refusal"
             for item in response.output

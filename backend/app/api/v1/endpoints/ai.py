@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, status
 
 from app.ai.apply_service import (
@@ -27,14 +29,20 @@ from app.ai.schemas import (
     AIProjectChangePlanResponse,
     AIProjectPlanRequest,
     AIProjectPlanResponse,
+    AIWorkspaceUsageResponse,
 )
 from app.ai.service import AIProjectNotFoundError
+from app.ai.usage_service import (
+    AIMonthlyQuotaExceededError,
+    AIRateLimitExceededError,
+)
 from app.api.deps import (
     AIApplyServiceDep,
     AIProjectChangeApplyServiceDep,
     AIProjectChangePlanServiceDep,
     AIProviderDep,
     AIServiceDep,
+    AIUsageServiceDep,
     CurrentUserDep,
 )
 from app.services.permission import PermissionDeniedError
@@ -42,6 +50,22 @@ from app.services.workspace import WorkspaceNotFoundError
 
 
 router = APIRouter()
+usage_router = APIRouter()
+
+
+def _usage_limit_http_exception(
+    error: AIMonthlyQuotaExceededError | AIRateLimitExceededError,
+) -> HTTPException:
+    if isinstance(error, AIRateLimitExceededError):
+        return HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="AI generation rate limit exceeded.",
+            headers={"Retry-After": str(error.retry_after_seconds)},
+        )
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail="AI monthly quota exceeded.",
+    )
 
 
 def _provider_http_exception(error: AIProviderError) -> HTTPException:
@@ -161,6 +185,8 @@ async def generate_project_change_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except (AIMonthlyQuotaExceededError, AIRateLimitExceededError) as exc:
+        raise _usage_limit_http_exception(exc) from exc
     except AIProviderError as exc:
         raise _provider_http_exception(exc) from exc
 
@@ -226,5 +252,30 @@ async def generate_project_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except (AIMonthlyQuotaExceededError, AIRateLimitExceededError) as exc:
+        raise _usage_limit_http_exception(exc) from exc
     except AIProviderError as exc:
         raise _provider_http_exception(exc) from exc
+
+
+@usage_router.get(
+    "/{workspace_id}/ai/usage",
+    response_model=AIWorkspaceUsageResponse,
+)
+def get_workspace_ai_usage(
+    workspace_id: UUID,
+    current_user: CurrentUserDep,
+    service: AIUsageServiceDep,
+) -> AIWorkspaceUsageResponse:
+    try:
+        return service.get_workspace_usage(current_user, workspace_id)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc

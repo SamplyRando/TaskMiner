@@ -66,6 +66,21 @@ class Settings(BaseSettings):
         min_length=1,
         validation_alias="TASKMINER_OPENAI_MODEL",
     )
+    ai_monthly_request_limit: int = Field(
+        default=100,
+        gt=0,
+        validation_alias="TASKMINER_AI_MONTHLY_REQUEST_LIMIT",
+    )
+    ai_rate_limit_requests: int = Field(
+        default=10,
+        gt=0,
+        validation_alias="TASKMINER_AI_RATE_LIMIT_REQUESTS",
+    )
+    ai_rate_limit_window_seconds: int = Field(
+        default=60,
+        gt=0,
+        validation_alias="TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS",
+    )
     email_provider: Literal["noop", "resend"] = Field(
         default="noop",
         validation_alias="TASKMINER_EMAIL_PROVIDER",

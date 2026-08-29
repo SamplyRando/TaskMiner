@@ -3,6 +3,7 @@ import type {
   AIApplyProjectPlanResponse,
   AIProjectChangePlanResponse,
   AIProjectPlanResponse,
+  AIWorkspaceUsage,
 } from "@/types/ai";
 import { projectId } from "@/test/resource-fixtures";
 
@@ -71,6 +72,22 @@ export const aiApplyFixture: AIApplyProjectPlanResponse = {
   project_id: "10000000-0000-4000-8000-000000000001",
   skipped_task_count: 0,
   warnings: [],
+};
+
+export const aiUsageFixture: AIWorkspaceUsage = {
+  average_latency_ms: 1850,
+  estimated_cost_usd: 0.42,
+  failed_requests: 2,
+  input_tokens: 12345,
+  output_tokens: 6789,
+  period_end: "2026-09-01T00:00:00Z",
+  period_start: "2026-08-01T00:00:00Z",
+  pricing_configured: true,
+  request_limit: 100,
+  requests_remaining: 73,
+  requests_used: 27,
+  successful_requests: 25,
+  total_tokens: 19134,
 };
 
 export const aiChangePlanFixture: AIProjectChangePlanResponse = {

@@ -9,12 +9,22 @@ import type {
   AIProjectChangePlanResponse,
   AIProjectPlanRequest,
   AIProjectPlanResponse,
+  AIWorkspaceUsage,
 } from "@/types/ai";
 
 const AI_GENERATION_TIMEOUT_MS = 60_000;
 
 export const getAICapabilities = async (): Promise<AICapabilities> => {
   const response = await apiClient.get<AICapabilities>("/ai/capabilities");
+  return response.data;
+};
+
+export const getAIWorkspaceUsage = async (
+  workspaceId: string,
+): Promise<AIWorkspaceUsage> => {
+  const response = await apiClient.get<AIWorkspaceUsage>(
+    `/workspaces/${workspaceId}/ai/usage`,
+  );
   return response.data;
 };
 

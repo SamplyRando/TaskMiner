@@ -9,8 +9,10 @@ import { AIProjectPlan } from "@/features/ai/ai-project-plan";
 import { AIApplySuccess } from "@/features/ai/ai-apply-success";
 import { AIProjectChangeWorkflow } from "@/features/ai/ai-project-change-workflow";
 import { AIProjectPlannerForm } from "@/features/ai/ai-project-planner-form";
+import { AIUsagePanel } from "@/features/ai/ai-usage-panel";
 import {
   useAICapabilities,
+  useAIWorkspaceUsage,
   useApplyProjectPlan,
   useGenerateProjectPlan,
 } from "@/features/ai/hooks";
@@ -19,6 +21,7 @@ import type {
   AIProjectPlannerFormValues,
 } from "@/features/ai/schemas";
 import { useProjects } from "@/features/projects/hooks";
+import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useSessionState } from "@/hooks/use-session-state";
 import type {
@@ -69,10 +72,28 @@ export function AIPage() {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     draft?.workspaceId ?? null,
   );
+  const [usageWorkspaceId, setUsageWorkspaceId] = useState<string | null>(
+    draft?.workspaceId ?? null,
+  );
   const effectiveWorkspaceId =
     selectedWorkspaceId ?? workspaceState.activeWorkspaceId ?? "";
+  const effectiveUsageWorkspaceId =
+    usageWorkspaceId ?? workspaceState.activeWorkspaceId;
+  const permissionsQuery = useWorkspacePermissions(effectiveUsageWorkspaceId);
+  const canViewUsage =
+    permissionsQuery.data?.role === "owner" ||
+    permissionsQuery.data?.role === "admin";
+  const usageQuery = useAIWorkspaceUsage(
+    effectiveUsageWorkspaceId,
+    canViewUsage,
+  );
+  const quotaReachedWorkspaceId =
+    usageQuery.data?.requests_remaining === 0
+      ? effectiveUsageWorkspaceId
+      : null;
   const handleWorkspaceChange = useCallback(
     (workspaceId: string) => {
+      setUsageWorkspaceId(workspaceId);
       setSelectedWorkspaceId((currentWorkspaceId) => {
         if (currentWorkspaceId !== null && currentWorkspaceId !== workspaceId) {
           setDraft(null);
@@ -201,6 +222,15 @@ export function AIPage() {
         </Button>
       </div>
 
+      {canViewUsage ? (
+        <AIUsagePanel
+          data={usageQuery.data}
+          error={usageQuery.error}
+          isPending={usageQuery.isPending}
+          onRetry={() => void usageQuery.refetch()}
+        />
+      ) : null}
+
       {!workspaceState.isPending && workspaceState.workspaces.length === 0 ? (
         <Card>
           <CardContent className="flex min-h-56 flex-col items-center justify-center px-6 py-10 text-center">
@@ -223,6 +253,7 @@ export function AIPage() {
           isProjectsPending={projectsQuery.isPending}
           isWorkspacesPending={workspaceState.isPending}
           key={plannerCycle}
+          quotaReachedWorkspaceId={quotaReachedWorkspaceId}
           onSubmit={handleSubmit}
           onWorkspaceChange={handleWorkspaceChange}
           projects={projectsQuery.data?.items ?? []}
@@ -232,6 +263,8 @@ export function AIPage() {
         <AIProjectChangeWorkflow
           activeWorkspaceId={workspaceState.activeWorkspaceId}
           isWorkspacesPending={workspaceState.isPending}
+          onUsageWorkspaceChange={setUsageWorkspaceId}
+          quotaReachedWorkspaceId={quotaReachedWorkspaceId}
           workspaces={workspaceState.workspaces}
         />
       )}

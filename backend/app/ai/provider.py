@@ -1,4 +1,5 @@
-from typing import Literal, Protocol
+from dataclasses import dataclass
+from typing import Generic, Literal, Protocol, TypeVar
 
 from app.ai.schemas import (
     AIProjectChangePlanRequest,
@@ -10,6 +11,26 @@ from app.ai.schemas import (
 
 
 AIProviderName = Literal["mock", "openai"]
+ProviderResponseT = TypeVar("ProviderResponseT")
+
+
+@dataclass(frozen=True)
+class AIProviderUsage:
+    """Provider-reported token totals; absent for providers without metering."""
+
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    cached_input_tokens: int = 0
+    cache_write_input_tokens: int = 0
+
+
+@dataclass(frozen=True)
+class AIProviderResult(Generic[ProviderResponseT]):
+    """Validated proposal plus metadata kept outside the public API contract."""
+
+    value: ProviderResponseT
+    usage: AIProviderUsage | None = None
 
 
 class AIProviderError(Exception):
@@ -49,11 +70,12 @@ class AIProvider(Protocol):
 
     provider_name: AIProviderName
     display_name: str
+    model_name: str
 
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
-    ) -> AIProjectPlanResponse:
+    ) -> AIProviderResult[AIProjectPlanResponse]:
         """Generate a structured draft without mutating TaskMiner resources."""
         ...
 
@@ -61,6 +83,6 @@ class AIProvider(Protocol):
         self,
         request: AIProjectChangePlanRequest,
         context: AIProjectContext,
-    ) -> AIProjectChangePlanResponse:
+    ) -> AIProviderResult[AIProjectChangePlanResponse]:
         """Generate task changes from a safe server-owned project snapshot."""
         ...

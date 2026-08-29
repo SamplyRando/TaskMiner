@@ -10,9 +10,11 @@ import {
   generateProjectChangePlan,
   generateProjectPlan,
   getAICapabilities,
+  getAIWorkspaceUsage,
 } from "@/api/ai";
 import { listProjects } from "@/api/projects";
 import { listWorkspaces } from "@/api/workspace";
+import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { AIPage } from "@/pages/ai-page";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import {
@@ -21,6 +23,7 @@ import {
   aiChangePlanFixture,
   aiPlanFixture,
   aiSevenTaskPlanFixture,
+  aiUsageFixture,
 } from "@/test/ai-fixtures";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { projectFixture, workspaceFixture } from "@/test/resource-fixtures";
@@ -31,6 +34,7 @@ vi.mock("@/api/ai", () => ({
   generateProjectChangePlan: vi.fn(),
   generateProjectPlan: vi.fn(),
   getAICapabilities: vi.fn(),
+  getAIWorkspaceUsage: vi.fn(),
 }));
 vi.mock("@/api/projects", () => ({
   createProject: vi.fn(),
@@ -44,9 +48,14 @@ vi.mock("@/api/workspace", () => ({
   listWorkspaces: vi.fn(),
   updateWorkspace: vi.fn(),
 }));
+vi.mock("@/api/workspace-permissions", () => ({
+  getWorkspacePermissions: vi.fn(),
+}));
 
 const mockedGenerate = vi.mocked(generateProjectPlan);
 const mockedCapabilities = vi.mocked(getAICapabilities);
+const mockedUsage = vi.mocked(getAIWorkspaceUsage);
+const mockedPermissions = vi.mocked(getWorkspacePermissions);
 const mockedApply = vi.mocked(applyProjectPlan);
 const mockedGenerateChanges = vi.mocked(generateProjectChangePlan);
 const mockedApplyChanges = vi.mocked(applyProjectChangePlan);
@@ -73,6 +82,18 @@ describe("AIPage", () => {
       provider: "openai",
       provider_label: "OpenAI",
     });
+    mockedUsage.mockResolvedValue(aiUsageFixture);
+    mockedPermissions.mockResolvedValue({
+      role: "owner",
+      permissions: {
+        manage_invitations: true,
+        manage_members: true,
+        manage_projects: true,
+        manage_tasks: true,
+        manage_workspace: true,
+        read: true,
+      },
+    });
     mockedApply.mockResolvedValue(aiApplyFixture);
     mockedGenerateChanges.mockResolvedValue(aiChangePlanFixture);
     mockedApplyChanges.mockResolvedValue(aiChangeApplyFixture);
@@ -85,6 +106,7 @@ describe("AIPage", () => {
       screen.getByRole("heading", { level: 1, name: "TaskMiner AI" }),
     ).toBeInTheDocument();
     expect(await screen.findByText("OpenAI")).toBeInTheDocument();
+    expect(await screen.findByText("27 / 100 requêtes")).toBeInTheDocument();
     expect(
       await screen.findByText("Votre brouillon apparaîtra ici"),
     ).toBeInTheDocument();
@@ -96,6 +118,77 @@ describe("AIPage", () => {
         workspace_id: workspaceFixture.id,
       });
     });
+  });
+
+  it("keeps workspace usage private from non-administrative members", async () => {
+    mockedPermissions.mockResolvedValue({
+      role: "member",
+      permissions: {
+        manage_invitations: false,
+        manage_members: false,
+        manage_projects: false,
+        manage_tasks: true,
+        manage_workspace: false,
+        read: true,
+      },
+    });
+
+    renderWithQuery(<AIPage />);
+
+    await screen.findByText("Votre brouillon apparaîtra ici");
+    expect(mockedUsage).not.toHaveBeenCalled();
+    expect(screen.queryByText("Utilisation IA")).not.toBeInTheDocument();
+  });
+
+  it("disables generation when the server usage reports an exhausted quota", async () => {
+    const user = userEvent.setup();
+    mockedUsage.mockResolvedValue({
+      ...aiUsageFixture,
+      requests_remaining: 0,
+      requests_used: aiUsageFixture.request_limit,
+    });
+    renderWithQuery(<AIPage />);
+
+    await user.type(
+      await screen.findByLabelText("Brief du projet"),
+      "Prepare a complete structured launch plan.",
+    );
+
+    expect(await screen.findByText("Quota atteint")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Générer le plan" }),
+    ).toBeDisabled();
+    expect(mockedGenerate).not.toHaveBeenCalled();
+  });
+
+  it("renders quota and provider-unavailable generation errors safely", async () => {
+    const user = userEvent.setup();
+    mockedGenerate
+      .mockRejectedValueOnce(new ApiError("AI monthly quota exceeded.", 429))
+      .mockRejectedValueOnce(
+        new ApiError(
+          "TaskMiner AI is temporarily unavailable. Please try again.",
+          503,
+        ),
+      );
+    renderWithQuery(<AIPage />);
+    const prompt = await screen.findByLabelText("Brief du projet");
+    await user.type(prompt, "Prepare a complete structured launch plan.");
+    const generateButton = screen.getByRole("button", {
+      name: "Générer le plan",
+    });
+
+    await user.click(generateButton);
+    expect(
+      await screen.findByText(/quota mensuel TaskMiner AI/),
+    ).toBeInTheDocument();
+    await user.click(generateButton);
+    expect(
+      await screen.findByText(
+        "TaskMiner AI est temporairement indisponible. Réessayez dans quelques instants.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/api key|traceback/i)).not.toBeInTheDocument();
   });
 
   it("generates and displays a reviewable structured draft", async () => {

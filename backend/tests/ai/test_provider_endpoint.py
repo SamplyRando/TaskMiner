@@ -16,6 +16,7 @@ from tests.factories import CreatedWorkspace
 class FailingProvider:
     provider_name: AIProviderName = "openai"
     display_name = "OpenAI"
+    model_name = "test-model"
 
     def __init__(self, error: Exception) -> None:
         self.error = error

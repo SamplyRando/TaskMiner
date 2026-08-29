@@ -4,9 +4,10 @@ import { ApiError } from "@/api/client";
 
 type FormErrorProps = {
   error: unknown;
+  message?: string | undefined;
 };
 
-export function FormError({ error }: FormErrorProps) {
+export function FormError({ error, message }: FormErrorProps) {
   if (!error) {
     return null;
   }
@@ -18,9 +19,10 @@ export function FormError({ error }: FormErrorProps) {
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>
-        {error instanceof ApiError
-          ? error.message
-          : "Une erreur inattendue est survenue."}
+        {message ??
+          (error instanceof ApiError
+            ? error.message
+            : "Une erreur inattendue est survenue.")}
       </span>
     </div>
   );
