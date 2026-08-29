@@ -65,4 +65,23 @@ describe("AIProjectChangeForm", () => {
     expect(submit).toBeDisabled();
     expect(submit).toHaveAttribute("aria-busy", "true");
   });
+
+  it("disables analysis when the selected workspace quota is exhausted", () => {
+    render(
+      <AIProjectChangeForm
+        {...props}
+        initialValues={{
+          workspaceId: workspaceFixture.id,
+          projectId: projectFixture.id,
+          instruction: "Décale toutes les tâches API d’une semaine.",
+        }}
+        quotaReachedWorkspaceId={workspaceFixture.id}
+      />,
+    );
+
+    expect(screen.getByText(/quota mensuel TaskMiner AI/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    ).toBeDisabled();
+  });
 });

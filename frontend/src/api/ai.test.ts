@@ -6,6 +6,7 @@ import {
   generateProjectChangePlan,
   generateProjectPlan,
   getAICapabilities,
+  getAIWorkspaceUsage,
 } from "@/api/ai";
 import { apiClient } from "@/api/client";
 import {
@@ -13,6 +14,7 @@ import {
   aiChangeApplyFixture,
   aiChangePlanFixture,
   aiPlanFixture,
+  aiUsageFixture,
 } from "@/test/ai-fixtures";
 import { projectId, workspaceId } from "@/test/resource-fixtures";
 
@@ -34,6 +36,17 @@ describe("TaskMiner AI API", () => {
 
     await expect(getAICapabilities()).resolves.toEqual(capabilities);
     expect(get).toHaveBeenCalledWith("/ai/capabilities");
+  });
+
+  it("loads workspace AI usage through the authenticated client", async () => {
+    const get = vi
+      .spyOn(apiClient, "get")
+      .mockResolvedValue({ data: aiUsageFixture });
+
+    await expect(getAIWorkspaceUsage(workspaceId)).resolves.toEqual(
+      aiUsageFixture,
+    );
+    expect(get).toHaveBeenCalledWith(`/workspaces/${workspaceId}/ai/usage`);
   });
 
   it("uses the authenticated API client and structured project-plan contract", async () => {

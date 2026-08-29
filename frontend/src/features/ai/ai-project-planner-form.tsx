@@ -19,6 +19,7 @@ import {
   type AIProjectPlannerFormValues,
   aiProjectPlannerSchema,
 } from "@/features/ai/schemas";
+import { getAIGenerationErrorMessage } from "@/features/ai/error-message";
 import type { Project } from "@/types/project";
 import type { Workspace } from "@/types/workspace";
 
@@ -32,6 +33,7 @@ type AIProjectPlannerFormProps = {
   onSubmit: (values: AIProjectPlannerFormValues) => Promise<void>;
   onWorkspaceChange: (workspaceId: string) => void;
   projects: Project[];
+  quotaReachedWorkspaceId?: string | null;
   workspaces: Workspace[];
 };
 
@@ -45,6 +47,7 @@ export function AIProjectPlannerForm({
   onSubmit,
   onWorkspaceChange,
   projects,
+  quotaReachedWorkspaceId = null,
   workspaces,
 }: AIProjectPlannerFormProps) {
   const form = useForm<AIProjectPlannerFormValues>({
@@ -86,6 +89,9 @@ export function AIProjectPlannerForm({
     isWorkspacesPending ||
     workspaces.length === 0 ||
     !form.formState.isValid;
+  const isQuotaReached =
+    Boolean(selectedWorkspaceId) &&
+    selectedWorkspaceId === quotaReachedWorkspaceId;
 
   return (
     <Card>
@@ -202,7 +208,16 @@ export function AIProjectPlannerForm({
             )}
           </div>
 
-          <FormError error={error} />
+          <FormError
+            error={error}
+            message={getAIGenerationErrorMessage(error)}
+          />
+
+          {isQuotaReached ? (
+            <p className="text-destructive text-sm" role="alert">
+              Le quota mensuel TaskMiner AI de ce workspace est atteint.
+            </p>
+          ) : null}
 
           <div className="flex flex-col items-start justify-between gap-3 border-t pt-5 sm:flex-row sm:items-center">
             <p className="text-muted-foreground text-xs">
@@ -210,7 +225,7 @@ export function AIProjectPlannerForm({
               confirmée du brouillon créera le projet ou les tâches.
             </p>
             <Button
-              disabled={isSubmitDisabled}
+              disabled={isSubmitDisabled || isQuotaReached}
               isLoading={isPending}
               loadingLabel="Génération du plan en cours"
               type="submit"

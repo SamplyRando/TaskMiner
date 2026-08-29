@@ -22,6 +22,26 @@ class AICapabilitiesResponse(BaseModel):
     provider_label: str
 
 
+class AIWorkspaceUsageResponse(BaseModel):
+    """Current UTC-month AI usage visible to workspace administrators."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    period_start: datetime
+    period_end: datetime
+    request_limit: int = Field(gt=0)
+    requests_used: int = Field(ge=0)
+    requests_remaining: int = Field(ge=0)
+    successful_requests: int = Field(ge=0)
+    failed_requests: int = Field(ge=0)
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+    estimated_cost_usd: float = Field(ge=0)
+    pricing_configured: bool
+    average_latency_ms: int | None = Field(default=None, ge=0)
+
+
 class AIProjectPlanRequest(BaseModel):
     """Validated context used to generate a transient project-plan draft."""
 

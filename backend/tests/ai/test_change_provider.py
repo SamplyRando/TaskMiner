@@ -5,6 +5,7 @@ from uuid import UUID
 from app.ai.mock_provider import MockAIProvider
 from app.ai.schemas import (
     AIProjectChangePlanRequest,
+    AIProjectChangePlanResponse,
     AIProjectContext,
     AIProjectTaskContext,
     AITaskChangeState,
@@ -69,7 +70,10 @@ def project_context() -> AIProjectContext:
     )
 
 
-def generate(instruction: str, context: AIProjectContext | None = None):
+def generate(
+    instruction: str,
+    context: AIProjectContext | None = None,
+) -> AIProjectChangePlanResponse:
     request = AIProjectChangePlanRequest(
         workspace_id=WORKSPACE_ID,
         project_id=PROJECT_ID,
@@ -80,7 +84,7 @@ def generate(instruction: str, context: AIProjectContext | None = None):
             request,
             context or project_context(),
         )
-    )
+    ).value
 
 
 def test_mock_change_provider_matches_the_manual_qa_scenario() -> None:

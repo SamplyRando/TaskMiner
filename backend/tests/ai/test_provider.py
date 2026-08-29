@@ -3,7 +3,7 @@ from datetime import date
 from uuid import uuid4
 
 from app.ai.mock_provider import MockAIProvider
-from app.ai.schemas import AIProjectPlanRequest
+from app.ai.schemas import AIProjectPlanRequest, AIProjectPlanResponse
 from app.models.task import TaskPriority
 
 
@@ -16,8 +16,8 @@ def build_request(**overrides: object) -> AIProjectPlanRequest:
     return AIProjectPlanRequest.model_validate(values)
 
 
-def generate(request: AIProjectPlanRequest):
-    return asyncio.run(MockAIProvider().generate_project_plan(request))
+def generate(request: AIProjectPlanRequest) -> AIProjectPlanResponse:
+    return asyncio.run(MockAIProvider().generate_project_plan(request)).value
 
 
 def test_mock_provider_is_deterministic() -> None:

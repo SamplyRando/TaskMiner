@@ -40,6 +40,8 @@ type AppliedChanges = {
 type AIProjectChangeWorkflowProps = {
   activeWorkspaceId: string | null;
   isWorkspacesPending: boolean;
+  onUsageWorkspaceChange: (workspaceId: string) => void;
+  quotaReachedWorkspaceId: string | null;
   workspaces: Workspace[];
 };
 
@@ -48,6 +50,8 @@ const CHANGE_DRAFT_STORAGE_KEY = "taskminer-ai-change-draft-v1";
 export function AIProjectChangeWorkflow({
   activeWorkspaceId,
   isWorkspacesPending,
+  onUsageWorkspaceChange,
+  quotaReachedWorkspaceId,
   workspaces,
 }: AIProjectChangeWorkflowProps) {
   const generatePlan = useGenerateProjectChangePlan();
@@ -76,6 +80,7 @@ export function AIProjectChangeWorkflow({
 
   const handleWorkspaceChange = useCallback(
     (nextWorkspaceId: string) => {
+      onUsageWorkspaceChange(nextWorkspaceId);
       setWorkspaceId((currentWorkspaceId) => {
         if (currentWorkspaceId && currentWorkspaceId !== nextWorkspaceId) {
           setDraft(null);
@@ -85,7 +90,7 @@ export function AIProjectChangeWorkflow({
         return nextWorkspaceId;
       });
     },
-    [resetApplyPlan, setDraft],
+    [onUsageWorkspaceChange, resetApplyPlan, setDraft],
   );
 
   const handleGenerate = async (values: AIProjectChangeFormValues) => {
@@ -159,6 +164,7 @@ export function AIProjectChangeWorkflow({
         onSubmit={handleGenerate}
         onWorkspaceChange={handleWorkspaceChange}
         projects={projectsQuery.data?.items ?? []}
+        quotaReachedWorkspaceId={quotaReachedWorkspaceId}
         workspaces={workspaces}
       />
 

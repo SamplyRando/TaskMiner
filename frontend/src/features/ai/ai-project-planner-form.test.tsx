@@ -46,4 +46,28 @@ describe("AIProjectPlannerForm", () => {
 
     expect(submit).toBeEnabled();
   });
+
+  it("disables generation when the selected workspace quota is known exhausted", async () => {
+    const user = userEvent.setup();
+    render(
+      <AIProjectPlannerForm
+        {...baseProps}
+        quotaReachedWorkspaceId={workspaceFixture.id}
+      />,
+    );
+
+    await user.selectOptions(
+      screen.getByLabelText("Workspace"),
+      workspaceFixture.id,
+    );
+    await user.type(
+      screen.getByLabelText("Brief du projet"),
+      "Préparer un plan de lancement complet.",
+    );
+
+    expect(screen.getByText(/quota mensuel TaskMiner AI/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Générer le plan" }),
+    ).toBeDisabled();
+  });
 });

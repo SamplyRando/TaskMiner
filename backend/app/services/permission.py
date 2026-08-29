@@ -186,6 +186,16 @@ class PermissionService:
             raise PermissionDeniedError
         return workspace
 
+    def require_ai_usage_view(
+        self,
+        user: User,
+        workspace_id: UUID,
+    ) -> Workspace:
+        workspace, membership = self._get_workspace_membership(user, workspace_id)
+        if not permissions.can_view_ai_usage(membership.role):
+            raise PermissionDeniedError
+        return workspace
+
     def _get_workspace_membership(
         self,
         user: User,

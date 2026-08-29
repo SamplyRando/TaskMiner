@@ -7,6 +7,22 @@ export type AICapabilities = {
   provider_label: string;
 };
 
+export type AIWorkspaceUsage = {
+  period_start: string;
+  period_end: string;
+  request_limit: number;
+  requests_used: number;
+  requests_remaining: number;
+  successful_requests: number;
+  failed_requests: number;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd: number;
+  pricing_configured: boolean;
+  average_latency_ms: number | null;
+};
+
 export type AIProjectPlanRequest = {
   workspace_id: string;
   project_id: string | null;

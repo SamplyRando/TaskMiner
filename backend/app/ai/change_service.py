@@ -7,6 +7,7 @@ from app.ai.schemas import (
     AITaskChangeState,
 )
 from app.ai.service import AIProjectNotFoundError
+from app.ai.usage_service import AIUsageService
 from app.models.user import User
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
@@ -22,18 +23,20 @@ class AIProjectChangePlanService:
         permission_service: PermissionService,
         project_repository: ProjectRepository,
         task_repository: TaskRepository,
+        usage_service: AIUsageService,
     ) -> None:
         self.provider = provider
         self.permission_service = permission_service
         self.project_repository = project_repository
         self.task_repository = task_repository
+        self.usage_service = usage_service
 
     async def generate_project_change_plan(
         self,
         user: User,
         request: AIProjectChangePlanRequest,
     ) -> AIProjectChangePlanResponse:
-        workspace = self.permission_service.require_workspace_view(
+        workspace = self.permission_service.require_task_management(
             user,
             request.workspace_id,
         )
@@ -69,4 +72,13 @@ class AIProjectChangePlanService:
                 for task in tasks
             ],
         )
-        return await self.provider.generate_project_change_plan(request, context)
+        return await self.usage_service.run_generation(
+            user=user,
+            workspace_id=workspace.id,
+            operation_type="project_change_plan",
+            provider=self.provider,
+            generate=lambda: self.provider.generate_project_change_plan(
+                request,
+                context,
+            ),
+        )

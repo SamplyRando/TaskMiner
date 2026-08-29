@@ -9,9 +9,11 @@ from sqlalchemy.orm import Session
 from app.ai.apply_service import AIApplyService
 from app.ai.change_apply_service import AIProjectChangeApplyService
 from app.ai.change_service import AIProjectChangePlanService
+from app.ai.cost import AIUsageCostEstimator
 from app.ai.factory import get_ai_provider
 from app.ai.provider import AIProvider, AIProviderConfigurationError
 from app.ai.service import AIService
+from app.ai.usage_service import AIUsageService
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
@@ -21,6 +23,7 @@ from app.email.service import EmailService
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
 from app.repositories.ai_plan_application import AIPlanApplicationRepository
+from app.repositories.ai_usage import AIUsageRepository
 from app.repositories.audit import AuditRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
@@ -340,7 +343,35 @@ def get_ai_provider_dependency() -> AIProvider:
 AIProviderDep = Annotated[AIProvider, Depends(get_ai_provider_dependency)]
 
 
-def get_ai_service(session: SessionDep, provider: AIProviderDep) -> AIService:
+def get_ai_usage_service(session: SessionDep) -> AIUsageService:
+    workspace_repository = WorkspaceRepository(session)
+    return AIUsageService(
+        AIUsageRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
+        AIUsageCostEstimator(),
+        monthly_request_limit=settings.ai_monthly_request_limit,
+        rate_limit_requests=settings.ai_rate_limit_requests,
+        rate_limit_window_seconds=settings.ai_rate_limit_window_seconds,
+        pricing_model=(
+            settings.openai_model if settings.ai_provider == "openai" else None
+        ),
+    )
+
+
+AIUsageServiceDep = Annotated[
+    AIUsageService,
+    Depends(get_ai_usage_service),
+]
+
+
+def get_ai_service(
+    session: SessionDep,
+    provider: AIProviderDep,
+    usage_service: AIUsageServiceDep,
+) -> AIService:
     member_repository = WorkspaceMemberRepository(session)
     workspace_repository = WorkspaceRepository(session)
     permission_service = PermissionService(
@@ -351,6 +382,7 @@ def get_ai_service(session: SessionDep, provider: AIProviderDep) -> AIService:
         provider,
         permission_service,
         ProjectRepository(session),
+        usage_service,
     )
 
 
@@ -391,6 +423,7 @@ AIApplyServiceDep = Annotated[AIApplyService, Depends(get_ai_apply_service)]
 def get_ai_change_plan_service(
     session: SessionDep,
     provider: AIProviderDep,
+    usage_service: AIUsageServiceDep,
 ) -> AIProjectChangePlanService:
     member_repository = WorkspaceMemberRepository(session)
     workspace_repository = WorkspaceRepository(session)
@@ -403,6 +436,7 @@ def get_ai_change_plan_service(
         permission_service,
         ProjectRepository(session),
         TaskRepository(session),
+        usage_service,
     )
 
 

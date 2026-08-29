@@ -4,7 +4,7 @@ import re
 import unicodedata
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from app.ai.provider import AIProviderName
+from app.ai.provider import AIProviderName, AIProviderResult
 from app.ai.schemas import (
     AIChangeField,
     AIGeneratedMilestone,
@@ -211,11 +211,12 @@ class MockAIProvider:
 
     provider_name: AIProviderName = "mock"
     display_name = "Mock provider"
+    model_name = "deterministic-mock"
 
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
-    ) -> AIProjectPlanResponse:
+    ) -> AIProviderResult[AIProjectPlanResponse]:
         normalized_prompt = request.prompt.casefold()
         is_launch_plan = any(
             keyword in normalized_prompt for keyword in _LAUNCH_KEYWORDS
@@ -265,18 +266,20 @@ class MockAIProvider:
             if request.target_date is not None
             else ["No target date was provided; suggested due dates are omitted."]
         )
-        return AIProjectPlanResponse(
-            summary=summary,
-            tasks=tasks,
-            milestones=milestones,
-            warnings=warnings,
+        return AIProviderResult(
+            value=AIProjectPlanResponse(
+                summary=summary,
+                tasks=tasks,
+                milestones=milestones,
+                warnings=warnings,
+            )
         )
 
     async def generate_project_change_plan(
         self,
         request: AIProjectChangePlanRequest,
         context: AIProjectContext,
-    ) -> AIProjectChangePlanResponse:
+    ) -> AIProviderResult[AIProjectChangePlanResponse]:
         """Interpret a bounded set of deterministic task-edit instructions."""
 
         instruction = self._normalize(request.instruction)
@@ -389,11 +392,13 @@ class MockAIProvider:
             if changes
             else f"Aucune modification sûre proposée pour « {context.name} »."
         )
-        return AIProjectChangePlanResponse(
-            summary=summary,
-            project_id=context.id,
-            changes=changes,
-            warnings=warnings,
+        return AIProviderResult(
+            value=AIProjectChangePlanResponse(
+                summary=summary,
+                project_id=context.id,
+                changes=changes,
+                warnings=warnings,
+            )
         )
 
     @staticmethod

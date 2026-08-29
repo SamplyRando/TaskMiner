@@ -94,6 +94,9 @@ que lorsque cette perte de données est volontaire.
 | `TASKMINER_AI_PROVIDER` | Provider IA : `mock` en local/test, `openai` en production |
 | `TASKMINER_OPENAI_MODEL` | Modèle Responses API utilisé par le provider OpenAI |
 | `OPENAI_API_KEY` | Clé serveur OpenAI, jamais exposée à Vite |
+| `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Quota mensuel UTC de générations par workspace |
+| `TASKMINER_AI_RATE_LIMIT_REQUESTS` | Générations autorisées par utilisateur et fenêtre |
+| `TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS` | Durée de la fenêtre glissante de rate limit |
 | `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
 | `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
 | `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |

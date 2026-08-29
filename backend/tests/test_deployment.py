@@ -74,6 +74,39 @@ def test_explicit_sqlalchemy_database_url_is_preserved() -> None:
     assert deployment_settings.database_url == database_url
 
 
+def test_ai_control_defaults_are_safe_and_positive() -> None:
+    deployment_settings = build_settings()
+
+    assert deployment_settings.ai_monthly_request_limit == 100
+    assert deployment_settings.ai_rate_limit_requests == 10
+    assert deployment_settings.ai_rate_limit_window_seconds == 60
+
+
+def test_ai_controls_are_configurable() -> None:
+    deployment_settings = build_settings(
+        TASKMINER_AI_MONTHLY_REQUEST_LIMIT=250,
+        TASKMINER_AI_RATE_LIMIT_REQUESTS=5,
+        TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS=30,
+    )
+
+    assert deployment_settings.ai_monthly_request_limit == 250
+    assert deployment_settings.ai_rate_limit_requests == 5
+    assert deployment_settings.ai_rate_limit_window_seconds == 30
+
+
+@pytest.mark.parametrize(
+    "setting",
+    [
+        "TASKMINER_AI_MONTHLY_REQUEST_LIMIT",
+        "TASKMINER_AI_RATE_LIMIT_REQUESTS",
+        "TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS",
+    ],
+)
+def test_ai_control_limits_reject_non_positive_values(setting: str) -> None:
+    with pytest.raises(ValidationError):
+        build_settings(**{setting: 0})
+
+
 def test_cors_origins_are_normalized() -> None:
     deployment_settings = build_settings(
         CORS_ORIGINS=" https://taskminer.vercel.app/, http://localhost:3000 "

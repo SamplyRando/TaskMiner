@@ -126,7 +126,8 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
 
     result = asyncio.run(provider.generate_project_plan(request))
 
-    assert result == plan
+    assert result.value == plan
+    assert result.usage is None
     assert parse.await_args is not None
     kwargs = parse.await_args.kwargs
     assert kwargs["model"] == "gpt-5.6-luna"
@@ -141,6 +142,47 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
     }
     assert str(request.workspace_id) not in kwargs["input"]
     assert "Never state or imply" in kwargs["instructions"]
+
+
+def test_project_plan_returns_provider_token_usage_for_server_metering() -> None:
+    plan = valid_plan()
+    parse = AsyncMock(
+        return_value=SimpleNamespace(
+            output_parsed=plan,
+            output=[],
+            usage=SimpleNamespace(
+                input_tokens=321,
+                input_tokens_details=SimpleNamespace(
+                    cached_tokens=120,
+                    cache_write_tokens=80,
+                ),
+                output_tokens=123,
+                total_tokens=444,
+            ),
+        )
+    )
+    client = SimpleNamespace(responses=SimpleNamespace(parse=parse))
+    provider = OpenAIProvider(
+        api_key="tests-only-key",
+        model="gpt-5.6-luna",
+        client=cast(AsyncOpenAI, client),
+    )
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(
+                workspace_id=uuid4(),
+                prompt="Prepare a valid structured project proposal.",
+            )
+        )
+    )
+
+    assert result.usage is not None
+    assert result.usage.input_tokens == 321
+    assert result.usage.output_tokens == 123
+    assert result.usage.total_tokens == 444
+    assert result.usage.cached_input_tokens == 120
+    assert result.usage.cache_write_input_tokens == 80
 
 
 def test_project_change_uses_only_safe_context_and_server_owned_identity() -> None:
@@ -183,9 +225,9 @@ def test_project_change_uses_only_safe_context_and_server_owned_identity() -> No
 
     result = asyncio.run(provider.generate_project_change_plan(request, context))
 
-    assert result.project_id == context.id
-    assert len(result.changes) == 1
-    change = result.changes[0]
+    assert result.value.project_id == context.id
+    assert len(result.value.changes) == 1
+    change = result.value.changes[0]
     assert change is not None
     assert change.task_id == task.id
     assert change.task_title == task.state.title
