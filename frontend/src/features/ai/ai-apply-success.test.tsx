@@ -76,4 +76,13 @@ describe("AIApplySuccess", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("reports assignments that were actually applied", () => {
+    renderSuccess(() => undefined, {
+      ...aiApplyFixture,
+      created_assignment_count: 2,
+    });
+
+    expect(screen.getByText("2 assignations appliquées.")).toBeInTheDocument();
+  });
 });

@@ -32,11 +32,14 @@ from app.ai.schemas import (
     AIProjectChangePlanRequest,
     AIProjectContext,
     AIProjectPlanRequest,
+    AIProjectPlanningContext,
     AIProjectPlanResponse,
     AIProjectTaskContext,
     AITaskChangeState,
+    AIWorkspaceMemberContext,
 )
 from app.models.task import TaskPriority, TaskStatus
+from app.models.workspace_member import WorkspaceMemberRole
 
 
 def valid_plan() -> AIProjectPlanResponse:
@@ -136,12 +139,64 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
     assert kwargs["timeout"] == 30.0
     sent = json.loads(kwargs["input"])
     assert sent == {
+        "available_members": [],
         "brief": request.prompt,
         "target_date": "2026-09-01",
         "planning_mode": "new_project",
     }
     assert str(request.workspace_id) not in kwargs["input"]
     assert "Never state or imply" in kwargs["instructions"]
+
+
+def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() -> None:
+    member_id = uuid4()
+    context = AIProjectPlanningContext(
+        assignable_members=[
+            AIWorkspaceMemberContext(
+                user_id=member_id,
+                display_name="Ada Lovelace",
+                role=WorkspaceMemberRole.MEMBER,
+            )
+        ]
+    )
+    plan = valid_plan()
+    plan.tasks[0].suggested_assignee_id = member_id
+    provider, parse = provider_with_result(plan)
+    request = AIProjectPlanRequest(
+        workspace_id=uuid4(),
+        prompt="Prepare a six-week ecommerce launch plan.",
+    )
+
+    result = asyncio.run(provider.generate_project_plan(request, context))
+
+    assert result.value.tasks[0].suggested_assignee_id == member_id
+    assert parse.await_args is not None
+    sent = json.loads(parse.await_args.kwargs["input"])
+    assert sent["available_members"] == [
+        {
+            "display_name": "Ada Lovelace",
+            "role": "member",
+            "user_id": str(member_id),
+        }
+    ]
+    assert "email" not in parse.await_args.kwargs["input"]
+
+
+def test_project_plan_rejects_an_assignee_outside_supplied_context() -> None:
+    plan = valid_plan()
+    plan.tasks[0].suggested_assignee_id = uuid4()
+    provider, _ = provider_with_result(plan)
+
+    with pytest.raises(AIProviderResponseError):
+        asyncio.run(
+            provider.generate_project_plan(
+                AIProjectPlanRequest(
+                    workspace_id=uuid4(),
+                    prompt="Prepare a six-week ecommerce launch plan.",
+                ),
+                AIProjectPlanningContext(assignable_members=[]),
+            )
+        )
 
 
 def test_project_plan_returns_provider_token_usage_for_server_metering() -> None:

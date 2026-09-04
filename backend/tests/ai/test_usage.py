@@ -23,6 +23,7 @@ from app.ai.schemas import (
     AIProjectChangePlanRequest,
     AIProjectContext,
     AIProjectPlanRequest,
+    AIProjectPlanningContext,
 )
 from app.api.deps import get_ai_provider_dependency
 from app.core.config import settings
@@ -50,9 +51,10 @@ class MeteredProvider:
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
+        context: AIProjectPlanningContext,
     ) -> AIProviderResult:
         self.call_count += 1
-        result = await MockAIProvider().generate_project_plan(request)
+        result = await MockAIProvider().generate_project_plan(request, context)
         return replace(
             result,
             usage=AIProviderUsage(
@@ -91,8 +93,9 @@ class FailingMeteredProvider(MeteredProvider):
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
+        context: AIProjectPlanningContext,
     ) -> AIProviderResult:
-        del request
+        del request, context
         self.call_count += 1
         raise self.error
 

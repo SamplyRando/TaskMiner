@@ -13,6 +13,7 @@ from app.ai.schemas import (
     AIProjectChangePlanResponse,
     AIProjectContext,
     AIProjectPlanRequest,
+    AIProjectPlanningContext,
     AIProjectPlanResponse,
     AIProjectTaskContext,
     AIProjectTaskChange,
@@ -216,6 +217,7 @@ class MockAIProvider:
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
+        context: AIProjectPlanningContext | None = None,
     ) -> AIProviderResult[AIProjectPlanResponse]:
         normalized_prompt = request.prompt.casefold()
         is_launch_plan = any(
@@ -226,6 +228,7 @@ class MockAIProvider:
             _LAUNCH_MILESTONES if is_launch_plan else _GENERAL_MILESTONES
         )
 
+        members = context.assignable_members if context is not None else []
         tasks = [
             AIGeneratedTask(
                 title=template.title,
@@ -238,6 +241,9 @@ class MockAIProvider:
                 milestone=template.milestone,
                 order=order,
                 depends_on=list(template.depends_on),
+                suggested_assignee_id=(
+                    members[(order - 1) % len(members)].user_id if members else None
+                ),
             )
             for order, template in enumerate(task_templates, start=1)
         ]

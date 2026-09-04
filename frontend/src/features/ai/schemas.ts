@@ -17,6 +17,7 @@ export const aiProjectPlannerSchema = z.object({
 export type AIProjectPlannerFormValues = z.infer<typeof aiProjectPlannerSchema>;
 
 const aiReviewedTaskSchema = z.object({
+  assignedUserId: z.string().nullable(),
   selected: z.boolean(),
   sourceOrder: z.number().int().positive(),
   title: z.string(),

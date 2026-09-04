@@ -36,6 +36,12 @@ type AIProjectChangeFormProps = {
   workspaces: Workspace[];
 };
 
+const CHANGE_PROMPT_EXAMPLES = [
+  "Réorganiser ce projet pour terminer une semaine plus tôt.",
+  "Décale toutes les tâches non terminées de trois jours.",
+  "Passe les tâches de validation en priorité haute.",
+] as const;
+
 export function AIProjectChangeForm({
   error,
   initialValues,
@@ -184,6 +190,33 @@ export function AIProjectChangeForm({
               </p>
             )}
           </div>
+
+          {!instruction.trim() ? (
+            <section aria-labelledby="ai-change-examples-title">
+              <h3 className="text-sm font-medium" id="ai-change-examples-title">
+                Exemples d’instructions
+              </h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {CHANGE_PROMPT_EXAMPLES.map((example) => (
+                  <Button
+                    className="h-auto min-h-11 justify-start px-3 py-2 text-left text-xs leading-5 whitespace-normal"
+                    key={example}
+                    onClick={() => {
+                      form.setValue("instruction", example, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      form.setFocus("instruction");
+                    }}
+                    type="button"
+                    variant="outline"
+                  >
+                    {example}
+                  </Button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <FormError
             error={error}

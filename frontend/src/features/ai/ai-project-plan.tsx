@@ -1,10 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertTriangle,
-  CalendarDays,
-  CheckCircle2,
-  ListChecks,
-} from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListChecks } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -28,16 +23,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AIMilestoneTimeline } from "@/features/ai/ai-milestone-timeline";
+import { buildAIPlanWarnings } from "@/features/ai/ai-plan-warning-utils";
+import { AIPlanWarnings } from "@/features/ai/ai-plan-warnings";
 import { AITaskReviewCard } from "@/features/ai/ai-task-review-card";
 import {
   type AIPlanReviewValues,
   aiPlanReviewDraftSchema,
   aiPlanReviewSchema,
 } from "@/features/ai/schemas";
+import { getAIApplyErrorMessage } from "@/features/ai/error-message";
 import type {
   AIApplyProjectPlanRequest,
   AIProjectPlanResponse,
 } from "@/types/ai";
+import type { AssignableWorkspaceMember } from "@/types/workspace";
 
 type AIProjectPlanProps = {
   error: unknown;
@@ -45,8 +45,13 @@ type AIProjectPlanProps = {
   existingProjectName: string | null;
   idempotencyKey: string;
   initialReviewValues: AIPlanReviewValues | null;
+  currentUserId?: string;
   isPending: boolean;
+  isMembersLoading?: boolean;
+  members?: AssignableWorkspaceMember[];
+  membersError?: unknown;
   onApply: (request: AIApplyProjectPlanRequest) => Promise<void>;
+  onRetryMembers?: () => void;
   onReviewChange: (values: AIPlanReviewValues) => void;
   plan: AIProjectPlanResponse;
   suggestedProjectName: string;
@@ -62,8 +67,13 @@ export function AIProjectPlan({
   existingProjectName,
   idempotencyKey,
   initialReviewValues,
+  currentUserId = "",
   isPending,
+  isMembersLoading = false,
+  members = [],
+  membersError = null,
   onApply,
+  onRetryMembers = () => undefined,
   onReviewChange,
   plan,
   suggestedProjectName,
@@ -73,23 +83,37 @@ export function AIProjectPlan({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationValues, setConfirmationValues] =
     useState<AIPlanReviewValues | null>(null);
+  const defaultReviewValues: AIPlanReviewValues = initialReviewValues
+    ? {
+        ...initialReviewValues,
+        tasks: initialReviewValues.tasks.map((task) => ({
+          ...task,
+          assignedUserId:
+            task.assignedUserId ??
+            plan.tasks.find((candidate) => candidate.order === task.sourceOrder)
+              ?.suggested_assignee_id ??
+            null,
+        })),
+      }
+    : {
+        createProject: existingProjectId === null,
+        projectDescription: plan.summary,
+        projectName: suggestedProjectName,
+        tasks: plan.tasks.map((task) => ({
+          assignedUserId: task.suggested_assignee_id ?? null,
+          dependsOn: task.depends_on,
+          description: task.description ?? "",
+          dueDate: task.suggested_due_date ?? "",
+          milestone: task.milestone ?? "",
+          priority: task.priority,
+          selected: true,
+          sourceOrder: task.order,
+          status: task.status,
+          title: task.title,
+        })),
+      };
   const form = useForm<AIPlanReviewValues>({
-    defaultValues: initialReviewValues ?? {
-      createProject: existingProjectId === null,
-      projectDescription: plan.summary,
-      projectName: suggestedProjectName,
-      tasks: plan.tasks.map((task) => ({
-        dependsOn: task.depends_on,
-        description: task.description ?? "",
-        dueDate: task.suggested_due_date ?? "",
-        milestone: task.milestone ?? "",
-        priority: task.priority,
-        selected: true,
-        sourceOrder: task.order,
-        status: task.status,
-        title: task.title,
-      })),
-    },
+    defaultValues: defaultReviewValues,
     mode: "onChange",
     resolver: zodResolver(aiPlanReviewSchema),
   });
@@ -102,6 +126,23 @@ export function AIProjectPlan({
   const selectedTaskCount = useMemo(
     () => reviewedTasks.filter((task) => task.selected).length,
     [reviewedTasks],
+  );
+  const selectedAssignmentCount = useMemo(
+    () =>
+      reviewedTasks.filter(
+        (task) => task.selected && task.assignedUserId !== null,
+      ).length,
+    [reviewedTasks],
+  );
+  const reviewWarnings = useMemo(
+    () => buildAIPlanWarnings(plan.warnings, reviewedTasks),
+    [plan.warnings, reviewedTasks],
+  );
+  const hasBlockingWarning = reviewWarnings.some(
+    (warning) => warning.level === "blocking",
+  );
+  const [expandedTaskOrders, setExpandedTaskOrders] = useState<Set<number>>(
+    () => new Set(plan.tasks[0] ? [plan.tasks[0].order] : []),
   );
   const selectedTaskCountLabel = String(selectedTaskCount);
   const lastPersistedReview = useRef<string | null>(null);
@@ -118,9 +159,22 @@ export function AIProjectPlan({
   const targetProjectName =
     existingProjectName ?? (reviewedProjectName.trim() || suggestedProjectName);
   const selectedTaskLabel = `${selectedTaskCountLabel} tâche${selectedTaskCount > 1 ? "s" : ""}`;
+  const assignmentLabel = `${String(selectedAssignmentCount)} assignation${selectedAssignmentCount > 1 ? "s" : ""}`;
   const creationSummary = existingProjectId
-    ? `${selectedTaskLabel} ${selectedTaskCount > 1 ? "seront créées" : "sera créée"} dans « ${targetProjectName} ».`
-    : `Le projet « ${targetProjectName || suggestedProjectName} » et ${selectedTaskLabel} seront créés.`;
+    ? `${selectedTaskLabel} ${selectedTaskCount > 1 ? "seront créées" : "sera créée"} dans « ${targetProjectName} » · ${assignmentLabel}.`
+    : `Le projet « ${targetProjectName || suggestedProjectName} » et ${selectedTaskLabel} seront créés · ${assignmentLabel}.`;
+
+  const openTask = (sourceOrder: number) => {
+    setExpandedTaskOrders((current) => new Set(current).add(sourceOrder));
+    window.requestAnimationFrame(() => {
+      const taskElement = document.getElementById(
+        `ai-review-task-${String(sourceOrder)}`,
+      );
+      if (taskElement) {
+        taskElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  };
 
   const prepareApplication = form.handleSubmit((values) => {
     setConfirmationValues(values);
@@ -146,7 +200,7 @@ export function AIProjectPlan({
         tasks: confirmationValues.tasks
           .filter((task) => task.selected)
           .map((task) => ({
-            assigned_user_id: null,
+            assigned_user_id: task.assignedUserId,
             depends_on: task.dependsOn.filter((dependency) =>
               confirmationValues.tasks.some(
                 (candidate) =>
@@ -177,7 +231,7 @@ export function AIProjectPlan({
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>AI draft</Badge>
+            <Badge>Brouillon IA</Badge>
             <span className="text-muted-foreground text-xs">
               Brouillon IA — non enregistré
             </span>
@@ -277,15 +331,86 @@ export function AIProjectPlan({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex flex-wrap justify-end gap-2">
+                <Button
+                  onClick={() => {
+                    setExpandedTaskOrders(
+                      new Set(reviewedTasks.map((task) => task.sourceOrder)),
+                    );
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronsUpDown aria-hidden="true" className="size-4" />
+                  Tout développer
+                </Button>
+                <Button
+                  onClick={() => {
+                    setExpandedTaskOrders(new Set());
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronsDownUp aria-hidden="true" className="size-4" />
+                  Tout réduire
+                </Button>
+              </div>
               <ol className="space-y-4">
                 {reviewedTasks.map((task, index) => (
                   <AITaskReviewCard
-                    dependencies={task.dependsOn}
+                    assignedUserId={task.assignedUserId}
+                    currentUserId={currentUserId}
+                    dependencies={task.dependsOn.map((dependencyOrder) => {
+                      const dependency = reviewedTasks.find(
+                        (candidate) =>
+                          candidate.sourceOrder === dependencyOrder,
+                      );
+                      return {
+                        order: dependencyOrder,
+                        selected: dependency?.selected ?? false,
+                        title: dependency?.title.trim()
+                          ? dependency.title
+                          : `Tâche ${String(dependencyOrder).padStart(2, "0")}`,
+                      };
+                    })}
+                    dueDate={task.dueDate}
+                    expanded={expandedTaskOrders.has(task.sourceOrder)}
                     index={index}
+                    isMembersLoading={isMembersLoading}
                     key={task.sourceOrder}
+                    members={members}
+                    membersError={membersError}
+                    milestone={task.milestone}
+                    onAssigneeChange={(userId) => {
+                      form.setValue(
+                        `tasks.${String(index)}.assignedUserId` as `tasks.${number}.assignedUserId`,
+                        userId,
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        },
+                      );
+                    }}
+                    onRetryMembers={onRetryMembers}
+                    onToggle={() => {
+                      setExpandedTaskOrders((current) => {
+                        const next = new Set(current);
+                        if (next.has(task.sourceOrder)) {
+                          next.delete(task.sourceOrder);
+                        } else {
+                          next.add(task.sourceOrder);
+                        }
+                        return next;
+                      });
+                    }}
+                    priority={task.priority}
                     register={form.register}
                     selected={task.selected}
                     sourceOrder={task.sourceOrder}
+                    status={task.status}
+                    title={task.title}
                     titleError={form.formState.errors.tasks?.[index]?.title}
                   />
                 ))}
@@ -305,69 +430,44 @@ export function AIProjectPlan({
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <CalendarDays
-                    aria-hidden="true"
-                    className="text-primary size-5"
-                  />
-                  <CardTitle>Jalons suggérés</CardTitle>
-                </div>
+                <CardTitle>Progression proposée</CardTitle>
                 <CardDescription>
-                  Les jalons restent consultatifs dans ce sprint.
+                  Jalons consultatifs, reliés aux tâches actuellement
+                  sélectionnées.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ol className="space-y-4">
-                  {plan.milestones.map((milestone) => (
-                    <li className="flex gap-3" key={milestone.order}>
-                      <CheckCircle2
-                        aria-hidden="true"
-                        className="text-primary mt-0.5 size-4 shrink-0"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{milestone.name}</p>
-                        {milestone.description ? (
-                          <p className="text-muted-foreground mt-1 text-xs leading-5">
-                            {milestone.description}
-                          </p>
-                        ) : null}
-                        {milestone.suggested_due_date ? (
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            {milestone.suggested_due_date}
-                          </p>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                <AIMilestoneTimeline
+                  milestones={plan.milestones}
+                  tasks={reviewedTasks}
+                />
               </CardContent>
             </Card>
 
-            {plan.warnings.length > 0 ? (
-              <Card className="border-amber-500/30 bg-amber-500/5">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle
-                      aria-hidden="true"
-                      className="size-5 text-amber-600"
-                    />
-                    <CardTitle>À vérifier</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-muted-foreground list-disc space-y-2 pl-5 text-sm">
-                    {plan.warnings.map((warning) => (
-                      <li key={warning}>{warning}</li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ) : null}
+            <Card>
+              <CardHeader>
+                <CardTitle>À vérifier</CardTitle>
+                <CardDescription>
+                  Points détectés à partir du brouillon actuel.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AIPlanWarnings
+                  onOpenTask={openTask}
+                  warnings={reviewWarnings}
+                />
+                {reviewWarnings.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    Aucun point bloquant détecté.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <FormError error={error} />
-        <div className="bg-card/95 sticky bottom-4 z-20 flex flex-col items-start justify-between gap-3 rounded-xl border p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center">
+        <FormError error={error} message={getAIApplyErrorMessage(error)} />
+        <div className="bg-card/95 sticky bottom-3 z-20 flex flex-col items-stretch justify-between gap-3 rounded-xl border p-4 shadow-lg backdrop-blur sm:bottom-4 sm:flex-row sm:items-center">
           <div>
             <p aria-live="polite" className="text-sm font-medium">
               {creationSummary}
@@ -378,8 +478,12 @@ export function AIProjectPlan({
           </div>
           <Button
             disabled={
-              isApplying || selectedTaskCount === 0 || !form.formState.isValid
+              isApplying ||
+              selectedTaskCount === 0 ||
+              hasBlockingWarning ||
+              !form.formState.isValid
             }
+            className="w-full sm:w-auto"
             isLoading={isApplying}
             loadingLabel="Application du plan en cours"
             type="submit"
@@ -400,11 +504,11 @@ export function AIProjectPlan({
             <DialogTitle>Confirmer l’application du plan</DialogTitle>
             <DialogDescription>
               {existingProjectId
-                ? `Vous allez ajouter ${selectedTaskCountLabel} tâche${selectedTaskCount > 1 ? "s" : ""} au projet « ${existingProjectName ?? "ce projet"} ». Cette action modifiera TaskMiner.`
-                : `Vous allez créer le projet « ${confirmationValues?.projectName ?? suggestedProjectName} » et ${selectedTaskCountLabel} tâche${selectedTaskCount > 1 ? "s" : ""}. Cette action modifiera TaskMiner.`}
+                ? `Vous allez ajouter ${selectedTaskCountLabel} tâche${selectedTaskCount > 1 ? "s" : ""} au projet « ${existingProjectName ?? "ce projet"} », dont ${assignmentLabel}. Cette action modifiera TaskMiner.`
+                : `Vous allez créer le projet « ${confirmationValues?.projectName ?? suggestedProjectName} » et ${selectedTaskCountLabel} tâche${selectedTaskCount > 1 ? "s" : ""}, dont ${assignmentLabel}. Cette action modifiera TaskMiner.`}
             </DialogDescription>
           </DialogHeader>
-          <FormError error={error} />
+          <FormError error={error} message={getAIApplyErrorMessage(error)} />
           <DialogFooter>
             <Button
               disabled={isApplying}

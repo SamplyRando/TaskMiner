@@ -156,6 +156,13 @@ export function AIProjectChangeReview({
     () => reviewedChanges.filter((change) => change.selected).length,
     [reviewedChanges],
   );
+  const selectedFieldCount = useMemo(
+    () =>
+      reviewedChanges
+        .filter((change) => change.selected)
+        .reduce((total, change) => total + change.changedFields.length, 0),
+    [reviewedChanges],
+  );
   const selectedLabel = `${String(selectedCount)} tâche${selectedCount > 1 ? "s" : ""}`;
 
   useEffect(() => {
@@ -292,18 +299,20 @@ export function AIProjectChangeReview({
             <FormError error={error} />
           )}
 
-          <div className="bg-card/95 sticky bottom-4 z-20 flex flex-col items-start justify-between gap-3 rounded-xl border p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center">
+          <div className="bg-card/95 sticky bottom-3 z-20 flex flex-col items-stretch justify-between gap-3 rounded-xl border p-4 shadow-lg backdrop-blur sm:bottom-4 sm:flex-row sm:items-center">
             <div>
               <p aria-live="polite" className="text-sm font-medium">
                 {selectedLabel}{" "}
                 {selectedCount > 1 ? "seront modifiées" : "sera modifiée"} dans
-                « {projectName} ».
+                « {projectName} » · {String(selectedFieldCount)} champ
+                {selectedFieldCount > 1 ? "s" : ""}.
               </p>
               <p className="text-muted-foreground mt-1 text-xs">
                 L’état courant sera revérifié avant toute écriture.
               </p>
             </div>
             <Button
+              className="w-full sm:w-auto"
               disabled={
                 isApplying || selectedCount === 0 || !form.formState.isValid
               }
@@ -330,7 +339,9 @@ export function AIProjectChangeReview({
               Vous allez modifier{" "}
               {String(confirmationRequest?.changes.length ?? 0)} tâche
               {(confirmationRequest?.changes.length ?? 0) > 1 ? "s" : ""} dans
-              le projet « {projectName} ». Cette action modifiera TaskMiner.
+              le projet « {projectName} » ({String(selectedFieldCount)} champ
+              {selectedFieldCount > 1 ? "s" : ""}). Cette action modifiera
+              TaskMiner.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

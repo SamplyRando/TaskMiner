@@ -14,3 +14,11 @@ export const getAIGenerationErrorMessage = (
   }
   return undefined;
 };
+
+export const getAIApplyErrorMessage = (error: unknown): string | undefined => {
+  if (!(error instanceof ApiError)) return undefined;
+  if (error.status === 404 && error.message === "Assignee not found.") {
+    return "Un membre assigné n’est plus disponible dans ce workspace. Choisissez une autre assignation avant de réessayer.";
+  }
+  return undefined;
+};

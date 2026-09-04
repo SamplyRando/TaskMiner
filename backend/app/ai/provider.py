@@ -6,6 +6,7 @@ from app.ai.schemas import (
     AIProjectChangePlanResponse,
     AIProjectContext,
     AIProjectPlanRequest,
+    AIProjectPlanningContext,
     AIProjectPlanResponse,
 )
 
@@ -75,6 +76,7 @@ class AIProvider(Protocol):
     async def generate_project_plan(
         self,
         request: AIProjectPlanRequest,
+        context: AIProjectPlanningContext,
     ) -> AIProviderResult[AIProjectPlanResponse]:
         """Generate a structured draft without mutating TaskMiner resources."""
         ...
