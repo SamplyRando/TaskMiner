@@ -382,6 +382,7 @@ def get_ai_service(
         provider,
         permission_service,
         ProjectRepository(session),
+        member_repository,
         usage_service,
     )
 

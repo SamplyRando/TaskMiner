@@ -437,11 +437,57 @@ def test_assignee_must_be_an_active_workspace_member(
         apply_payload(workspace.id, tasks=[task]),
     )
     assert accepted.status_code == 200
+    assert accepted.json()["created_assignment_count"] == 1
     created_task = database_session.get(
         Task, UUID(accepted.json()["created_task_ids"][0])
     )
     assert created_task is not None
     assert created_task.assigned_user_id == other_user.id
+
+
+def test_member_removed_between_generation_and_apply_is_rejected_atomically(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    other_user: RegisteredUser,
+    user_factory: UserFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
+    database_session: Session,
+) -> None:
+    workspace_member_factory.create(workspace, other_user)
+    generation = client.post(
+        "/api/v1/ai/project-plan",
+        headers=workspace.owner.headers,
+        json={
+            "workspace_id": str(workspace.id),
+            "project_id": None,
+            "prompt": "Prepare a complete launch plan for the workspace team.",
+            "target_date": "2026-09-01",
+        },
+    )
+    assert generation.status_code == 200
+    suggestion = next(
+        task
+        for task in generation.json()["tasks"]
+        if task["suggested_assignee_id"] == str(other_user.id)
+    )
+    user_factory.set_active(other_user, is_active=False)
+    payload = apply_payload(
+        workspace.id,
+        tasks=[
+            approved_task(
+                suggestion["order"],
+                title=suggestion["title"],
+                assigned_user_id=other_user.id,
+            )
+        ],
+    )
+
+    response = post_apply(client, workspace.owner, payload)
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Assignee not found."}
+    assert int(database_session.scalar(select(func.count(Project.id))) or 0) == 0
+    assert int(database_session.scalar(select(func.count(Task.id))) or 0) == 0
 
 
 @pytest.mark.parametrize("account_state", ["inactive", "deleted"])

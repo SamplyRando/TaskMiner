@@ -19,6 +19,24 @@ const baseProps = {
 };
 
 describe("AIProjectPlannerForm", () => {
+  it("prefills a prompt example without starting generation", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<AIProjectPlannerForm {...baseProps} onSubmit={onSubmit} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Créer un plan de lancement pour une application mobile en 8 semaines.",
+      }),
+    );
+
+    expect(screen.getByLabelText("Brief du projet")).toHaveValue(
+      "Créer un plan de lancement pour une application mobile en 8 semaines.",
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.queryByText("Commencer avec un exemple")).toBeNull();
+  });
+
   it("requires a workspace and a meaningful prompt", async () => {
     const user = userEvent.setup();
     render(<AIProjectPlannerForm {...baseProps} />);

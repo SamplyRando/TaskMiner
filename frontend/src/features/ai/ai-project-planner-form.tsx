@@ -37,6 +37,13 @@ type AIProjectPlannerFormProps = {
   workspaces: Workspace[];
 };
 
+const PROJECT_PROMPT_EXAMPLES = [
+  "Créer un plan de lancement pour une application mobile en 8 semaines.",
+  "Organiser la refonte de notre site e-commerce avant le 30 novembre.",
+  "Découper ce projet en tâches backend, frontend, QA et déploiement.",
+  "Préparer le lancement d’un nouveau service avec l’équipe produit.",
+] as const;
+
 export function AIProjectPlannerForm({
   activeWorkspaceId,
   error,
@@ -207,6 +214,45 @@ export function AIProjectPlannerForm({
               </p>
             )}
           </div>
+
+          {!prompt.trim() ? (
+            <section aria-labelledby="ai-prompt-examples-title">
+              <div className="mb-3">
+                <h3
+                  className="text-sm font-medium"
+                  id="ai-prompt-examples-title"
+                >
+                  Commencer avec un exemple
+                </h3>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Choisissez un point de départ, puis adaptez-le à votre équipe.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PROJECT_PROMPT_EXAMPLES.map((example) => (
+                  <Button
+                    className="h-auto min-h-11 justify-start px-3 py-2 text-left text-xs leading-5 whitespace-normal"
+                    key={example}
+                    onClick={() => {
+                      form.setValue("prompt", example, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      form.setFocus("prompt");
+                    }}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Sparkles
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0"
+                    />
+                    {example}
+                  </Button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <FormError
             error={error}

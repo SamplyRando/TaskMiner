@@ -39,6 +39,7 @@ export type AIGeneratedTask = {
   milestone: string | null;
   order: number;
   depends_on: number[];
+  suggested_assignee_id: string | null;
 };
 
 export type AIApprovedProject = {
@@ -72,6 +73,7 @@ export type AIApplyProjectPlanResponse = {
   created_project: boolean;
   created_task_ids: string[];
   created_task_count: number;
+  created_assignment_count: number;
   skipped_task_count: number;
   idempotent_replay: boolean;
   warnings: string[];

@@ -28,6 +28,7 @@ export const aiPlanFixture: AIProjectPlanResponse = {
       priority: "high",
       status: "todo",
       suggested_due_date: "2026-08-18",
+      suggested_assignee_id: null,
       title: "Define launch scope",
     },
     {
@@ -38,6 +39,7 @@ export const aiPlanFixture: AIProjectPlanResponse = {
       priority: "urgent",
       status: "todo",
       suggested_due_date: "2026-08-26",
+      suggested_assignee_id: null,
       title: "Run QA validation",
     },
   ],
@@ -56,6 +58,7 @@ export const aiSevenTaskPlanFixture: AIProjectPlanResponse = {
       priority: order === 6 ? "urgent" : "high",
       status: "todo",
       suggested_due_date: `2026-08-${String(17 + order).padStart(2, "0")}`,
+      suggested_assignee_id: null,
       title: `Generated task ${String(order)}`,
     };
   }),
@@ -64,6 +67,7 @@ export const aiSevenTaskPlanFixture: AIProjectPlanResponse = {
 export const aiApplyFixture: AIApplyProjectPlanResponse = {
   created_project: true,
   created_task_count: 2,
+  created_assignment_count: 0,
   created_task_ids: [
     "20000000-0000-4000-8000-000000000001",
     "20000000-0000-4000-8000-000000000002",

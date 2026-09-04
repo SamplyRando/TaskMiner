@@ -8,8 +8,25 @@ import { AIProjectPlan } from "@/features/ai/ai-project-plan";
 import { aiPlanFixture } from "@/test/ai-fixtures";
 import { projectId, workspaceId } from "@/test/resource-fixtures";
 import type { AIApplyProjectPlanRequest } from "@/types/ai";
+import type { AssignableWorkspaceMember } from "@/types/workspace";
 
 const idempotencyKey = "30000000-0000-4000-8000-000000000001";
+const adaId = "00000000-0000-4000-8000-000000000010";
+const graceId = "00000000-0000-4000-8000-000000000020";
+const members: AssignableWorkspaceMember[] = [
+  {
+    email: "ada@example.com",
+    full_name: "Ada Lovelace",
+    role: "owner",
+    user_id: adaId,
+  },
+  {
+    email: "grace@example.com",
+    full_name: "Grace Hopper",
+    role: "member",
+    user_id: graceId,
+  },
+];
 
 const renderReview = (
   overrides: Partial<ComponentProps<typeof AIProjectPlan>> = {},
@@ -37,6 +54,117 @@ const renderReview = (
 };
 
 describe("AIProjectPlan review", () => {
+  it("keeps task cards compact and supports expand/collapse controls", async () => {
+    const user = userEvent.setup();
+    renderReview();
+
+    expect(screen.getAllByLabelText("Titre")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Tout développer" }));
+    expect(screen.getAllByLabelText("Titre")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Tout réduire" }));
+    expect(screen.queryByLabelText("Titre")).toBeNull();
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
+    expect(screen.getByLabelText("Titre")).toHaveValue("Define launch scope");
+  });
+
+  it("shows dependencies by task title and explicitly removes excluded references", async () => {
+    const user = userEvent.setup();
+    const { onApply } = renderReview();
+
+    expect(screen.getByText("Dépend de")).toBeInTheDocument();
+    expect(screen.getAllByText("Define launch scope").length).toBeGreaterThan(
+      1,
+    );
+    await user.clear(screen.getByLabelText("Titre"));
+    await user.type(screen.getByLabelText("Titre"), "Cadrer le lancement");
+    expect(screen.getAllByText("Cadrer le lancement").length).toBeGreaterThan(
+      1,
+    );
+    await user.click(screen.getByLabelText("Inclure la tâche 1"));
+    expect(
+      screen.getByText(/désélectionnée.*référence sera retirée/i),
+    ).toBeInTheDocument();
+    const apply = screen.getByRole("button", { name: "Appliquer le plan" });
+    await waitFor(() => {
+      expect(apply).toBeEnabled();
+    });
+    await user.click(apply);
+    await user.click(
+      screen.getByRole("button", { name: "Confirmer et créer" }),
+    );
+
+    await waitFor(() => {
+      expect(onApply).toHaveBeenCalledOnce();
+    });
+    expect(onApply.mock.calls[0]?.[0].tasks[0]?.depends_on).toEqual([]);
+  });
+
+  it("shows and edits a safe assignment suggestion by name or email", async () => {
+    const user = userEvent.setup();
+    const { onApply } = renderReview({
+      currentUserId: adaId,
+      members,
+      plan: {
+        ...aiPlanFixture,
+        tasks: aiPlanFixture.tasks.map((task, index) => ({
+          ...task,
+          suggested_assignee_id: index === 0 ? adaId : null,
+        })),
+      },
+    });
+
+    expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThan(0);
+    const combobox = screen.getByRole("combobox", {
+      name: "Assignation suggérée",
+    });
+    await user.type(combobox, "grace@example.com");
+    await user.click(
+      screen.getByRole("option", {
+        name: "Grace Hopper — grace@example.com",
+      }),
+    );
+    expect(screen.getAllByText("Grace Hopper").length).toBeGreaterThan(0);
+    expect(screen.queryByText(graceId)).not.toBeInTheDocument();
+    const apply = screen.getByRole("button", { name: "Appliquer le plan" });
+    await waitFor(() => {
+      expect(apply).toBeEnabled();
+    });
+    await user.click(apply);
+    await user.click(
+      screen.getByRole("button", { name: "Confirmer et créer" }),
+    );
+    await waitFor(() => {
+      expect(onApply).toHaveBeenCalledOnce();
+    });
+    expect(onApply.mock.calls[0]?.[0].tasks[0]?.assigned_user_id).toBe(graceId);
+  });
+
+  it("renders milestones as an AI suggestion timeline with selected task counts", () => {
+    renderReview();
+
+    expect(screen.getByText("Progression proposée")).toBeInTheDocument();
+    expect(screen.getByText("Suggestion IA")).toBeInTheDocument();
+    expect(screen.getByText("0 tâche sélectionnée")).toBeInTheDocument();
+  });
+
+  it("prevents apply when a dependency reference is incoherent", () => {
+    renderReview({
+      plan: {
+        ...aiPlanFixture,
+        tasks: aiPlanFixture.tasks.map((task, index) =>
+          index === 0 ? { ...task, depends_on: [2] } : task,
+        ),
+      },
+    });
+
+    expect(screen.getByText(/dépendance.*incohérente/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Appliquer le plan" }),
+    ).toBeDisabled();
+  });
+
   it("selects, edits and counts only approved task suggestions", async () => {
     const user = userEvent.setup();
     renderReview();
@@ -162,6 +290,14 @@ describe("AIProjectPlan review", () => {
       screen.getByDisplayValue("Preserved after failure"),
     ).toBeInTheDocument();
     expect(screen.getByText("Insufficient permissions.")).toBeInTheDocument();
+  });
+
+  it("explains when a suggested assignee is no longer available", () => {
+    renderReview({ error: new ApiError("Assignee not found.", 404) });
+
+    expect(
+      screen.getByText(/membre assigné n’est plus disponible/i),
+    ).toBeInTheDocument();
   });
 
   it("preserves edits and reuses the same idempotency key on a safe retry", async () => {

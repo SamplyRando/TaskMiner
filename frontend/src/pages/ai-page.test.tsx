@@ -13,7 +13,10 @@ import {
   getAIWorkspaceUsage,
 } from "@/api/ai";
 import { listProjects } from "@/api/projects";
-import { listWorkspaces } from "@/api/workspace";
+import {
+  listAssignableWorkspaceMembers,
+  listWorkspaces,
+} from "@/api/workspace";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { AIPage } from "@/pages/ai-page";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -45,6 +48,7 @@ vi.mock("@/api/projects", () => ({
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
+  listAssignableWorkspaceMembers: vi.fn(),
   listWorkspaces: vi.fn(),
   updateWorkspace: vi.fn(),
 }));
@@ -61,6 +65,7 @@ const mockedGenerateChanges = vi.mocked(generateProjectChangePlan);
 const mockedApplyChanges = vi.mocked(applyProjectChangePlan);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
+const mockedListAssignableMembers = vi.mocked(listAssignableWorkspaceMembers);
 
 describe("AIPage", () => {
   beforeEach(() => {
@@ -69,6 +74,7 @@ describe("AIPage", () => {
     sessionStorage.clear();
     useWorkspaceStore.setState({ activeWorkspaceId: workspaceFixture.id });
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
+    mockedListAssignableMembers.mockResolvedValue({ items: [] });
     mockedListProjects.mockResolvedValue({
       items: [projectFixture],
       limit: 100,
@@ -201,7 +207,8 @@ describe("AIPage", () => {
     await user.click(screen.getByRole("button", { name: "Générer le plan" }));
 
     expect(await screen.findByText(aiPlanFixture.summary)).toBeInTheDocument();
-    expect(screen.getByText("AI draft")).toBeInTheDocument();
+    expect(screen.getByText("Brouillon IA")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tout développer" }));
     expect(screen.getByDisplayValue("Define launch scope")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Run QA validation")).toBeInTheDocument();
     const priorities = screen.getAllByLabelText("Priorité");
@@ -241,6 +248,9 @@ describe("AIPage", () => {
     const loadingButton = screen.getByRole("button", { name: /Génération/ });
     expect(loadingButton).toBeDisabled();
     expect(loadingButton).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByText("TaskMiner AI prépare votre brouillon"),
+    ).toBeInTheDocument();
     expect(mockedGenerate).toHaveBeenCalledTimes(1);
   });
 
@@ -277,7 +287,7 @@ describe("AIPage", () => {
     await waitFor(() => {
       expect(mockedGenerate).toHaveBeenCalledTimes(2);
     });
-    expect(screen.getAllByText("AI draft")).toHaveLength(1);
+    expect(screen.getAllByText("Brouillon IA")).toHaveLength(1);
     expect(mockedApply).not.toHaveBeenCalled();
   });
 
@@ -308,7 +318,7 @@ describe("AIPage", () => {
       await screen.findByText("Plan appliqué avec succès"),
     ).toBeInTheDocument();
     expect(mockedApply).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("AI draft")).not.toBeInTheDocument();
+    expect(screen.queryByText("Brouillon IA")).not.toBeInTheDocument();
     expect(
       screen.getByText(/Prepare the mobile application/),
     ).toBeInTheDocument();
@@ -364,13 +374,13 @@ describe("AIPage", () => {
     expect(screen.getByText("6 sur 7 sélectionnées")).toBeInTheDocument();
     expect(
       screen.getByText(
-        `6 tâches seront créées dans « ${projectFixture.name} ».`,
+        `6 tâches seront créées dans « ${projectFixture.name} » · 0 assignation.`,
       ),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Appliquer le plan" }));
     expect(
       screen.getByText(
-        `Vous allez ajouter 6 tâches au projet « ${projectFixture.name} ». Cette action modifiera TaskMiner.`,
+        `Vous allez ajouter 6 tâches au projet « ${projectFixture.name} », dont 0 assignation. Cette action modifiera TaskMiner.`,
       ),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Annuler" }));

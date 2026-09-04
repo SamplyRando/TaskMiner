@@ -14,6 +14,7 @@ from tests.factories import (
     CreatedWorkspace,
     ProjectFactory,
     RegisteredUser,
+    UserFactory,
     WorkspaceFactory,
     WorkspaceMemberFactory,
 )
@@ -75,6 +76,7 @@ def test_project_plan_returns_a_structured_transient_draft(
         "milestone": "Planning",
         "order": 1,
         "depends_on": [],
+        "suggested_assignee_id": str(workspace.owner.id),
     }
     assert data["warnings"] == []
 
@@ -272,3 +274,33 @@ def test_generation_does_not_create_or_mutate_resources(
         refreshed_project.description,
         refreshed_project.updated_at,
     ) == project_snapshot
+
+
+def test_generated_assignees_are_limited_to_active_workspace_members(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    other_user: RegisteredUser,
+    user_factory: UserFactory,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    workspace_member_factory.create(workspace, other_user)
+    outsider = user_factory.create()
+    inactive_member = user_factory.create()
+    workspace_member_factory.create(workspace, inactive_member)
+    user_factory.set_active(inactive_member, is_active=False)
+    deleted_member = user_factory.create()
+    workspace_member_factory.create(workspace, deleted_member)
+    user_factory.delete(deleted_member)
+
+    response = client.post(
+        "/api/v1/ai/project-plan",
+        headers=workspace.owner.headers,
+        json=plan_payload(workspace.id),
+    )
+
+    assert response.status_code == 200
+    suggested_ids = {task["suggested_assignee_id"] for task in response.json()["tasks"]}
+    assert suggested_ids == {str(workspace.owner.id), str(other_user.id)}
+    assert str(outsider.id) not in suggested_ids
+    assert str(inactive_member.id) not in suggested_ids
+    assert str(deleted_member.id) not in suggested_ids

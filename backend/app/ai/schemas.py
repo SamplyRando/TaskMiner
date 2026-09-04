@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.task import TaskPriority, TaskStatus
+from app.models.workspace_member import WorkspaceMemberRole
 from app.schemas.project import ProjectCreate
 from app.schemas.task import TaskCreate
 
@@ -73,6 +74,25 @@ class AIGeneratedTask(BaseModel):
     milestone: str | None = Field(default=None, max_length=255)
     order: int = Field(ge=1)
     depends_on: list[int] = Field(default_factory=list)
+    suggested_assignee_id: UUID | None = None
+
+
+class AIWorkspaceMemberContext(BaseModel):
+    """Minimal active-member context safe to send to an AI provider."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: UUID
+    display_name: str = Field(min_length=1, max_length=255)
+    role: WorkspaceMemberRole
+
+
+class AIProjectPlanningContext(BaseModel):
+    """Server-owned context used for assignment suggestions."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    assignable_members: list[AIWorkspaceMemberContext]
 
 
 class AIGeneratedMilestone(BaseModel):
@@ -181,6 +201,7 @@ class AIApplyProjectPlanResponse(BaseModel):
     created_project: bool
     created_task_ids: list[UUID]
     created_task_count: int = Field(ge=0)
+    created_assignment_count: int = Field(ge=0)
     skipped_task_count: int = Field(ge=0)
     idempotent_replay: bool
     warnings: list[str] = Field(default_factory=list)

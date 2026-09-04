@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import type { AIWorkspaceUsage } from "@/types/ai";
 
 type AIUsagePanelProps = {
+  compact?: boolean;
   data: AIWorkspaceUsage | undefined;
   error: unknown;
   isPending: boolean;
@@ -45,6 +46,7 @@ const formatCost = (value: number): string => {
 };
 
 export function AIUsagePanel({
+  compact = false,
   data,
   error,
   isPending,
@@ -53,7 +55,7 @@ export function AIUsagePanel({
   if (isPending) {
     return (
       <Card aria-busy="true" aria-label="Chargement de l’utilisation IA">
-        <CardContent className="space-y-3 p-6">
+        <CardContent className={`space-y-3 ${compact ? "p-4" : "p-6"}`}>
           <div className="bg-muted h-5 w-40 animate-pulse rounded" />
           <div className="bg-muted h-2 w-full animate-pulse rounded" />
           <div className="bg-muted h-4 w-56 animate-pulse rounded" />
@@ -108,7 +110,9 @@ export function AIUsagePanel({
             : undefined
       }
     >
-      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+      <CardHeader
+        className={`gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 ${compact ? "p-4 pb-3" : ""}`}
+      >
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
             <Gauge aria-hidden="true" className="text-primary size-4" />
@@ -134,7 +138,7 @@ export function AIUsagePanel({
               : `${String(data.requests_remaining)} restantes`}
         </span>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className={compact ? "space-y-4 px-4 pb-4" : "space-y-5"}>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="font-medium">
@@ -153,7 +157,7 @@ export function AIUsagePanel({
           />
         </div>
 
-        <dl className="grid gap-4 text-sm sm:grid-cols-3">
+        <dl className="grid gap-3 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-muted-foreground">Succès / erreurs</dt>
             <dd className="mt-1 font-medium">

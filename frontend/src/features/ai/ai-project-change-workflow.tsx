@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AIChangeApplySuccess } from "@/features/ai/ai-change-apply-success";
 import { AIProjectChangeForm } from "@/features/ai/ai-project-change-form";
 import { AIProjectChangeReview } from "@/features/ai/ai-project-change-review";
+import { AIGenerationStatus } from "@/features/ai/ai-generation-status";
 import {
   useApplyProjectChangePlan,
   useGenerateProjectChangePlan,
@@ -168,6 +169,8 @@ export function AIProjectChangeWorkflow({
         workspaces={workspaces}
       />
 
+      {generatePlan.isPending ? <AIGenerationStatus mode="change" /> : null}
+
       {draft && !applyPlan.data ? (
         <AIProjectChangeReview
           error={applyPlan.error}
@@ -190,7 +193,7 @@ export function AIProjectChangeWorkflow({
         />
       ) : null}
 
-      {!draft && !appliedChanges ? (
+      {!draft && !appliedChanges && !generatePlan.isPending ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-44 flex-col items-center justify-center px-6 py-10 text-center">
             <GitCompareArrows

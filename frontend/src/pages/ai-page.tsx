@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AIProjectPlan } from "@/features/ai/ai-project-plan";
 import { AIApplySuccess } from "@/features/ai/ai-apply-success";
 import { AIProjectChangeWorkflow } from "@/features/ai/ai-project-change-workflow";
+import { AIGenerationStatus } from "@/features/ai/ai-generation-status";
 import { AIProjectPlannerForm } from "@/features/ai/ai-project-planner-form";
 import { AIUsagePanel } from "@/features/ai/ai-usage-panel";
 import {
@@ -22,8 +23,10 @@ import type {
 } from "@/features/ai/schemas";
 import { useProjects } from "@/features/projects/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useAssignableWorkspaceMembers } from "@/features/workspaces/hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useSessionState } from "@/hooks/use-session-state";
+import { useAuthStore } from "@/store/auth-store";
 import type {
   AIApplyProjectPlanRequest,
   AIApplyProjectPlanResponse,
@@ -54,6 +57,7 @@ const suggestProjectName = (prompt: string): string => {
 };
 
 export function AIPage() {
+  const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
   const workspaceState = useActiveWorkspace();
   const capabilitiesQuery = useAICapabilities();
   const generatePlan = useGenerateProjectPlan();
@@ -113,6 +117,10 @@ export function AIPage() {
       ...(effectiveWorkspaceId ? { workspace_id: effectiveWorkspaceId } : {}),
     },
     Boolean(effectiveWorkspaceId),
+  );
+  const assignableMembersQuery = useAssignableWorkspaceMembers(
+    draft?.workspaceId ?? null,
+    Boolean(draft),
   );
 
   const handleSubmit = async (values: AIProjectPlannerFormValues) => {
@@ -179,10 +187,10 @@ export function AIPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-[96rem] space-y-8">
       <EntityPageHeader
         actions={
-          <div className="border-primary/20 bg-primary/5 text-primary flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
+          <div className="border-primary/20 bg-primary/5 text-primary flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm">
             <Sparkles aria-hidden="true" className="size-3.5" />
             {capabilitiesQuery.data?.provider_label ?? "TaskMiner AI"}
           </div>
@@ -224,6 +232,7 @@ export function AIPage() {
 
       {canViewUsage ? (
         <AIUsagePanel
+          compact
           data={usageQuery.data}
           error={usageQuery.error}
           isPending={usageQuery.isPending}
@@ -269,6 +278,10 @@ export function AIPage() {
         />
       )}
 
+      {mode === "plan" && generatePlan.isPending ? (
+        <AIGenerationStatus mode="plan" />
+      ) : null}
+
       {mode === "plan" && draft && !applyPlan.data ? (
         <AIProjectPlan
           error={applyPlan.error}
@@ -276,8 +289,15 @@ export function AIPage() {
           existingProjectName={draft.projectName}
           idempotencyKey={draft.idempotencyKey}
           initialReviewValues={draft.reviewValues}
+          currentUserId={currentUserId}
           isPending={applyPlan.isPending}
+          isMembersLoading={assignableMembersQuery.isPending}
+          members={assignableMembersQuery.data?.items ?? []}
+          membersError={assignableMembersQuery.error}
           onApply={handleApply}
+          onRetryMembers={() => {
+            void assignableMembersQuery.refetch();
+          }}
           onReviewChange={handleReviewChange}
           plan={draft.plan}
           suggestedProjectName={draft.suggestedProjectName}
@@ -296,6 +316,7 @@ export function AIPage() {
       {mode === "plan" &&
       !draft &&
       !appliedPlan &&
+      !generatePlan.isPending &&
       workspaceState.workspaces.length > 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-48 flex-col items-center justify-center px-6 py-10 text-center">

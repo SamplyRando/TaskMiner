@@ -40,6 +40,13 @@ export function AIApplySuccess({
                 {result.skipped_task_count > 1 ? "s" : ""}.
               </p>
             ) : null}
+            {result.created_assignment_count > 0 ? (
+              <p className="text-muted-foreground mt-1 text-xs">
+                {result.created_assignment_count} assignation
+                {result.created_assignment_count > 1 ? "s" : ""} appliquée
+                {result.created_assignment_count > 1 ? "s" : ""}.
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

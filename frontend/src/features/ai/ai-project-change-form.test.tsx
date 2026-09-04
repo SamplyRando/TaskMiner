@@ -19,6 +19,23 @@ const props = {
 };
 
 describe("AIProjectChangeForm", () => {
+  it("prefills an instruction example without starting analysis", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<AIProjectChangeForm {...props} onSubmit={onSubmit} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Réorganiser ce projet pour terminer une semaine plus tôt.",
+      }),
+    );
+
+    expect(screen.getByLabelText("Instruction")).toHaveValue(
+      "Réorganiser ce projet pour terminer une semaine plus tôt.",
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("requires a workspace, an existing project and a meaningful instruction", async () => {
     const user = userEvent.setup();
     render(<AIProjectChangeForm {...props} />);

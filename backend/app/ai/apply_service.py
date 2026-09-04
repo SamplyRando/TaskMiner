@@ -175,6 +175,9 @@ class AIApplyService:
             created_project=creating_project,
             created_task_ids=task_ids,
             created_task_count=len(task_ids),
+            created_assignment_count=sum(
+                task.assigned_user_id is not None for task in data.tasks
+            ),
             skipped_task_count=skipped_task_count,
             idempotent_replay=False,
             warnings=self._advisory_warnings(data),
@@ -238,6 +241,9 @@ class AIApplyService:
                 UUID(task_id) for task_id in application.created_task_ids
             ],
             created_task_count=len(application.created_task_ids),
+            created_assignment_count=sum(
+                task.assigned_user_id is not None for task in data.tasks
+            ),
             skipped_task_count=application.skipped_task_count,
             idempotent_replay=True,
             warnings=cls._advisory_warnings(data),
