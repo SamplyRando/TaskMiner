@@ -39,6 +39,7 @@ from app.ai.schemas import (
     AIWorkspaceMemberContext,
 )
 from app.models.task import TaskPriority, TaskStatus
+from app.models.workspace_member import WorkspaceMemberRole
 
 
 def valid_plan() -> AIProjectPlanResponse:
@@ -154,7 +155,7 @@ def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() 
             AIWorkspaceMemberContext(
                 user_id=member_id,
                 display_name="Ada Lovelace",
-                role="member",
+                role=WorkspaceMemberRole.MEMBER,
             )
         ]
     )
