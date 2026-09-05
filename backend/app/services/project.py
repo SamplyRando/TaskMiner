@@ -20,6 +20,7 @@ from app.schemas.project import (
 )
 from app.schemas.workspace import WorkspaceCreate
 from app.services.permission import PermissionService
+from app.services.subscription import SubscriptionService
 
 
 DEFAULT_WORKSPACE_NAME = "My Workspace"
@@ -37,10 +38,12 @@ class ProjectService:
         repository: ProjectRepository,
         workspace_repository: WorkspaceRepository,
         permission_service: PermissionService,
+        subscription_service: SubscriptionService,
     ) -> None:
         self.repository = repository
         self.workspace_repository = workspace_repository
         self.permission_service = permission_service
+        self.subscription_service = subscription_service
 
     def create_project(
         self,
@@ -54,10 +57,15 @@ class ProjectService:
             else self.workspace_repository.get_first_active_by_owner(owner)
         )
         if workspace is None:
-            workspace = self.workspace_repository.create(
-                owner,
-                WorkspaceCreate(name=DEFAULT_WORKSPACE_NAME),
-            )
+            self.subscription_service.serialize_owned_workspace_creation(owner.id)
+            workspace = self.workspace_repository.get_first_active_by_owner(owner)
+            if workspace is None:
+                self.subscription_service.enforce_owned_workspace_limit(owner.id)
+                workspace = self.workspace_repository.create(
+                    owner,
+                    WorkspaceCreate(name=DEFAULT_WORKSPACE_NAME),
+                )
+        self.subscription_service.enforce_project_limit(workspace.id)
         project = self.repository.create(workspace, data)
         publish(self.project_created_event(owner, workspace, project))
         return project
@@ -71,6 +79,8 @@ class ProjectService:
         source: str,
     ) -> tuple[Project, DomainEvent]:
         """Stage a project and its event inside a caller-owned transaction."""
+
+        self.subscription_service.enforce_project_limit(workspace.id)
 
         project = self.repository.create(workspace, data, commit=False)
         return project, self.project_created_event(

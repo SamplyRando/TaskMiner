@@ -7,6 +7,7 @@ import {
   listWorkspaces,
   updateWorkspace,
 } from "@/api/workspace";
+import { subscriptionKeys } from "@/features/subscriptions/hooks";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
 
 export const workspaceKeys = {
@@ -41,6 +42,7 @@ export const useCreateWorkspace = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });
@@ -78,6 +80,7 @@ export const useUpdateWorkspace = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });
@@ -109,6 +112,7 @@ export const useDeleteWorkspace = () => {
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });

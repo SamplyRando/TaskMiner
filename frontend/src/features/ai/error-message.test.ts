@@ -12,6 +12,18 @@ describe("getAIGenerationErrorMessage", () => {
     ).toMatch(/quota mensuel/i);
     expect(
       getAIGenerationErrorMessage(
+        new ApiError("AI request limit reached for the Free plan.", 429, {
+          detail: {
+            code: "ai_quota_reached",
+            limit: 25,
+            message: "AI request limit reached for the Free plan.",
+            plan: "free",
+          },
+        }),
+      ),
+    ).toMatch(/quota mensuel/i);
+    expect(
+      getAIGenerationErrorMessage(
         new ApiError("AI generation rate limit exceeded.", 429),
       ),
     ).toMatch(/Trop de générations/);

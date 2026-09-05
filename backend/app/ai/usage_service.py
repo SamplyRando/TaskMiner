@@ -22,6 +22,8 @@ from app.ai.schemas import AIWorkspaceUsageResponse
 from app.models.user import User
 from app.repositories.ai_usage import AIUsageRepository
 from app.services.permission import PermissionService
+from app.services.subscription import PlanLimitExceededError, SubscriptionService
+from app.subscriptions.plans import PlanCode
 
 
 logger = logging.getLogger(__name__)
@@ -30,8 +32,16 @@ AIUsageOperation = Literal["project_plan", "project_change_plan"]
 GenerationT = TypeVar("GenerationT")
 
 
-class AIMonthlyQuotaExceededError(Exception):
+class AIMonthlyQuotaExceededError(PlanLimitExceededError):
     """Raised before provider dispatch when the workspace quota is exhausted."""
+
+    def __init__(self, plan: PlanCode, limit: int) -> None:
+        super().__init__(
+            "ai_quota_reached",
+            plan,
+            limit,
+            "AI request",
+        )
 
 
 class AIRateLimitExceededError(Exception):
@@ -59,8 +69,8 @@ class AIUsageService:
         repository: AIUsageRepository,
         permission_service: PermissionService,
         cost_estimator: AIUsageCostEstimator,
+        subscription_service: SubscriptionService,
         *,
-        monthly_request_limit: int,
         rate_limit_requests: int,
         rate_limit_window_seconds: int,
         pricing_model: str | None,
@@ -69,7 +79,7 @@ class AIUsageService:
         self.repository = repository
         self.permission_service = permission_service
         self.cost_estimator = cost_estimator
-        self.monthly_request_limit = monthly_request_limit
+        self.subscription_service = subscription_service
         self.rate_limit_requests = rate_limit_requests
         self.rate_limit_window_seconds = rate_limit_window_seconds
         self.pricing_model = pricing_model
@@ -176,13 +186,14 @@ class AIUsageService:
             period_start,
             period_end,
         )
+        _, request_limit = self.subscription_service.get_ai_request_limit(workspace_id)
         return AIWorkspaceUsageResponse(
             period_start=period_start,
             period_end=period_end,
-            request_limit=self.monthly_request_limit,
+            request_limit=request_limit,
             requests_used=aggregate.requests_used,
             requests_remaining=max(
-                self.monthly_request_limit - aggregate.requests_used,
+                request_limit - aggregate.requests_used,
                 0,
             ),
             successful_requests=aggregate.successful_requests,
@@ -208,13 +219,16 @@ class AIUsageService:
         window_start = now - timedelta(seconds=self.rate_limit_window_seconds)
         try:
             self.repository.lock_workspace(workspace_id)
+            plan, request_limit = self.subscription_service.get_ai_request_limit(
+                workspace_id
+            )
             usage_count = self.repository.count_workspace_requests(
                 workspace_id,
                 period_start,
                 period_end,
             )
-            if usage_count >= self.monthly_request_limit:
-                raise AIMonthlyQuotaExceededError
+            if usage_count >= request_limit:
+                raise AIMonthlyQuotaExceededError(plan, request_limit)
 
             rate_count = self.repository.count_user_requests_since(
                 workspace_id,

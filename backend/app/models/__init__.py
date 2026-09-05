@@ -17,6 +17,7 @@ from app.models.workspace_invitation import (
     WorkspaceInvitation,
 )
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
+from app.models.workspace_subscription import WorkspaceSubscription
 
 __all__ = [
     "Activity",
@@ -40,4 +41,5 @@ __all__ = [
     "InvitationEmailDeliveryStatus",
     "WorkspaceMember",
     "WorkspaceMemberRole",
+    "WorkspaceSubscription",
 ]

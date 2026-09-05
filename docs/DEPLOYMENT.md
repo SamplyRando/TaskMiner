@@ -66,7 +66,7 @@ Docker actuel.
 | `TASKMINER_AI_PROVIDER` | `openai` en production |
 | `TASKMINER_OPENAI_MODEL` | `gpt-5.6-luna` ou le modèle validé pour la production |
 | `OPENAI_API_KEY` | Clé API OpenAI stockée uniquement dans Railway |
-| `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Quota mensuel UTC par workspace, par exemple `100` |
+| `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Plafond d'urgence optionnel ; laisser absent pour appliquer Free=25 et Pro=500 |
 | `TASKMINER_AI_RATE_LIMIT_REQUESTS` | Générations par utilisateur et fenêtre, par exemple `10` |
 | `TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre glissante en secondes, par exemple `60` |
 | `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
@@ -101,9 +101,12 @@ Définir explicitement `TASKMINER_AI_PROVIDER=openai`, puis enregistrer
 tests ; il ne doit pas être utilisé par le service de production. La clé OpenAI
 ne doit jamais être dupliquée dans une variable `VITE_*` ni dans Vercel.
 
-Définir également les limites IA dans Railway. Le quota suit le mois calendaire
-UTC et une requête qui atteint réellement le provider consomme une unité, même
-si le provider échoue. Le rate limit est appliqué par utilisateur et workspace
+Le quota IA suit le plan actif du workspace (Free : 25, Pro : 500) et le mois
+calendaire UTC. `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` est uniquement un plafond
+d'urgence optionnel : s'il est défini, la plus petite valeur entre le quota du
+plan et ce plafond est utilisée. Une requête qui atteint réellement le provider
+consomme une unité, même si le provider échoue. Le rate limit est appliqué par
+utilisateur et workspace
 dans une fenêtre glissante, avec PostgreSQL comme source de vérité
 multi-instance. Le coût est estimé côté backend à partir des tokens réellement
 retournés par OpenAI et d'un registre lié à l'identifiant exact du modèle. Le

@@ -66,10 +66,13 @@ class Settings(BaseSettings):
         min_length=1,
         validation_alias="TASKMINER_OPENAI_MODEL",
     )
-    ai_monthly_request_limit: int = Field(
-        default=100,
+    ai_monthly_request_limit: int | None = Field(
+        default=None,
         gt=0,
         validation_alias="TASKMINER_AI_MONTHLY_REQUEST_LIMIT",
+        description=(
+            "Optional emergency ceiling applied on top of plan-derived AI quotas."
+        ),
     )
     ai_rate_limit_requests: int = Field(
         default=10,

@@ -13,6 +13,7 @@ import {
   getAIWorkspaceUsage,
 } from "@/api/ai";
 import { listProjects } from "@/api/projects";
+import { getWorkspaceSubscription } from "@/api/subscription";
 import {
   listAssignableWorkspaceMembers,
   listWorkspaces,
@@ -29,6 +30,7 @@ import {
   aiUsageFixture,
 } from "@/test/ai-fixtures";
 import { renderWithQuery } from "@/test/query-wrapper";
+import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
 import { projectFixture, workspaceFixture } from "@/test/resource-fixtures";
 
 vi.mock("@/api/ai", () => ({
@@ -45,6 +47,7 @@ vi.mock("@/api/projects", () => ({
   listProjects: vi.fn(),
   updateProject: vi.fn(),
 }));
+vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
@@ -66,6 +69,7 @@ const mockedApplyChanges = vi.mocked(applyProjectChangePlan);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedListAssignableMembers = vi.mocked(listAssignableWorkspaceMembers);
+const mockedSubscription = vi.mocked(getWorkspaceSubscription);
 
 describe("AIPage", () => {
   beforeEach(() => {
@@ -89,6 +93,7 @@ describe("AIPage", () => {
       provider_label: "OpenAI",
     });
     mockedUsage.mockResolvedValue(aiUsageFixture);
+    mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
     mockedPermissions.mockResolvedValue({
       role: "owner",
       permissions: {
@@ -152,6 +157,14 @@ describe("AIPage", () => {
       ...aiUsageFixture,
       requests_remaining: 0,
       requests_used: aiUsageFixture.request_limit,
+    });
+    mockedSubscription.mockResolvedValue({
+      ...freeSubscriptionFixture,
+      usage: {
+        ...freeSubscriptionFixture.usage,
+        ai_requests_this_month:
+          freeSubscriptionFixture.limits.ai_requests_per_month,
+      },
     });
     renderWithQuery(<AIPage />);
 

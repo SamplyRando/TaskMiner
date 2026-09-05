@@ -2,9 +2,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.deps import CurrentUserDep, WorkspaceServiceDep
+from app.api.deps import (
+    CurrentUserDep,
+    SubscriptionServiceDep,
+    WorkspaceServiceDep,
+)
 from app.models.workspace import Workspace
 from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate
+from app.schemas.subscription import WorkspaceSubscriptionRead
+from app.services.subscription import PlanLimitExceededError
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -17,7 +23,31 @@ def create_workspace(
     current_user: CurrentUserDep,
     service: WorkspaceServiceDep,
 ) -> Workspace:
-    return service.create_workspace(current_user, data)
+    try:
+        return service.create_workspace(current_user, data)
+    except PlanLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.as_detail(),
+        ) from exc
+
+
+@router.get(
+    "/{workspace_id}/subscription",
+    response_model=WorkspaceSubscriptionRead,
+)
+def get_workspace_subscription(
+    workspace_id: UUID,
+    current_user: CurrentUserDep,
+    service: SubscriptionServiceDep,
+) -> WorkspaceSubscriptionRead:
+    try:
+        return service.get_summary(current_user, workspace_id)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found.",
+        ) from exc
 
 
 @router.get("", response_model=list[WorkspaceRead])

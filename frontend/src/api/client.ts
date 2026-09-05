@@ -64,6 +64,10 @@ const getErrorMessage = (data: unknown): string => {
     return payload.detail;
   }
 
+  if (isRecord(payload.detail) && typeof payload.detail.message === "string") {
+    return payload.detail.message;
+  }
+
   const validationMessage = getValidationMessage(payload.detail);
   if (validationMessage) {
     return validationMessage;

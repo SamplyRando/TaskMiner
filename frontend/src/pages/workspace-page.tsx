@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useSessionState } from "@/hooks/use-session-state";
 import { useAuthStore } from "@/store/auth-store";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
+import { WorkspacePlanCard } from "@/features/subscriptions/workspace-plan-card";
+import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import {
   useCreateWorkspace,
   useDeleteWorkspace,
@@ -25,6 +29,9 @@ const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 
 export function WorkspacePage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
+  const activeWorkspaceId = useWorkspaceStore(
+    (state) => state.activeWorkspaceId,
+  );
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
   const [search, setSearch] = useSessionState(
@@ -56,6 +63,13 @@ export function WorkspacePage() {
   }, [preferences.data, setPagination]);
 
   const workspacesQuery = useWorkspaces();
+  const activeWorkspace =
+    workspacesQuery.data?.find(({ id }) => id === activeWorkspaceId) ??
+    workspacesQuery.data?.[0] ??
+    null;
+  const subscriptionQuery = useWorkspaceSubscription(
+    activeWorkspace?.id ?? null,
+  );
   const createWorkspace = useCreateWorkspace();
   const updateWorkspace = useUpdateWorkspace();
   const deleteWorkspace = useDeleteWorkspace();
@@ -160,6 +174,16 @@ export function WorkspacePage() {
         />
       </div>
 
+      {activeWorkspace ? (
+        <WorkspacePlanCard
+          data={subscriptionQuery.data}
+          error={subscriptionQuery.error}
+          isPending={subscriptionQuery.isPending}
+          onRetry={() => void subscriptionQuery.refetch()}
+          workspaceName={activeWorkspace.name}
+        />
+      ) : null}
+
       {workspacesQuery.isError ? (
         <ErrorState
           error={workspacesQuery.error}
@@ -206,6 +230,11 @@ export function WorkspacePage() {
       <WorkspaceFormDialog
         error={
           selectedWorkspace ? updateWorkspace.error : createWorkspace.error
+        }
+        errorMessage={
+          selectedWorkspace
+            ? undefined
+            : getPlanLimitMessage(createWorkspace.error)
         }
         isPending={
           selectedWorkspace

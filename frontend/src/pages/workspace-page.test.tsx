@@ -9,11 +9,14 @@ import {
   updateWorkspace,
 } from "@/api/workspace";
 import { getUserPreferences } from "@/api/settings";
+import { getWorkspaceSubscription } from "@/api/subscription";
 import { WorkspacePage } from "@/pages/workspace-page";
 import { useAuthStore } from "@/store/auth-store";
+import { useWorkspaceStore } from "@/store/workspace-store";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { userId, workspaceFixture } from "@/test/resource-fixtures";
 import { settingsPreferencesFixture } from "@/test/settings-fixtures";
+import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
 
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
@@ -22,16 +25,19 @@ vi.mock("@/api/workspace", () => ({
   updateWorkspace: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
+vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
 
 const mockedCreateWorkspace = vi.mocked(createWorkspace);
 const mockedDeleteWorkspace = vi.mocked(deleteWorkspace);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedUpdateWorkspace = vi.mocked(updateWorkspace);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
+const mockedSubscription = vi.mocked(getWorkspaceSubscription);
 
 describe("WorkspacePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useWorkspaceStore.setState({ activeWorkspaceId: workspaceFixture.id });
     useAuthStore.setState({
       currentUser: {
         created_at: null,
@@ -44,13 +50,17 @@ describe("WorkspacePage", () => {
     });
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
+    mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
   });
 
   it("loads and searches the real workspace list", async () => {
     const user = userEvent.setup();
     renderWithQuery(<WorkspacePage />);
 
-    expect(await screen.findByText(workspaceFixture.name)).toBeInTheDocument();
+    expect(await screen.findAllByText(workspaceFixture.name)).not.toHaveLength(
+      0,
+    );
+    expect(await screen.findByText("Plan Free")).toBeInTheDocument();
     await user.type(
       screen.getByRole("textbox", { name: "Rechercher un workspace" }),
       "introuvable",
@@ -71,7 +81,7 @@ describe("WorkspacePage", () => {
       .mockResolvedValue([workspaceFixture, createdWorkspace]);
     renderWithQuery(<WorkspacePage />);
 
-    await screen.findByText(workspaceFixture.name);
+    await screen.findAllByText(workspaceFixture.name);
     await user.click(screen.getByRole("button", { name: "Nouveau workspace" }));
     await user.type(
       screen.getByRole("textbox", { name: "Nom" }),
@@ -99,7 +109,7 @@ describe("WorkspacePage", () => {
     });
     renderWithQuery(<WorkspacePage />);
 
-    await screen.findByText(workspaceFixture.name);
+    await screen.findAllByText(workspaceFixture.name);
     await user.click(
       screen.getByRole("button", {
         name: `Modifier ${workspaceFixture.name}`,
@@ -126,7 +136,7 @@ describe("WorkspacePage", () => {
       .mockResolvedValue([]);
     renderWithQuery(<WorkspacePage />);
 
-    await screen.findByText(workspaceFixture.name);
+    await screen.findAllByText(workspaceFixture.name);
     await user.click(
       screen.getByRole("button", {
         name: `Supprimer ${workspaceFixture.name}`,

@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createProject, listProjects } from "@/api/projects";
 import { getUserPreferences } from "@/api/settings";
+import { getWorkspaceSubscription } from "@/api/subscription";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { listWorkspaces } from "@/api/workspace";
 import { ProjectsPage } from "@/pages/projects-page";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { projectFixture, workspaceFixture } from "@/test/resource-fixtures";
 import { settingsPreferencesFixture } from "@/test/settings-fixtures";
+import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
 import { useWorkspaceStore } from "@/store/workspace-store";
 
 vi.mock("@/api/projects", () => ({
@@ -19,6 +21,7 @@ vi.mock("@/api/projects", () => ({
   updateProject: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
+vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
 vi.mock("@/api/workspace", () => ({ listWorkspaces: vi.fn() }));
 vi.mock("@/api/workspace-permissions", () => ({
   getWorkspacePermissions: vi.fn(),
@@ -29,6 +32,7 @@ const mockedListProjects = vi.mocked(listProjects);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
+const mockedSubscription = vi.mocked(getWorkspaceSubscription);
 
 describe("ProjectsPage", () => {
   beforeEach(() => {
@@ -36,6 +40,7 @@ describe("ProjectsPage", () => {
     useWorkspaceStore.setState({ activeWorkspaceId: null });
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
+    mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
     mockedPermissions.mockResolvedValue({
       permissions: {
         manage_invitations: true,
@@ -139,5 +144,21 @@ describe("ProjectsPage", () => {
         name: `Supprimer ${projectFixture.name}`,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("disables project creation when the backend summary reports the limit", async () => {
+    mockedSubscription.mockResolvedValue({
+      ...freeSubscriptionFixture,
+      usage: { ...freeSubscriptionFixture.usage, projects: 5 },
+    });
+
+    renderWithQuery(<ProjectsPage />);
+
+    expect(
+      await screen.findByText(/Limite de 5 projets atteinte/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nouveau projet" }),
+    ).toBeDisabled();
   });
 });

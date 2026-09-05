@@ -1,11 +1,13 @@
 import { ApiError } from "@/api/client";
+import { getPlanLimitCode } from "@/features/subscriptions/errors";
 
 export const getAIGenerationErrorMessage = (
   error: unknown,
 ): string | undefined => {
   if (!(error instanceof ApiError)) return undefined;
   if (error.status === 429) {
-    return error.message === "AI monthly quota exceeded."
+    return error.message === "AI monthly quota exceeded." ||
+      getPlanLimitCode(error) === "ai_quota_reached"
       ? "Le quota mensuel TaskMiner AI de ce workspace est atteint."
       : "Trop de générations ont été demandées. Réessayez dans un instant.";
   }

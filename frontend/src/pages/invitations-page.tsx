@@ -32,6 +32,8 @@ import {
 import { RecipientInvitationCard } from "@/features/invitations/recipient-invitation-card";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
+import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -119,6 +121,9 @@ export function InvitationsPage() {
   }, [preferences.data, setPaginationState]);
 
   const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
+  const subscriptionQuery = useWorkspaceSubscription(
+    workspace.activeWorkspaceId,
+  );
   const canManage = Boolean(
     permissionsQuery.data?.permissions.manage_invitations,
   );
@@ -142,6 +147,11 @@ export function InvitationsPage() {
   const resendInvitation = useResendInvitation();
   const acceptInvitation = useAcceptInvitation();
   const total = invitationsQuery.data?.total ?? 0;
+  const memberLimitReached = Boolean(
+    subscriptionQuery.data &&
+    subscriptionQuery.data.usage.members >=
+      subscriptionQuery.data.limits.members,
+  );
   const pageCount = Math.ceil(total / pagination.pageSize);
   const createInvitationError = isEmailDeliveryError(createInvitation.error)
     ? new ApiError(
@@ -149,6 +159,8 @@ export function InvitationsPage() {
         502,
       )
     : createInvitation.error;
+  const createInvitationErrorMessage =
+    getPlanLimitMessage(createInvitation.error) ?? undefined;
   const handleResend = useCallback(
     async (invitation: WorkspaceInvitation) => {
       try {
@@ -291,6 +303,7 @@ export function InvitationsPage() {
             />
             {canManage ? (
               <Button
+                disabled={memberLimitReached}
                 onClick={() => {
                   createInvitation.reset();
                   setFormOpen(true);
@@ -338,6 +351,17 @@ export function InvitationsPage() {
           error={workspace.error}
           onRetry={() => void workspace.refetch()}
         />
+      ) : null}
+
+      {canManage && memberLimitReached ? (
+        <p
+          className="border-destructive/30 bg-destructive/5 text-destructive rounded-lg border px-4 py-3 text-sm"
+          role="status"
+        >
+          Limite de {subscriptionQuery.data?.limits.members} membres atteinte
+          pour le plan {subscriptionQuery.data?.plan === "pro" ? "Pro" : "Free"}
+          . Retirez un membre avant d’accepter une nouvelle invitation.
+        </p>
       ) : null}
 
       {!workspace.isPending &&
@@ -427,6 +451,7 @@ export function InvitationsPage() {
                             </Button>
                           ) : (
                             <Button
+                              disabled={memberLimitReached}
                               onClick={() => {
                                 createInvitation.reset();
                                 setFormOpen(true);
@@ -530,6 +555,7 @@ export function InvitationsPage() {
                     </Button>
                   ) : (
                     <Button
+                      disabled={memberLimitReached}
                       onClick={() => {
                         createInvitation.reset();
                         setFormOpen(true);
@@ -591,6 +617,7 @@ export function InvitationsPage() {
 
       <InvitationFormDialog
         error={createInvitationError}
+        errorMessage={createInvitationErrorMessage}
         isPending={createInvitation.isPending}
         onOpenChange={setFormOpen}
         onSubmit={handleCreate}

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.workspace_invitation import WorkspaceInvitation
     from app.models.workspace_member import WorkspaceMember
+    from app.models.workspace_subscription import WorkspaceSubscription
 
 
 class Workspace(SoftDeleteMixin, TimestampMixin, Base):
@@ -55,4 +56,10 @@ class Workspace(SoftDeleteMixin, TimestampMixin, Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+    subscription: Mapped[WorkspaceSubscription] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        uselist=False,
     )

@@ -101,8 +101,11 @@ def user_factory(client: TestClient) -> UserFactory:
 
 
 @pytest.fixture
-def project_factory(client: TestClient) -> ProjectFactory:
-    return ProjectFactory(client)
+def project_factory(
+    client: TestClient,
+    database_session: Session,
+) -> ProjectFactory:
+    return ProjectFactory(client, database_session)
 
 
 @pytest.fixture
@@ -121,8 +124,11 @@ def comment_factory(client: TestClient) -> CommentFactory:
 
 
 @pytest.fixture
-def workspace_factory(client: TestClient) -> WorkspaceFactory:
-    return WorkspaceFactory(client)
+def workspace_factory(
+    client: TestClient,
+    database_session: Session,
+) -> WorkspaceFactory:
+    return WorkspaceFactory(client, database_session)
 
 
 @pytest.fixture

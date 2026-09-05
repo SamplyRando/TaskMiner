@@ -23,6 +23,7 @@ import type {
 } from "@/features/ai/schemas";
 import { useProjects } from "@/features/projects/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
 import { useAssignableWorkspaceMembers } from "@/features/workspaces/hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useSessionState } from "@/hooks/use-session-state";
@@ -91,8 +92,11 @@ export function AIPage() {
     effectiveUsageWorkspaceId,
     canViewUsage,
   );
+  const subscriptionQuery = useWorkspaceSubscription(effectiveUsageWorkspaceId);
   const quotaReachedWorkspaceId =
-    usageQuery.data?.requests_remaining === 0
+    subscriptionQuery.data &&
+    subscriptionQuery.data.usage.ai_requests_this_month >=
+      subscriptionQuery.data.limits.ai_requests_per_month
       ? effectiveUsageWorkspaceId
       : null;
   const handleWorkspaceChange = useCallback(

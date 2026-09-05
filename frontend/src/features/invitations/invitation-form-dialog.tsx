@@ -23,6 +23,7 @@ import type { InvitationCreate } from "@/types/invitation";
 
 type InvitationFormDialogProps = {
   error: unknown;
+  errorMessage?: string | undefined;
   isPending: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InvitationCreate) => Promise<void>;
@@ -31,6 +32,7 @@ type InvitationFormDialogProps = {
 
 export function InvitationFormDialog({
   error,
+  errorMessage,
   isPending,
   onOpenChange,
   onSubmit,
@@ -96,7 +98,7 @@ export function InvitationFormDialog({
             </Select>
           </div>
 
-          <FormError error={error} />
+          <FormError error={error} message={errorMessage} />
 
           <DialogFooter>
             <Button

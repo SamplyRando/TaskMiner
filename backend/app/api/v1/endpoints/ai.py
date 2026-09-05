@@ -46,6 +46,7 @@ from app.api.deps import (
     CurrentUserDep,
 )
 from app.services.permission import PermissionDeniedError
+from app.services.subscription import PlanLimitExceededError
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -64,7 +65,7 @@ def _usage_limit_http_exception(
         )
     return HTTPException(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        detail="AI monthly quota exceeded.",
+        detail=error.as_detail(),
     )
 
 
@@ -226,6 +227,11 @@ def apply_project_plan(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Idempotency key already used with another payload.",
+        ) from exc
+    except PlanLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.as_detail(),
         ) from exc
 
 
