@@ -14,6 +14,7 @@ from app.schemas.workspace_invitation import (
 )
 from app.services.permission import PermissionDeniedError
 from app.services.workspace import WorkspaceNotFoundError
+from app.services.subscription import PlanLimitExceededError
 from app.services.workspace_invitation import (
     InvitationAlreadyAcceptedError,
     InvitationEmailMismatchError,
@@ -203,6 +204,11 @@ def accept_workspace_invitation(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A workspace can only have one owner.",
+        ) from exc
+    except PlanLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.as_detail(),
         ) from exc
 
 

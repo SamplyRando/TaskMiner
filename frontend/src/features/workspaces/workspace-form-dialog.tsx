@@ -23,6 +23,7 @@ import type { Workspace, WorkspaceInput } from "@/types/workspace";
 
 type WorkspaceFormDialogProps = {
   error?: unknown;
+  errorMessage?: string | undefined;
   isPending: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: WorkspaceInput) => Promise<void>;
@@ -32,6 +33,7 @@ type WorkspaceFormDialogProps = {
 
 export function WorkspaceFormDialog({
   error,
+  errorMessage,
   isPending,
   onOpenChange,
   onSubmit,
@@ -112,7 +114,7 @@ export function WorkspaceFormDialog({
             ) : null}
           </div>
 
-          <FormError error={error} />
+          <FormError error={error} message={errorMessage} />
 
           <DialogFooter>
             <Button

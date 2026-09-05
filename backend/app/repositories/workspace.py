@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember, WorkspaceMemberRole
+from app.models.workspace_subscription import WorkspaceSubscription
 from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate
 
 
@@ -29,6 +30,7 @@ class WorkspaceRepository:
                 role=WorkspaceMemberRole.OWNER,
             )
         )
+        workspace.subscription = WorkspaceSubscription()
         self.session.add(workspace)
 
         try:

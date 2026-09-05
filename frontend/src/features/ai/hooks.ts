@@ -9,6 +9,7 @@ import {
   getAIWorkspaceUsage,
 } from "@/api/ai";
 import { projectKeys } from "@/features/projects/hooks";
+import { subscriptionKeys } from "@/features/subscriptions/hooks";
 import { taskKeys } from "@/features/tasks/hooks";
 
 export const aiKeys = {
@@ -44,6 +45,9 @@ export const useGenerateProjectPlan = () => {
       await queryClient.invalidateQueries({
         queryKey: aiKeys.usage(variables.workspace_id),
       });
+      await queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.detail(variables.workspace_id),
+      });
     },
   });
 };
@@ -60,6 +64,7 @@ export const useApplyProjectPlan = () => {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["activities"] }),
         queryClient.invalidateQueries({ queryKey: ["audit"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });
@@ -72,6 +77,9 @@ export const useGenerateProjectChangePlan = () => {
     onSettled: async (_data, _error, variables) => {
       await queryClient.invalidateQueries({
         queryKey: aiKeys.usage(variables.workspace_id),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.detail(variables.workspace_id),
       });
     },
   });

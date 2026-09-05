@@ -274,7 +274,12 @@ def test_provider_failure_consumes_one_quota_unit_but_no_local_rejection_event(
 
     assert failed.status_code == 503
     assert rejected.status_code == 429
-    assert rejected.json() == {"detail": "AI monthly quota exceeded."}
+    assert rejected.json()["detail"] == {
+        "code": "ai_quota_reached",
+        "message": "AI request limit reached for the Free plan.",
+        "plan": "free",
+        "limit": 1,
+    }
     assert provider.call_count == 1
     assert database_session.scalar(select(func.count(AIUsageEvent.id))) == 1
 
@@ -300,7 +305,7 @@ def test_monthly_quota_rejects_before_provider_and_does_not_count_rejection(
 
     assert first.status_code == 200
     assert second.status_code == 429
-    assert second.json() == {"detail": "AI monthly quota exceeded."}
+    assert second.json()["detail"]["code"] == "ai_quota_reached"
     assert metered_provider.call_count == 1
     assert database_session.scalar(select(func.count(AIUsageEvent.id))) == 1
 
@@ -543,9 +548,9 @@ def test_usage_endpoint_is_available_to_owner_and_admin(
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["request_limit"] == settings.ai_monthly_request_limit
+        assert data["request_limit"] == 25
         assert data["requests_used"] == 1
-        assert data["requests_remaining"] == settings.ai_monthly_request_limit - 1
+        assert data["requests_remaining"] == 24
         assert data["successful_requests"] == 1
         assert data["failed_requests"] == 0
         assert data["input_tokens"] == 1_000

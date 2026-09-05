@@ -13,6 +13,7 @@ import {
   revokeInvitation,
 } from "@/api/invitations";
 import { getUserPreferences } from "@/api/settings";
+import { getWorkspaceSubscription } from "@/api/subscription";
 import { listWorkspaces } from "@/api/workspace";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { InvitationsPage } from "@/pages/invitations-page";
@@ -28,6 +29,7 @@ import {
   secondWorkspace,
 } from "@/test/invitation-fixtures";
 import { renderWithQuery } from "@/test/query-wrapper";
+import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
 
 vi.mock("@/api/invitations", () => ({
   acceptInvitation: vi.fn(),
@@ -38,6 +40,7 @@ vi.mock("@/api/invitations", () => ({
   revokeInvitation: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
+vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
 
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
@@ -59,6 +62,7 @@ const mockedPermissions = vi.mocked(getWorkspacePermissions);
 const mockedRevoke = vi.mocked(revokeInvitation);
 const mockedResend = vi.mocked(resendWorkspaceInvitation);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
+const mockedSubscription = vi.mocked(getWorkspaceSubscription);
 
 const setMobileViewport = (matches: boolean) => {
   Object.defineProperty(window, "matchMedia", {
@@ -88,6 +92,7 @@ describe("InvitationsPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     localStorage.clear();
+    mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
     setMobileViewport(false);
     authenticateStore(fakeUser);
     mockedGetPreferences.mockResolvedValue({
@@ -135,6 +140,22 @@ describe("InvitationsPage", () => {
       skip: 0,
       sort: "-created_at",
     });
+  });
+
+  it("disables invitations when the workspace member limit is reached", async () => {
+    mockedSubscription.mockResolvedValue({
+      ...freeSubscriptionFixture,
+      usage: { ...freeSubscriptionFixture.usage, members: 3 },
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByText(/Limite de 3 membres atteinte/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Inviter un membre" }),
+    ).toBeDisabled();
   });
 
   it("renders loading skeletons while invitations are loading", async () => {

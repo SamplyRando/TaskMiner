@@ -28,6 +28,7 @@ from app.schemas.workspace_invitation import (
     InvitationRead,
 )
 from app.services.permission import PermissionDeniedError, PermissionService
+from app.services.subscription import SubscriptionService
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -90,11 +91,13 @@ class WorkspaceInvitationService:
         member_repository: WorkspaceMemberRepository,
         permission_service: PermissionService,
         email_service: EmailService,
+        subscription_service: SubscriptionService,
     ) -> None:
         self.repository = repository
         self.member_repository = member_repository
         self.permission_service = permission_service
         self.email_service = email_service
+        self.subscription_service = subscription_service
 
     def create_invitation(
         self,
@@ -233,6 +236,8 @@ class WorkspaceInvitationService:
             is not None
         ):
             raise InvitationMemberAlreadyExistsError
+
+        self.subscription_service.enforce_member_limit(invitation.workspace_id)
 
         try:
             accepted_invitation = self.repository.accept(

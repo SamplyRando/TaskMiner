@@ -23,6 +23,7 @@ import type { Project, ProjectInput } from "@/types/project";
 
 type ProjectFormDialogProps = {
   error?: unknown;
+  errorMessage?: string | undefined;
   isPending: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ProjectInput) => Promise<void>;
@@ -32,6 +33,7 @@ type ProjectFormDialogProps = {
 
 export function ProjectFormDialog({
   error,
+  errorMessage,
   isPending,
   onOpenChange,
   onSubmit,
@@ -112,7 +114,7 @@ export function ProjectFormDialog({
             ) : null}
           </div>
 
-          <FormError error={error} />
+          <FormError error={error} message={errorMessage} />
 
           <DialogFooter>
             <Button

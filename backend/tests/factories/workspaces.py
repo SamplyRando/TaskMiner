@@ -3,7 +3,12 @@ from typing import cast
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.models.workspace import Workspace
+from app.models.workspace_subscription import WorkspaceSubscription
+from app.subscriptions.plans import PlanCode, SubscriptionStatus
 from tests.factories.users import RegisteredUser
 
 
@@ -16,8 +21,9 @@ class CreatedWorkspace:
 
 
 class WorkspaceFactory:
-    def __init__(self, client: TestClient) -> None:
+    def __init__(self, client: TestClient, session: Session) -> None:
         self.client = client
+        self.session = session
 
     def create(
         self,
@@ -25,7 +31,10 @@ class WorkspaceFactory:
         *,
         name: str | None = None,
         description: str | None = "Test workspace description",
+        ensure_capacity: bool = True,
     ) -> CreatedWorkspace:
+        if ensure_capacity:
+            self._ensure_capacity(owner.id)
         workspace_name = name or f"Workspace {uuid4().hex[:8]}"
         response = self.client.post(
             "/api/v1/workspaces",
@@ -41,3 +50,19 @@ class WorkspaceFactory:
             description=description,
             owner=owner,
         )
+
+    def _ensure_capacity(self, owner_id: UUID) -> None:
+        subscription = self.session.scalar(
+            select(WorkspaceSubscription)
+            .join(Workspace, WorkspaceSubscription.workspace_id == Workspace.id)
+            .where(
+                Workspace.owner_id == owner_id,
+                Workspace.deleted_at.is_(None),
+            )
+            .limit(1)
+        )
+        if subscription is None:
+            return
+        subscription.plan_code = PlanCode.PRO
+        subscription.status = SubscriptionStatus.ACTIVE
+        self.session.commit()

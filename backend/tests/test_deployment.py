@@ -77,7 +77,7 @@ def test_explicit_sqlalchemy_database_url_is_preserved() -> None:
 def test_ai_control_defaults_are_safe_and_positive() -> None:
     deployment_settings = build_settings()
 
-    assert deployment_settings.ai_monthly_request_limit == 100
+    assert deployment_settings.ai_monthly_request_limit is None
     assert deployment_settings.ai_rate_limit_requests == 10
     assert deployment_settings.ai_rate_limit_window_seconds == 60
 

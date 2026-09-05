@@ -14,6 +14,7 @@ from app.schemas.project import (
 )
 from app.services.permission import PermissionDeniedError
 from app.services.project import ProjectNotFoundError
+from app.services.subscription import PlanLimitExceededError
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -51,6 +52,11 @@ def create_project(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
+        ) from exc
+    except PlanLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.as_detail(),
         ) from exc
 
 

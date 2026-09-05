@@ -29,6 +29,7 @@ from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.dashboard import DashboardRepository
 from app.repositories.project import ProjectRepository
+from app.repositories.subscription import WorkspaceSubscriptionRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
 from app.repositories.user_preference import UserPreferenceRepository
@@ -48,6 +49,7 @@ from app.services.project import ProjectService
 from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
 from app.services.settings import SettingsService
+from app.services.subscription import SubscriptionService
 from app.services.user import UserService
 from app.services.workspace import WorkspaceService
 from app.services.workspace_invitation import WorkspaceInvitationService
@@ -129,13 +131,36 @@ def get_settings_service(session: SessionDep) -> SettingsService:
 SettingsServiceDep = Annotated[SettingsService, Depends(get_settings_service)]
 
 
-def get_project_service(session: SessionDep) -> ProjectService:
+def get_subscription_service(session: SessionDep) -> SubscriptionService:
+    workspace_repository = WorkspaceRepository(session)
+    return SubscriptionService(
+        WorkspaceSubscriptionRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
+        AIUsageRepository(session),
+        ai_monthly_request_ceiling=settings.ai_monthly_request_limit,
+    )
+
+
+SubscriptionServiceDep = Annotated[
+    SubscriptionService,
+    Depends(get_subscription_service),
+]
+
+
+def get_project_service(
+    session: SessionDep,
+    subscription_service: SubscriptionServiceDep,
+) -> ProjectService:
     workspace_repository = WorkspaceRepository(session)
     member_repository = WorkspaceMemberRepository(session)
     return ProjectService(
         ProjectRepository(session),
         workspace_repository,
         PermissionService(member_repository, workspace_repository),
+        subscription_service,
     )
 
 
@@ -204,8 +229,11 @@ TaskAssignmentServiceDep = Annotated[
 ]
 
 
-def get_workspace_service(session: SessionDep) -> WorkspaceService:
-    return WorkspaceService(WorkspaceRepository(session))
+def get_workspace_service(
+    session: SessionDep,
+    subscription_service: SubscriptionServiceDep,
+) -> WorkspaceService:
+    return WorkspaceService(WorkspaceRepository(session), subscription_service)
 
 
 WorkspaceServiceDep = Annotated[WorkspaceService, Depends(get_workspace_service)]
@@ -254,6 +282,7 @@ EmailServiceDep = Annotated[EmailService, Depends(get_email_service)]
 def get_workspace_invitation_service(
     session: SessionDep,
     email_service: EmailServiceDep,
+    subscription_service: SubscriptionServiceDep,
 ) -> WorkspaceInvitationService:
     member_repository = WorkspaceMemberRepository(session)
     permission_service = PermissionService(
@@ -265,6 +294,7 @@ def get_workspace_invitation_service(
         member_repository,
         permission_service,
         email_service,
+        subscription_service,
     )
 
 
@@ -343,7 +373,10 @@ def get_ai_provider_dependency() -> AIProvider:
 AIProviderDep = Annotated[AIProvider, Depends(get_ai_provider_dependency)]
 
 
-def get_ai_usage_service(session: SessionDep) -> AIUsageService:
+def get_ai_usage_service(
+    session: SessionDep,
+    subscription_service: SubscriptionServiceDep,
+) -> AIUsageService:
     workspace_repository = WorkspaceRepository(session)
     return AIUsageService(
         AIUsageRepository(session),
@@ -352,7 +385,7 @@ def get_ai_usage_service(session: SessionDep) -> AIUsageService:
             workspace_repository,
         ),
         AIUsageCostEstimator(),
-        monthly_request_limit=settings.ai_monthly_request_limit,
+        subscription_service,
         rate_limit_requests=settings.ai_rate_limit_requests,
         rate_limit_window_seconds=settings.ai_rate_limit_window_seconds,
         pricing_model=(
@@ -390,7 +423,10 @@ def get_ai_service(
 AIServiceDep = Annotated[AIService, Depends(get_ai_service)]
 
 
-def get_ai_apply_service(session: SessionDep) -> AIApplyService:
+def get_ai_apply_service(
+    session: SessionDep,
+    subscription_service: SubscriptionServiceDep,
+) -> AIApplyService:
     project_repository = ProjectRepository(session)
     task_repository = TaskRepository(session)
     workspace_repository = WorkspaceRepository(session)
@@ -408,6 +444,7 @@ def get_ai_apply_service(session: SessionDep) -> AIApplyService:
             project_repository,
             workspace_repository,
             permission_service,
+            subscription_service,
         ),
         TaskService(task_repository, project_repository, permission_service),
         TaskAssignmentService(

@@ -82,6 +82,24 @@ describe("apiClient", () => {
     });
   });
 
+  it("normalizes structured plan-limit errors", async () => {
+    await expect(
+      apiClient.post("/projects", undefined, {
+        adapter: createErrorAdapter(409, {
+          detail: {
+            code: "project_limit_reached",
+            limit: 5,
+            message: "Project limit reached for the Free plan.",
+            plan: "free",
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({
+      message: "Project limit reached for the Free plan.",
+      status: 409,
+    });
+  });
+
   it("returns a clear message when the backend is unavailable", async () => {
     await expect(
       apiClient.get("/health", {

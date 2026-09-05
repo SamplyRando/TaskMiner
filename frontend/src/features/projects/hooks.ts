@@ -12,6 +12,7 @@ import {
   updateProject,
 } from "@/api/projects";
 import { workspaceKeys } from "@/features/workspaces/hooks";
+import { subscriptionKeys } from "@/features/subscriptions/hooks";
 import type { PaginatedResponse } from "@/types/pagination";
 import type { Project, ProjectInput, ProjectListParams } from "@/types/project";
 
@@ -46,6 +47,7 @@ export const useCreateProject = () => {
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });
@@ -144,6 +146,7 @@ export const useDeleteProject = () => {
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });

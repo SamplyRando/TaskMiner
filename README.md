@@ -94,7 +94,7 @@ que lorsque cette perte de données est volontaire.
 | `TASKMINER_AI_PROVIDER` | Provider IA : `mock` en local/test, `openai` en production |
 | `TASKMINER_OPENAI_MODEL` | Modèle Responses API utilisé par le provider OpenAI |
 | `OPENAI_API_KEY` | Clé serveur OpenAI, jamais exposée à Vite |
-| `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Quota mensuel UTC de générations par workspace |
+| `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Plafond d'urgence optionnel appliqué aux quotas IA des plans |
 | `TASKMINER_AI_RATE_LIMIT_REQUESTS` | Générations autorisées par utilisateur et fenêtre |
 | `TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS` | Durée de la fenêtre glissante de rate limit |
 | `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
@@ -108,6 +108,15 @@ que lorsque cette perte de données est volontaire.
 
 Les fichiers `.env` ne sont jamais versionnés. Les exemples présents à la
 racine, dans `backend/` et dans `frontend/` ne contiennent aucun secret réel.
+
+## Plans workspace
+
+Les limites sont centralisées côté backend et contrôlées avant chaque mutation.
+Le plan Free autorise 1 workspace possédé, 3 membres (owner inclus), 5 projets
+et 25 générations IA par mois. Le plan Pro prévoit respectivement 10, 25, 100
+et 500. Les invitations en attente ne réservent pas de siège ; la limite est
+revérifiée transactionnellement lors de leur acceptation. Aucun paiement ni
+checkout n'est activé à ce stade.
 
 ## Développement local
 

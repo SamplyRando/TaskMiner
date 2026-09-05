@@ -3,7 +3,13 @@ from typing import cast
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
+from app.models.project import Project
+from app.models.workspace import Workspace
+from app.models.workspace_subscription import WorkspaceSubscription
+from app.subscriptions.plans import PlanCode, SubscriptionStatus
 from tests.factories.users import RegisteredUser
 
 
@@ -17,8 +23,9 @@ class CreatedProject:
 
 
 class ProjectFactory:
-    def __init__(self, client: TestClient) -> None:
+    def __init__(self, client: TestClient, session: Session) -> None:
         self.client = client
+        self.session = session
 
     def create(
         self,
@@ -27,6 +34,7 @@ class ProjectFactory:
         name: str | None = None,
         description: str | None = "Test project description",
     ) -> CreatedProject:
+        self._ensure_capacity(owner.id)
         project_name = name or f"Project {uuid4().hex[:8]}"
         response = self.client.post(
             "/api/v1/projects",
@@ -43,3 +51,36 @@ class ProjectFactory:
             description=description,
             owner=owner,
         )
+
+    def _ensure_capacity(self, owner_id: UUID) -> None:
+        workspace = self.session.scalar(
+            select(Workspace)
+            .where(
+                Workspace.owner_id == owner_id,
+                Workspace.deleted_at.is_(None),
+            )
+            .order_by(Workspace.created_at.asc())
+            .limit(1)
+        )
+        if workspace is None:
+            return
+        project_count = int(
+            self.session.scalar(
+                select(func.count(Project.id)).where(
+                    Project.workspace_id == workspace.id,
+                    Project.deleted_at.is_(None),
+                )
+            )
+            or 0
+        )
+        if project_count < 5:
+            return
+        subscription = self.session.scalar(
+            select(WorkspaceSubscription).where(
+                WorkspaceSubscription.workspace_id == workspace.id
+            )
+        )
+        if subscription is not None:
+            subscription.plan_code = PlanCode.PRO
+            subscription.status = SubscriptionStatus.ACTIVE
+            self.session.commit()

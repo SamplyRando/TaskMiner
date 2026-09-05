@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate
+
+if TYPE_CHECKING:
+    from app.services.subscription import SubscriptionService
 
 
 class WorkspaceNotFoundError(Exception):
@@ -13,14 +19,20 @@ class WorkspaceNotFoundError(Exception):
 class WorkspaceService:
     """Application service for workspace use cases."""
 
-    def __init__(self, repository: WorkspaceRepository) -> None:
+    def __init__(
+        self,
+        repository: WorkspaceRepository,
+        subscription_service: SubscriptionService,
+    ) -> None:
         self.repository = repository
+        self.subscription_service = subscription_service
 
     def create_workspace(
         self,
         owner: User,
         data: WorkspaceCreate,
     ) -> Workspace:
+        self.subscription_service.enforce_owned_workspace_limit(owner.id)
         return self.repository.create(owner, data)
 
     def list_workspaces(self, user: User) -> list[Workspace]:

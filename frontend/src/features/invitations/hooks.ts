@@ -14,6 +14,7 @@ import {
   revokeInvitation,
 } from "@/api/invitations";
 import { listWorkspaces } from "@/api/workspace";
+import { subscriptionKeys } from "@/features/subscriptions/hooks";
 import { workspaceKeys } from "@/features/workspaces/hooks";
 import { workspacePermissionKeys } from "@/features/workspaces/permissions-hooks";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -129,6 +130,7 @@ export const useAcceptInvitation = () => {
         queryClient.invalidateQueries({
           queryKey: workspacePermissionKeys.all,
         }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
   });

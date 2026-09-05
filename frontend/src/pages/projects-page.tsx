@@ -1,5 +1,5 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { Plus, Search } from "lucide-react";
+import { AlertTriangle, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
@@ -19,6 +19,8 @@ import { getProjectColumns } from "@/features/projects/project-columns";
 import { ProjectFormDialog } from "@/features/projects/project-form-dialog";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
+import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
+import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useSessionState } from "@/hooks/use-session-state";
@@ -42,6 +44,9 @@ function getSortParameter(sorting: SortingState): ProjectSort {
 export function ProjectsPage() {
   const workspace = useActiveWorkspace();
   const permissionsQuery = useWorkspacePermissions(workspace.activeWorkspaceId);
+  const subscriptionQuery = useWorkspaceSubscription(
+    workspace.activeWorkspaceId,
+  );
   const canManageProjects =
     permissionsQuery.data?.permissions.manage_projects ?? false;
   const preferences = useUserPreferences();
@@ -60,6 +65,11 @@ export function ProjectsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const normalizedSearch = deferredSearch.trim();
+  const projectLimitReached = Boolean(
+    subscriptionQuery.data &&
+    subscriptionQuery.data.usage.projects >=
+      subscriptionQuery.data.limits.projects,
+  );
 
   useEffect(() => {
     if (!preferences.data || pageSizeApplied.current) return;
@@ -145,7 +155,7 @@ export function ProjectsPage() {
       <EntityPageHeader
         actions={
           <Button
-            disabled={!canManageProjects}
+            disabled={!canManageProjects || projectLimitReached}
             onClick={() => {
               createProject.reset();
               setSelectedProject(null);
@@ -170,6 +180,18 @@ export function ProjectsPage() {
         value={workspace.activeWorkspaceId}
         workspaces={workspace.workspaces}
       />
+
+      {projectLimitReached ? (
+        <p
+          className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
+          role="status"
+        >
+          <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
+          Limite de {subscriptionQuery.data?.limits.projects} projets atteinte
+          pour le plan {subscriptionQuery.data?.plan === "pro" ? "Pro" : "Free"}
+          .
+        </p>
+      ) : null}
 
       <div className="relative max-w-md">
         <Search
@@ -206,7 +228,7 @@ export function ProjectsPage() {
           columns={columns}
           data={projectsQuery.data?.items ?? []}
           emptyAction={
-            search || !canManageProjects ? undefined : (
+            search || !canManageProjects || projectLimitReached ? undefined : (
               <Button
                 onClick={() => {
                   createProject.reset();
@@ -247,6 +269,9 @@ export function ProjectsPage() {
 
       <ProjectFormDialog
         error={selectedProject ? updateProject.error : createProject.error}
+        errorMessage={
+          selectedProject ? undefined : getPlanLimitMessage(createProject.error)
+        }
         isPending={
           selectedProject ? updateProject.isPending : createProject.isPending
         }
