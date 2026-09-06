@@ -29,5 +29,8 @@ class WorkspaceSubscriptionRead(BaseModel):
     current_period_start: datetime | None
     current_period_end: datetime | None
     cancel_at_period_end: bool
+    scheduled_cancellation_at: datetime | None
+    billing_enabled: bool
+    billing_portal_available: bool
     limits: WorkspacePlanLimitsRead
     usage: WorkspacePlanUsageRead

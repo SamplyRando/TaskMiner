@@ -37,9 +37,9 @@ PLAN_LIMITS: dict[PlanCode, PlanLimits] = {
         ai_requests_per_month=25,
     ),
     PlanCode.PRO: PlanLimits(
-        owned_workspaces=10,
-        members_per_workspace=25,
-        projects_per_workspace=100,
+        owned_workspaces=5,
+        members_per_workspace=15,
+        projects_per_workspace=50,
         ai_requests_per_month=500,
     ),
 }

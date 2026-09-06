@@ -17,7 +17,7 @@ const questions = [
   },
   {
     answer:
-      "Yes. TaskMiner is currently available during early access, and the application has no paid checkout today. You can create an account without entering payment details.",
+      "Yes. You can create an account and use the Free plan without entering payment details. Workspace owners can upgrade an individual workspace to Pro when the team needs more capacity.",
     question: "Can I use it for free?",
   },
   {

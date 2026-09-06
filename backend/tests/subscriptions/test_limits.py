@@ -86,9 +86,9 @@ def test_central_plan_registry_defines_all_initial_limits() -> None:
     assert PLAN_LIMITS[PlanCode.FREE].members_per_workspace == 3
     assert PLAN_LIMITS[PlanCode.FREE].projects_per_workspace == 5
     assert PLAN_LIMITS[PlanCode.FREE].ai_requests_per_month == 25
-    assert PLAN_LIMITS[PlanCode.PRO].owned_workspaces == 10
-    assert PLAN_LIMITS[PlanCode.PRO].members_per_workspace == 25
-    assert PLAN_LIMITS[PlanCode.PRO].projects_per_workspace == 100
+    assert PLAN_LIMITS[PlanCode.PRO].owned_workspaces == 5
+    assert PLAN_LIMITS[PlanCode.PRO].members_per_workspace == 15
+    assert PLAN_LIMITS[PlanCode.PRO].projects_per_workspace == 50
     assert PLAN_LIMITS[PlanCode.PRO].ai_requests_per_month == 500
 
 
@@ -116,11 +116,11 @@ def test_highest_owned_active_plan_controls_workspace_limit(
     blocked = client.post(
         "/api/v1/workspaces",
         headers=user.headers,
-        json={"name": "Workspace 11"},
+        json={"name": "Workspace over limit"},
     )
     assert blocked.status_code == 409
     assert blocked.json()["detail"]["plan"] == "pro"
-    assert blocked.json()["detail"]["limit"] == 10
+    assert blocked.json()["detail"]["limit"] == 5
 
 
 def test_free_project_limit_ignores_soft_deleted_projects(
@@ -165,16 +165,16 @@ def test_pro_project_limit_is_enforced(
     database_session.add_all(
         [
             Project(name=f"Project {index}", workspace_id=workspace.id)
-            for index in range(100)
+            for index in range(50)
         ]
     )
     database_session.commit()
 
-    blocked = create_project(client, workspace, "Project 101")
+    blocked = create_project(client, workspace, "Project over limit")
 
     assert blocked.status_code == 409
     assert blocked.json()["detail"]["plan"] == "pro"
-    assert blocked.json()["detail"]["limit"] == 100
+    assert blocked.json()["detail"]["limit"] == 50
 
 
 def test_invitation_acceptance_enforces_member_limit_with_owner_counted(
@@ -277,6 +277,9 @@ def test_subscription_summary_is_member_readable_and_outsider_hidden(
         "current_period_start": None,
         "current_period_end": None,
         "cancel_at_period_end": False,
+        "scheduled_cancellation_at": None,
+        "billing_enabled": False,
+        "billing_portal_available": False,
         "limits": {
             "members": 3,
             "projects": 5,

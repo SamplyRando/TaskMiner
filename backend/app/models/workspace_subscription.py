@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,6 +25,14 @@ class WorkspaceSubscription(TimestampMixin, Base):
         UniqueConstraint(
             "workspace_id",
             name="uq_workspace_subscriptions_workspace_id",
+        ),
+        UniqueConstraint(
+            "stripe_customer_id",
+            name="uq_workspace_subscriptions_stripe_customer_id",
+        ),
+        UniqueConstraint(
+            "stripe_subscription_id",
+            name="uq_workspace_subscriptions_stripe_subscription_id",
         ),
     )
 
@@ -88,6 +96,26 @@ class WorkspaceSubscription(TimestampMixin, Base):
         nullable=False,
         default=False,
         server_default=text("false"),
+    )
+    cancel_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    stripe_customer_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    stripe_subscription_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    stripe_price_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    stripe_event_created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="subscription")

@@ -16,5 +16,7 @@ export const useWorkspaceSubscription = (
     enabled: enabled && workspaceId !== null,
     queryFn: () => getWorkspaceSubscription(workspaceId ?? ""),
     queryKey: subscriptionKeys.detail(workspaceId ?? ""),
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
     staleTime: 30_000,
   });

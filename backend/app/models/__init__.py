@@ -7,6 +7,7 @@ from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.project import Project
+from app.models.stripe_webhook_event import StripeWebhookEvent
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.user import User
 from app.models.user_preference import UserAccent, UserMotion, UserPreference, UserTheme
@@ -27,6 +28,7 @@ __all__ = [
     "Attachment",
     "Comment",
     "Project",
+    "StripeWebhookEvent",
     "Task",
     "TaskPriority",
     "TaskStatus",

@@ -14,6 +14,12 @@ from app.ai.factory import get_ai_provider
 from app.ai.provider import AIProvider, AIProviderConfigurationError
 from app.ai.service import AIService
 from app.ai.usage_service import AIUsageService
+from app.billing.factory import get_billing_provider
+from app.billing.provider import (
+    BillingConfigurationError,
+    BillingProvider,
+)
+from app.billing.service import BillingService
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.database.database import get_db
@@ -25,6 +31,7 @@ from app.repositories.activity import ActivityRepository
 from app.repositories.ai_plan_application import AIPlanApplicationRepository
 from app.repositories.ai_usage import AIUsageRepository
 from app.repositories.audit import AuditRepository
+from app.repositories.billing import BillingRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.dashboard import DashboardRepository
@@ -141,12 +148,57 @@ def get_subscription_service(session: SessionDep) -> SubscriptionService:
         ),
         AIUsageRepository(session),
         ai_monthly_request_ceiling=settings.ai_monthly_request_limit,
+        billing_enabled=settings.billing_enabled,
     )
 
 
 SubscriptionServiceDep = Annotated[
     SubscriptionService,
     Depends(get_subscription_service),
+]
+
+
+def get_billing_provider_dependency() -> BillingProvider:
+    try:
+        return get_billing_provider()
+    except BillingConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "billing_not_configured",
+                "message": "Billing is not configured.",
+            },
+        ) from exc
+
+
+BillingProviderDep = Annotated[
+    BillingProvider,
+    Depends(get_billing_provider_dependency),
+]
+
+
+def get_billing_service(
+    session: SessionDep,
+    provider: BillingProviderDep,
+) -> BillingService:
+    assert settings.stripe_pro_price_id is not None
+    workspace_repository = WorkspaceRepository(session)
+    return BillingService(
+        BillingRepository(session),
+        PermissionService(
+            WorkspaceMemberRepository(session),
+            workspace_repository,
+        ),
+        provider,
+        pro_price_id=settings.stripe_pro_price_id,
+        success_url=str(settings.billing_success_url),
+        cancel_url=str(settings.billing_cancel_url),
+    )
+
+
+BillingServiceDep = Annotated[
+    BillingService,
+    Depends(get_billing_service),
 ]
 
 

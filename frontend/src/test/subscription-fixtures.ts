@@ -2,6 +2,9 @@ import type { WorkspaceSubscription } from "@/types/subscription";
 
 export const freeSubscriptionFixture: WorkspaceSubscription = {
   cancel_at_period_end: false,
+  scheduled_cancellation_at: null,
+  billing_enabled: true,
+  billing_portal_available: false,
   current_period_end: null,
   current_period_start: null,
   limits: {
@@ -20,10 +23,11 @@ export const freeSubscriptionFixture: WorkspaceSubscription = {
 
 export const proSubscriptionFixture: WorkspaceSubscription = {
   ...freeSubscriptionFixture,
+  billing_portal_available: true,
   limits: {
     ai_requests_per_month: 500,
-    members: 25,
-    projects: 100,
+    members: 15,
+    projects: 50,
   },
   plan: "pro",
 };

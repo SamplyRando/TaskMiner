@@ -60,7 +60,7 @@ export function FinalCta() {
           data-marketing-reveal
           style={{ "--reveal-delay": "210ms" } as CSSProperties}
         >
-          Early access · No credit card required
+          Free plan · No credit card required
         </span>
       </div>
     </section>
