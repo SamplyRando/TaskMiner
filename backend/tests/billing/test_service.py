@@ -192,6 +192,32 @@ def test_owner_checkout_uses_server_price_and_reuses_customer(
     assert request.workspace_id == workspace.id
 
 
+def test_later_checkout_attempt_uses_a_new_server_attempt_id(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+
+    first = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+    later = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+
+    assert first.status_code == 200
+    assert later.status_code == 200
+    assert len(provider.checkout_requests) == 2
+    assert (
+        provider.checkout_requests[0].attempt_id
+        != provider.checkout_requests[1].attempt_id
+    )
+
+
 def test_non_owner_and_outsider_cannot_start_checkout(
     client: TestClient,
     workspace: CreatedWorkspace,
@@ -309,6 +335,33 @@ def test_only_free_workspace_can_start_checkout(
     assert subscription is not None
     subscription.plan_code = PlanCode.PRO
     subscription.status = subscription_status
+    database_session.commit()
+
+    response = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "billing_state_conflict"
+    assert provider.checkout_requests == []
+
+
+def test_workspace_with_stripe_subscription_cannot_start_second_checkout(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    subscription.stripe_subscription_id = "sub_existing"
     database_session.commit()
 
     response = client.post(

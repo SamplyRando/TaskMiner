@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import hmac
@@ -80,10 +81,12 @@ def test_checkout_uses_backend_price_workspace_metadata_and_known_customer(
 
     monkeypatch.setattr(provider._client.v1.checkout.sessions, "create", create)
     workspace_id = uuid4()
+    attempt_id = uuid4()
 
     result = provider.create_checkout_session(
         CheckoutSessionRequest(
             workspace_id=workspace_id,
+            attempt_id=attempt_id,
             customer_email="owner@example.com",
             customer_id="cus_existing",
             price_id="price_test_pro",
@@ -102,9 +105,54 @@ def test_checkout_uses_backend_price_workspace_metadata_and_known_customer(
         "metadata": {"workspace_id": str(workspace_id)}
     }
     assert captured["options"] == {
-        "idempotency_key": f"taskminer-pro-checkout-{workspace_id}"
+        "idempotency_key": f"taskminer-pro-checkout-{workspace_id}-{attempt_id}"
     }
     assert result.url.startswith("https://checkout.stripe.com/")
+
+
+def test_checkout_idempotency_is_scoped_to_one_attempt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = configured_provider()
+    sessions_by_key: dict[str, object] = {}
+    captured_keys: list[str] = []
+
+    def create(params: object, options: object) -> object:
+        del params
+        assert isinstance(options, dict)
+        key = options["idempotency_key"]
+        assert isinstance(key, str)
+        captured_keys.append(key)
+        if key not in sessions_by_key:
+            session_number = len(sessions_by_key) + 1
+            sessions_by_key[key] = stripe.checkout.Session.construct_from(
+                {
+                    "id": f"cs_test_{session_number}",
+                    "url": (f"https://checkout.stripe.com/c/pay/test-{session_number}"),
+                },
+                "stripe-test-secret",
+            )
+        return sessions_by_key[key]
+
+    monkeypatch.setattr(provider._client.v1.checkout.sessions, "create", create)
+    request = CheckoutSessionRequest(
+        workspace_id=uuid4(),
+        attempt_id=uuid4(),
+        customer_email="owner@example.com",
+        customer_id=None,
+        price_id="price_test_pro",
+        success_url="https://www.taskminer.app/app/workspaces?billing=success",
+        cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+    )
+
+    first = provider.create_checkout_session(request)
+    retry = provider.create_checkout_session(request)
+    later = provider.create_checkout_session(replace(request, attempt_id=uuid4()))
+
+    assert captured_keys[0] == captured_keys[1]
+    assert first.url == retry.url
+    assert captured_keys[2] != captured_keys[0]
+    assert later.url != first.url
 
 
 def test_checkout_uses_owner_email_until_customer_is_known(
@@ -125,6 +173,7 @@ def test_checkout_uses_owner_email_until_customer_is_known(
     provider.create_checkout_session(
         CheckoutSessionRequest(
             workspace_id=uuid4(),
+            attempt_id=uuid4(),
             customer_email="owner@example.com",
             customer_id=None,
             price_id="price_test_pro",
@@ -184,6 +233,7 @@ def test_provider_hides_stripe_errors(monkeypatch: pytest.MonkeyPatch) -> None:
         provider.create_checkout_session(
             CheckoutSessionRequest(
                 workspace_id=uuid4(),
+                attempt_id=uuid4(),
                 customer_email="owner@example.com",
                 customer_id=None,
                 price_id="price_test_pro",

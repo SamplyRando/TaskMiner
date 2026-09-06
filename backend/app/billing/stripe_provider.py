@@ -54,7 +54,10 @@ class StripeBillingProvider:
             session = self._client.v1.checkout.sessions.create(
                 params,
                 options={
-                    "idempotency_key": f"taskminer-pro-checkout-{request.workspace_id}"
+                    "idempotency_key": (
+                        f"taskminer-pro-checkout-{request.workspace_id}-"
+                        f"{request.attempt_id}"
+                    )
                 },
             )
         except stripe.StripeError as exc:
