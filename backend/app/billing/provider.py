@@ -19,6 +19,7 @@ class BillingSignatureError(BillingProviderError):
 @dataclass(frozen=True)
 class CheckoutSessionRequest:
     workspace_id: UUID
+    attempt_id: UUID
     customer_email: str
     customer_id: str | None
     price_id: str

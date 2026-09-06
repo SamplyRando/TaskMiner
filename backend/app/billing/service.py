@@ -1,5 +1,5 @@
 from urllib.parse import urlsplit, urlunsplit
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.billing.provider import (
     BillingEvent,
@@ -77,6 +77,7 @@ class BillingService:
         return self.provider.create_checkout_session(
             CheckoutSessionRequest(
                 workspace_id=workspace_id,
+                attempt_id=uuid4(),
                 customer_email=user.email,
                 customer_id=subscription.stripe_customer_id,
                 price_id=self.pro_price_id,
