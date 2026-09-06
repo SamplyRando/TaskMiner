@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     audit,
     attachments,
     auth,
+    billing,
     comments,
     dashboard,
     projects,
@@ -24,6 +25,11 @@ api_router.include_router(ai.router, prefix="/ai", tags=["ai"])
 api_router.include_router(ai.usage_router, prefix="/workspaces", tags=["ai"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(
+    billing.router,
+    prefix="/billing",
+    tags=["billing"],
+)
+api_router.include_router(
     dashboard.router,
     prefix="/dashboard",
     tags=["dashboard"],
@@ -33,6 +39,11 @@ api_router.include_router(
     workspaces.router,
     prefix="/workspaces",
     tags=["workspaces"],
+)
+api_router.include_router(
+    billing.workspace_router,
+    prefix="/workspaces",
+    tags=["billing"],
 )
 api_router.include_router(
     workspace_members.router,

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,11 @@ import {
   listWorkspaces,
   updateWorkspace,
 } from "@/api/workspace";
+import {
+  createBillingCheckout,
+  createBillingPortal,
+  redirectToBillingUrl,
+} from "@/api/billing";
 import { getUserPreferences } from "@/api/settings";
 import { getWorkspaceSubscription } from "@/api/subscription";
 import { WorkspacePage } from "@/pages/workspace-page";
@@ -16,13 +21,21 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { userId, workspaceFixture } from "@/test/resource-fixtures";
 import { settingsPreferencesFixture } from "@/test/settings-fixtures";
-import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
+import {
+  freeSubscriptionFixture,
+  proSubscriptionFixture,
+} from "@/test/subscription-fixtures";
 
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
   listWorkspaces: vi.fn(),
   updateWorkspace: vi.fn(),
+}));
+vi.mock("@/api/billing", () => ({
+  createBillingCheckout: vi.fn(),
+  createBillingPortal: vi.fn(),
+  redirectToBillingUrl: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
@@ -33,6 +46,9 @@ const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedUpdateWorkspace = vi.mocked(updateWorkspace);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
 const mockedSubscription = vi.mocked(getWorkspaceSubscription);
+const mockedCheckout = vi.mocked(createBillingCheckout);
+const mockedPortal = vi.mocked(createBillingPortal);
+const mockedRedirect = vi.mocked(redirectToBillingUrl);
 
 describe("WorkspacePage", () => {
   beforeEach(() => {
@@ -51,6 +67,13 @@ describe("WorkspacePage", () => {
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
     mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
+    mockedCheckout.mockResolvedValue({
+      checkout_url: "https://checkout.stripe.com/c/pay/test",
+    });
+    mockedPortal.mockResolvedValue({
+      portal_url: "https://billing.stripe.com/p/test",
+    });
+    window.history.replaceState(null, "", "/app/workspace");
   });
 
   it("loads and searches the real workspace list", async () => {
@@ -150,5 +173,91 @@ describe("WorkspacePage", () => {
         expect.anything(),
       );
     });
+  });
+
+  it("starts one hosted checkout and redirects to its URL", async () => {
+    let resolveCheckout:
+      ((value: { checkout_url: string }) => void) | undefined;
+    mockedCheckout.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCheckout = resolve;
+      }),
+    );
+    renderWithQuery(<WorkspacePage />);
+
+    const button = await screen.findByRole("button", { name: "Passer à Pro" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(mockedCheckout).toHaveBeenCalledTimes(1);
+    });
+    expect(mockedCheckout).toHaveBeenCalledWith(
+      workspaceFixture.id,
+      expect.anything(),
+    );
+    resolveCheckout?.({
+      checkout_url: "https://checkout.stripe.com/c/pay/test",
+    });
+    await waitFor(() => {
+      expect(mockedRedirect).toHaveBeenCalledTimes(1);
+    });
+    expect(mockedRedirect).toHaveBeenCalledWith(
+      "https://checkout.stripe.com/c/pay/test",
+    );
+  });
+
+  it("opens the Stripe customer portal for a Pro workspace", async () => {
+    const user = userEvent.setup();
+    mockedSubscription.mockResolvedValue(proSubscriptionFixture);
+    renderWithQuery(<WorkspacePage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Gérer l’abonnement" }),
+    );
+
+    await waitFor(() => {
+      expect(mockedPortal).toHaveBeenCalledOnce();
+    });
+    expect(mockedPortal).toHaveBeenCalledWith(
+      workspaceFixture.id,
+      expect.anything(),
+    );
+    expect(mockedRedirect).toHaveBeenCalledWith(
+      "https://billing.stripe.com/p/test",
+    );
+    expect(mockedCheckout).not.toHaveBeenCalled();
+  });
+
+  it("shows billing return feedback and removes the processed query", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/app/workspaces?billing=cancelled&source=test",
+    );
+
+    renderWithQuery(<WorkspacePage />);
+
+    expect(
+      await screen.findByText("Paiement annulé. Votre plan reste inchangé."),
+    ).toBeInTheDocument();
+    expect(window.location.search).toBe("?source=test");
+    expect(mockedCheckout).not.toHaveBeenCalled();
+  });
+
+  it("refetches backend subscription state after a successful Stripe return", async () => {
+    window.history.replaceState(null, "", "/app/workspaces?billing=success");
+
+    renderWithQuery(<WorkspacePage />);
+
+    expect(
+      await screen.findByText(
+        "Retour de paiement reçu. Vérification de votre plan en cours.",
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockedSubscription.mock.calls.length).toBeGreaterThan(1);
+    });
+    expect(window.location.search).toBe("");
   });
 });

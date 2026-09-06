@@ -74,12 +74,14 @@ class SubscriptionService:
         ai_usage_repository: AIUsageRepository,
         *,
         ai_monthly_request_ceiling: int | None = None,
+        billing_enabled: bool = False,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.repository = repository
         self.permission_service = permission_service
         self.ai_usage_repository = ai_usage_repository
         self.ai_monthly_request_ceiling = ai_monthly_request_ceiling
+        self.billing_enabled = billing_enabled
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     def get_effective_subscription(
@@ -186,6 +188,18 @@ class SubscriptionService:
             period_start,
             period_end,
         )
+        scheduled_cancellation_at = None
+        if (
+            subscription is not None
+            and subscription.plan_code == PlanCode.PRO
+            and subscription.status in ENTITLEMENT_STATUSES
+            and (
+                subscription.cancel_at_period_end or subscription.cancel_at is not None
+            )
+        ):
+            scheduled_cancellation_at = (
+                subscription.cancel_at or subscription.current_period_end
+            )
         return WorkspaceSubscriptionRead(
             plan=plan,
             status=status,
@@ -197,6 +211,14 @@ class SubscriptionService:
             ),
             cancel_at_period_end=(
                 subscription.cancel_at_period_end if subscription is not None else False
+            ),
+            scheduled_cancellation_at=scheduled_cancellation_at,
+            billing_enabled=self.billing_enabled,
+            billing_portal_available=(
+                self.billing_enabled
+                and subscription is not None
+                and subscription.plan_code == PlanCode.PRO
+                and subscription.stripe_customer_id is not None
             ),
             limits=WorkspacePlanLimitsRead(
                 members=limits.members_per_workspace,

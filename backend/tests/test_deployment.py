@@ -94,6 +94,24 @@ def test_ai_controls_are_configurable() -> None:
     assert deployment_settings.ai_rate_limit_window_seconds == 30
 
 
+def test_billing_is_optional_but_requires_complete_server_configuration() -> None:
+    disabled = build_settings()
+    partial = build_settings(STRIPE_SECRET_KEY="stripe-test-secret")
+    enabled = build_settings(
+        STRIPE_SECRET_KEY="stripe-test-secret",
+        STRIPE_WEBHOOK_SECRET="stripe-webhook-test",
+        STRIPE_PRO_PRICE_ID="price_test_pro",
+    )
+
+    assert disabled.billing_enabled is False
+    assert partial.billing_enabled is False
+    assert enabled.billing_enabled is True
+    assert enabled.stripe_secret_key is not None
+    assert enabled.stripe_secret_key.get_secret_value() == "stripe-test-secret"
+    assert str(enabled.billing_success_url).endswith("/app/workspaces?billing=success")
+    assert str(enabled.billing_cancel_url).endswith("/app/workspaces?billing=cancelled")
+
+
 @pytest.mark.parametrize(
     "setting",
     [

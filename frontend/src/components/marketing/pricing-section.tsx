@@ -8,40 +8,40 @@ import { cn } from "@/lib/utils";
 const plans = [
   {
     action: "Start free",
-    billingNote: "Free during early access",
+    billingNote: "Free",
     features: [
-      "Workspaces, projects, and tasks",
-      "Task assignment and comments",
-      "Files, activity, and audit history",
-      "Roles and workspace invitations",
+      "1 workspace",
+      "3 members per workspace",
+      "5 projects per workspace",
+      "25 AI requests per month",
     ],
     name: "Starter",
     price: "Free",
-    summary: "Use the complete current workspace during early access.",
+    summary: "For individuals and small teams getting organized.",
   },
   {
-    action: "Join early access",
-    badge: "Planned",
-    billingNote: "Pro is coming soon; no paid checkout is available today",
+    action: "Start Pro",
+    badge: "Most popular",
+    billingNote: "per workspace, billed monthly",
     features: [
-      "Pricing will be announced before launch",
-      "Plan details are not final",
-      "No payment is collected today",
-      "The current product remains available",
-      "Updates will be shared before launch",
+      "Up to 5 owned workspaces",
+      "15 members per workspace",
+      "50 projects per workspace",
+      "500 AI requests per month",
+      "Full TaskMiner AI",
     ],
     name: "Pro",
-    price: "Soon",
-    summary: "The planned upgrade for teams that need deeper planning tools.",
+    price: "12 € / month",
+    summary: "For teams running more projects with TaskMiner AI.",
   },
   {
     action: "Contact us",
     billingNote: "Tell us about your team and requirements",
     features: [
-      "Discuss workspace requirements",
-      "Review security needs",
-      "Explore rollout constraints",
-      "Plan migration requirements",
+      "Custom workspace limits",
+      "Custom member and project limits",
+      "Security and rollout discussion",
+      "Migration planning",
     ],
     name: "Enterprise",
     price: "Contact",
@@ -62,13 +62,13 @@ export function PricingSection() {
           data-marketing-reveal
         >
           <SectionHeading
-            description="Create an account and use the current product without entering payment details. Paid plans are not available yet."
-            eyebrow="Early access"
+            description="Start free, then upgrade individual workspaces when your team needs more capacity."
+            eyebrow="Simple pricing"
           >
             <span id="marketing-pricing-title">
-              Start with the full product.
+              Choose the capacity your team needs.
             </span>
-            <span>Upgrade options are coming later.</span>
+            <span>Keep control as your work grows.</span>
           </SectionHeading>
         </div>
 

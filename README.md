@@ -101,6 +101,11 @@ que lorsque cette perte de données est volontaire.
 | `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
 | `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |
 | `RESEND_API_KEY` | Clé serveur Resend, jamais exposée à Vite |
+| `STRIPE_SECRET_KEY` | Clé serveur Stripe, uniquement dans le backend |
+| `STRIPE_WEBHOOK_SECRET` | Secret de signature du webhook Stripe |
+| `STRIPE_PRO_PRICE_ID` | Price ID mensuel Pro à 12 EUR par workspace |
+| `TASKMINER_BILLING_SUCCESS_URL` | Retour frontend après Checkout réussi |
+| `TASKMINER_BILLING_CANCEL_URL` | Retour frontend après Checkout annulé |
 | `VITE_API_URL` | Base URL de l'API côté frontend |
 | `CORS_ORIGINS` | Origines frontend autorisées, séparées par des virgules |
 | `CORS_ORIGIN_REGEX` | Expression régulière optionnelle pour les previews Vercel |
@@ -113,10 +118,12 @@ racine, dans `backend/` et dans `frontend/` ne contiennent aucun secret réel.
 
 Les limites sont centralisées côté backend et contrôlées avant chaque mutation.
 Le plan Free autorise 1 workspace possédé, 3 membres (owner inclus), 5 projets
-et 25 générations IA par mois. Le plan Pro prévoit respectivement 10, 25, 100
-et 500. Les invitations en attente ne réservent pas de siège ; la limite est
-revérifiée transactionnellement lors de leur acceptation. Aucun paiement ni
-checkout n'est activé à ce stade.
+et 25 générations IA par mois. Le plan Pro coûte 12 EUR par mois et par
+workspace, avec respectivement 5 workspaces possédés, 15 membres, 50 projets et
+500 générations IA. Les invitations en attente ne réservent pas de siège ; la
+limite est revérifiée transactionnellement lors de leur acceptation. Checkout
+et le portail Stripe sont créés uniquement par le backend et le plan ne change
+qu'après réception d'un webhook signé.
 
 ## Développement local
 

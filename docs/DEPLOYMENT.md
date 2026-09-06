@@ -73,6 +73,11 @@ Docker actuel.
 | `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
 | `TASKMINER_EMAIL_FROM` | Expéditeur d'un domaine vérifié, ex. `TaskMiner <invitations@taskminer.app>` |
 | `TASKMINER_FRONTEND_URL` | `https://www.taskminer.app`, sans `/` final |
+| `STRIPE_SECRET_KEY` | Clé secrète Stripe stockée uniquement dans Railway |
+| `STRIPE_WEBHOOK_SECRET` | Secret de signature du webhook Stripe de production |
+| `STRIPE_PRO_PRICE_ID` | Price ID récurrent mensuel Pro, 12 EUR/workspace |
+| `TASKMINER_BILLING_SUCCESS_URL` | `https://www.taskminer.app/app/workspaces?billing=success` |
+| `TASKMINER_BILLING_CANCEL_URL` | `https://www.taskminer.app/app/workspaces?billing=cancelled` |
 
 Génération locale d'un secret :
 
@@ -134,6 +139,30 @@ requête externe n'est effectuée et la livraison apparaît comme désactivée.
 Une erreur Resend conserve l'invitation en attente, marque la livraison en
 échec et permet à un propriétaire ou administrateur de la renvoyer. Un délai
 de 60 secondes entre deux tentatives est imposé côté base de données.
+
+### Stripe Billing
+
+1. Créer dans Stripe un produit TaskMiner Pro avec un prix récurrent mensuel
+   de 12 EUR par workspace, puis copier son Price ID dans
+   `STRIPE_PRO_PRICE_ID` sur Railway.
+2. Stocker la clé secrète Stripe dans `STRIPE_SECRET_KEY`. Elle ne doit jamais
+   être ajoutée à Vercel ou à une variable `VITE_*`.
+3. Créer un endpoint webhook Stripe pointant vers :
+   `https://taskminer-production.up.railway.app/api/v1/billing/stripe/webhook`.
+4. Abonner cet endpoint aux événements suivants :
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted` et
+   `invoice.payment_failed`.
+5. Copier le secret de signature de cet endpoint dans
+   `STRIPE_WEBHOOK_SECRET`, puis configurer les deux URL de retour production
+   indiquées dans le tableau Railway.
+
+Le backend démarre même si Stripe n'est pas configuré. Dans ce cas, l'API de
+subscription expose `billing_enabled=false` et les endpoints Checkout/Portal/
+webhook répondent avec une erreur TaskMiner stable. Stripe reste la source de
+vérité : le retour navigateur ne modifie jamais le plan localement, seul un
+webhook signé peut le faire. Les IDs d'événements traités sont persistés afin
+que les retries Stripe soient idempotents.
 
 ## 3. Déploiement Vercel
 

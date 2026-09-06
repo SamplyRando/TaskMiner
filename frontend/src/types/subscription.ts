@@ -21,6 +21,9 @@ export type WorkspaceSubscription = {
   current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  scheduled_cancellation_at: string | null;
+  billing_enabled: boolean;
+  billing_portal_available: boolean;
   limits: WorkspacePlanLimits;
   usage: WorkspacePlanUsage;
 };

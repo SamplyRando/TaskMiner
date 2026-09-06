@@ -81,6 +81,7 @@ export function AppRouter() {
               <Route element={<TasksPage />} path="tasks" />
               <Route element={<SettingsPage />} path="settings" />
               <Route element={<WorkspacePage />} path="workspace" />
+              <Route element={<WorkspacePage />} path="workspaces" />
               <Route element={<ActivityPage />} path="activity" />
               <Route element={<AuditPage />} path="audit" />
               <Route element={<InvitationsPage />} path="invitations" />

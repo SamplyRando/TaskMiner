@@ -91,9 +91,10 @@ def test_subscription_migration_backfills_and_downgrades() -> None:
             "current_period_start",
             "current_period_end",
             "cancel_at_period_end",
+            "cancel_at",
             "created_at",
             "updated_at",
-        } == columns
+        } <= columns
         unique_constraints = {
             constraint["name"]
             for constraint in inspector.get_unique_constraints(

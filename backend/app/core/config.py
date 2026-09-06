@@ -100,6 +100,26 @@ class Settings(BaseSettings):
         default=AnyHttpUrl("http://localhost:3000"),
         validation_alias="TASKMINER_FRONTEND_URL",
     )
+    stripe_secret_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="STRIPE_SECRET_KEY",
+    )
+    stripe_webhook_secret: SecretStr | None = Field(
+        default=None,
+        validation_alias="STRIPE_WEBHOOK_SECRET",
+    )
+    stripe_pro_price_id: str | None = Field(
+        default=None,
+        validation_alias="STRIPE_PRO_PRICE_ID",
+    )
+    billing_success_url: AnyHttpUrl = Field(
+        default=AnyHttpUrl("http://localhost:3000/app/workspaces?billing=success"),
+        validation_alias="TASKMINER_BILLING_SUCCESS_URL",
+    )
+    billing_cancel_url: AnyHttpUrl = Field(
+        default=AnyHttpUrl("http://localhost:3000/app/workspaces?billing=cancelled"),
+        validation_alias="TASKMINER_BILLING_CANCEL_URL",
+    )
 
     @field_validator("database_url", "migration_database_url", mode="before")
     @classmethod
@@ -153,6 +173,21 @@ class Settings(BaseSettings):
             for origin in self.cors_origins.split(",")
             if origin.strip()
         ]
+
+    @property
+    def billing_enabled(self) -> bool:
+        """Return whether every server-side Stripe credential is configured."""
+
+        return all(
+            (
+                self.stripe_secret_key is not None
+                and bool(self.stripe_secret_key.get_secret_value().strip()),
+                self.stripe_webhook_secret is not None
+                and bool(self.stripe_webhook_secret.get_secret_value().strip()),
+                self.stripe_pro_price_id is not None
+                and bool(self.stripe_pro_price_id.strip()),
+            )
+        )
 
 
 @lru_cache
