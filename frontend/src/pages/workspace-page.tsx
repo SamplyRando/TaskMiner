@@ -28,6 +28,7 @@ import {
   useUpdateWorkspace,
   useWorkspaces,
 } from "@/features/workspaces/hooks";
+import { getWorkspaceDeletionErrorMessage } from "@/features/workspaces/errors";
 import { getWorkspaceColumns } from "@/features/workspaces/workspace-columns";
 import { WorkspaceFormDialog } from "@/features/workspaces/workspace-form-dialog";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
@@ -334,6 +335,7 @@ export function WorkspacePage() {
       <DeleteDialog
         description={`Le workspace « ${selectedWorkspace?.name ?? ""} » et ses ressources deviendront inaccessibles.`}
         error={deleteWorkspace.error}
+        errorMessage={getWorkspaceDeletionErrorMessage(deleteWorkspace.error)}
         isPending={deleteWorkspace.isPending}
         onConfirm={handleDelete}
         onOpenChange={setDeleteOpen}

@@ -59,4 +59,5 @@ class WorkspaceService:
         workspace = self.repository.get_by_id_for_owner(workspace_id, owner)
         if workspace is None:
             raise WorkspaceNotFoundError
+        self.subscription_service.enforce_workspace_deletion_allowed(workspace.id)
         self.repository.delete(workspace)

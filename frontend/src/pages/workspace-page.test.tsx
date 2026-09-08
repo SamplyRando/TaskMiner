@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/api/client";
 import {
   createWorkspace,
   deleteWorkspace,
@@ -73,6 +74,7 @@ describe("WorkspacePage", () => {
     mockedPortal.mockResolvedValue({
       portal_url: "https://billing.stripe.com/p/test",
     });
+    mockedDeleteWorkspace.mockResolvedValue();
     window.history.replaceState(null, "", "/app/workspace");
   });
 
@@ -173,6 +175,34 @@ describe("WorkspacePage", () => {
         expect.anything(),
       );
     });
+  });
+
+  it("explains why an attached subscription blocks workspace deletion", async () => {
+    const user = userEvent.setup();
+    mockedDeleteWorkspace.mockRejectedValue(
+      new ApiError("Backend billing error", 409, {
+        detail: {
+          code: "workspace_subscription_attached",
+          message: "Backend billing error",
+        },
+      }),
+    );
+    renderWithQuery(<WorkspacePage />);
+
+    await screen.findAllByText(workspaceFixture.name);
+    await user.click(
+      screen.getByRole("button", {
+        name: `Supprimer ${workspaceFixture.name}`,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+
+    expect(
+      await screen.findByText(
+        "Ce workspace possède encore un abonnement actif. Annulez d’abord l’abonnement et attendez sa date de fin avant de supprimer le workspace.",
+      ),
+    ).toBeInTheDocument();
+    expect(mockedDeleteWorkspace).toHaveBeenCalledOnce();
   });
 
   it("starts one hosted checkout and redirects to its URL", async () => {

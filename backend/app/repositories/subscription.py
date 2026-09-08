@@ -28,12 +28,18 @@ class WorkspaceSubscriptionRepository:
         self.session.add(subscription)
         return subscription
 
-    def get_for_workspace(self, workspace_id: UUID) -> WorkspaceSubscription | None:
-        return self.session.scalar(
-            select(WorkspaceSubscription).where(
-                WorkspaceSubscription.workspace_id == workspace_id
-            )
+    def get_for_workspace(
+        self,
+        workspace_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> WorkspaceSubscription | None:
+        statement = select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace_id
         )
+        if for_update:
+            statement = statement.with_for_update()
+        return self.session.scalar(statement)
 
     def lock_workspace(self, workspace_id: UUID) -> None:
         self.session.execute(

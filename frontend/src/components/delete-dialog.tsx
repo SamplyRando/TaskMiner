@@ -13,6 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 type DeleteDialogProps = {
   description: string;
   error: unknown;
+  errorMessage?: string | undefined;
   isPending: boolean;
   onConfirm: () => Promise<void>;
   onOpenChange: (open: boolean) => void;
@@ -23,6 +24,7 @@ type DeleteDialogProps = {
 export function DeleteDialog({
   description,
   error,
+  errorMessage,
   isPending,
   onConfirm,
   onOpenChange,
@@ -38,9 +40,10 @@ export function DeleteDialog({
         </DialogHeader>
         {error ? (
           <p className="text-destructive text-sm" role="alert">
-            {error instanceof ApiError
-              ? error.message
-              : "La suppression a échoué."}
+            {errorMessage ??
+              (error instanceof ApiError
+                ? error.message
+                : "La suppression a échoué.")}
           </p>
         ) : null}
         <DialogFooter>
