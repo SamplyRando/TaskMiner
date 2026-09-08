@@ -57,6 +57,22 @@ class PlanLimitExceededError(Exception):
         }
 
 
+class WorkspaceSubscriptionAttachedError(Exception):
+    """Raised when Stripe still owns an attached workspace subscription."""
+
+    code = "workspace_subscription_attached"
+    message = (
+        "This workspace still has an attached Stripe subscription. "
+        "Cancel it and wait until the paid period ends before deleting the workspace."
+    )
+
+    def __init__(self) -> None:
+        super().__init__(self.message)
+
+    def as_detail(self) -> dict[str, str]:
+        return {"code": self.code, "message": self.message}
+
+
 def utc_month_bounds(now: datetime) -> tuple[datetime, datetime]:
     start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     if now.month == 12:
@@ -139,6 +155,14 @@ class SubscriptionService:
         """Hold the owner row while a caller resolves a default workspace."""
 
         self.repository.lock_user(user_id)
+
+    def enforce_workspace_deletion_allowed(self, workspace_id: UUID) -> None:
+        subscription = self.repository.get_for_workspace(
+            workspace_id,
+            for_update=True,
+        )
+        if subscription is not None and subscription.stripe_subscription_id is not None:
+            raise WorkspaceSubscriptionAttachedError
 
     def enforce_member_limit(self, workspace_id: UUID) -> None:
         self.repository.lock_workspace(workspace_id)

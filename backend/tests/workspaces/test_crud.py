@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi.testclient import TestClient
@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.models.project import Project
 from app.models.workspace import Workspace
+from app.models.workspace_subscription import WorkspaceSubscription
+from app.subscriptions.plans import PlanCode, SubscriptionSource, SubscriptionStatus
 from tests.factories import (
     CreatedWorkspace,
     ProjectFactory,
@@ -110,6 +112,13 @@ def test_delete_workspace_soft_deletes_and_hides_it(
 ) -> None:
     stored_before = database_session.get(Workspace, workspace.id)
     assert stored_before is not None
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.stripe_subscription_id is None
     created_at = stored_before.created_at
     updated_at = stored_before.updated_at
 
@@ -145,6 +154,113 @@ def test_delete_workspace_soft_deletes_and_hides_it(
     assert list_response.status_code == 200
     assert list_response.json() == []
     assert second_delete_response.status_code == 404
+
+
+def test_delete_workspace_rejects_attached_stripe_subscription_without_mutation(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+) -> None:
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    subscription.plan_code = PlanCode.PRO
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.source = SubscriptionSource.STRIPE
+    subscription.stripe_subscription_id = f"sub_{workspace.id.hex}"
+    database_session.commit()
+
+    response = client.delete(
+        f"/api/v1/workspaces/{workspace.id}",
+        headers=workspace.owner.headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": {
+            "code": "workspace_subscription_attached",
+            "message": (
+                "This workspace still has an attached Stripe subscription. "
+                "Cancel it and wait until the paid period ends before deleting "
+                "the workspace."
+            ),
+        }
+    }
+    database_session.expire_all()
+    stored_workspace = database_session.get(Workspace, workspace.id)
+    stored_subscription = database_session.get(
+        WorkspaceSubscription,
+        subscription.id,
+    )
+    assert stored_workspace is not None
+    assert stored_workspace.deleted_at is None
+    assert stored_subscription is not None
+    assert stored_subscription.stripe_subscription_id == f"sub_{workspace.id.hex}"
+
+
+def test_delete_workspace_rejects_scheduled_stripe_cancellation(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+) -> None:
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    subscription.plan_code = PlanCode.PRO
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.source = SubscriptionSource.STRIPE
+    subscription.stripe_subscription_id = f"sub_{workspace.id.hex}"
+    subscription.cancel_at_period_end = False
+    subscription.cancel_at = datetime.now(timezone.utc) + timedelta(days=30)
+    database_session.commit()
+
+    response = client.delete(
+        f"/api/v1/workspaces/{workspace.id}",
+        headers=workspace.owner.headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "workspace_subscription_attached"
+    database_session.expire_all()
+    stored_workspace = database_session.get(Workspace, workspace.id)
+    assert stored_workspace is not None
+    assert stored_workspace.deleted_at is None
+
+
+def test_delete_workspace_allows_terminal_subscription_after_stripe_id_is_cleared(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+) -> None:
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    subscription.plan_code = PlanCode.FREE
+    subscription.status = SubscriptionStatus.CANCELED
+    subscription.source = SubscriptionSource.STRIPE
+    subscription.stripe_customer_id = f"cus_{workspace.id.hex}"
+    subscription.stripe_subscription_id = None
+    database_session.commit()
+
+    response = client.delete(
+        f"/api/v1/workspaces/{workspace.id}",
+        headers=workspace.owner.headers,
+    )
+
+    assert response.status_code == 204
+    database_session.expire_all()
+    stored_workspace = database_session.get(Workspace, workspace.id)
+    assert stored_workspace is not None
+    assert stored_workspace.deleted_at is not None
 
 
 def test_existing_project_endpoint_reuses_one_default_workspace(

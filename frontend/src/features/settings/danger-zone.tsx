@@ -24,6 +24,7 @@ import {
 } from "@/features/settings/schemas";
 import { SettingsSectionCard } from "@/features/settings/settings-section-card";
 import { useDeleteWorkspace } from "@/features/workspaces/hooks";
+import { getWorkspaceDeletionErrorMessage } from "@/features/workspaces/errors";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useAuthStore } from "@/store/auth-store";
@@ -223,7 +224,14 @@ export function DangerZone() {
                     {...register("currentPassword")}
                   />
                 )}
-                <FormError error={mutationError} />
+                <FormError
+                  error={mutationError}
+                  message={
+                    action === "workspace"
+                      ? getWorkspaceDeletionErrorMessage(mutationError)
+                      : undefined
+                  }
+                />
               </div>
               <DialogFooter>
                 <Button onClick={close} type="button" variant="outline">

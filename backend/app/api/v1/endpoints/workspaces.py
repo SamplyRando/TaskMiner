@@ -10,7 +10,10 @@ from app.api.deps import (
 from app.models.workspace import Workspace
 from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate
 from app.schemas.subscription import WorkspaceSubscriptionRead
-from app.services.subscription import PlanLimitExceededError
+from app.services.subscription import (
+    PlanLimitExceededError,
+    WorkspaceSubscriptionAttachedError,
+)
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -101,4 +104,9 @@ def delete_workspace(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workspace not found.",
+        ) from exc
+    except WorkspaceSubscriptionAttachedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.as_detail(),
         ) from exc
