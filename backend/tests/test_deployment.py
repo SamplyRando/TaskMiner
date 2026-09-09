@@ -94,6 +94,40 @@ def test_ai_controls_are_configurable() -> None:
     assert deployment_settings.ai_rate_limit_window_seconds == 30
 
 
+def test_auth_and_attachment_protection_defaults_are_safe() -> None:
+    deployment_settings = build_settings()
+
+    assert deployment_settings.auth_login_rate_limit_requests == 10
+    assert deployment_settings.auth_login_rate_limit_window_seconds == 300
+    assert deployment_settings.auth_register_rate_limit_requests == 5
+    assert deployment_settings.auth_register_rate_limit_window_seconds == 3600
+    assert deployment_settings.trusted_proxy_hops == 0
+    assert deployment_settings.attachment_workspace_quota_bytes == 1024**3
+    assert deployment_settings.attachment_upload_rate_limit_requests == 20
+    assert deployment_settings.attachment_upload_rate_limit_window_seconds == 60
+
+
+@pytest.mark.parametrize(
+    "setting,value",
+    [
+        ("TASKMINER_AUTH_LOGIN_RATE_LIMIT_REQUESTS", 0),
+        ("TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS", 0),
+        ("TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS", 0),
+        ("TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS", 0),
+        ("TASKMINER_TRUSTED_PROXY_HOPS", -1),
+        ("TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES", 0),
+        ("TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS", 0),
+        ("TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS", 0),
+    ],
+)
+def test_auth_and_attachment_protections_reject_invalid_values(
+    setting: str,
+    value: int,
+) -> None:
+    with pytest.raises(ValidationError):
+        build_settings(**{setting: value})
+
+
 def test_billing_is_optional_but_requires_complete_server_configuration() -> None:
     disabled = build_settings()
     partial = build_settings(STRIPE_SECRET_KEY="stripe-test-secret")

@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
@@ -12,6 +12,7 @@ import stripe
 
 from app.billing.factory import build_billing_provider
 from app.billing.provider import (
+    BillingCheckoutSession,
     BillingConfigurationError,
     BillingPortalRequest,
     BillingProviderError,
@@ -75,7 +76,13 @@ def test_checkout_uses_backend_price_workspace_metadata_and_known_customer(
         captured["params"] = params
         captured["options"] = options
         return stripe.checkout.Session.construct_from(
-            {"id": "cs_test_safe", "url": "https://checkout.stripe.com/c/pay/test"},
+            {
+                "id": "cs_test_safe",
+                "url": "https://checkout.stripe.com/c/pay/test",
+                "expires_at": int(
+                    (datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp()
+                ),
+            },
             "stripe-test-secret",
         )
 
@@ -92,6 +99,7 @@ def test_checkout_uses_backend_price_workspace_metadata_and_known_customer(
             price_id="price_test_pro",
             success_url="https://www.taskminer.app/app/workspaces?billing=success",
             cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
         )
     )
 
@@ -104,9 +112,12 @@ def test_checkout_uses_backend_price_workspace_metadata_and_known_customer(
     assert params["subscription_data"] == {
         "metadata": {"workspace_id": str(workspace_id)}
     }
+    assert isinstance(params["expires_at"], int)
     assert captured["options"] == {
         "idempotency_key": f"taskminer-pro-checkout-{workspace_id}-{attempt_id}"
     }
+    assert isinstance(result, BillingCheckoutSession)
+    assert result.id == "cs_test_safe"
     assert result.url.startswith("https://checkout.stripe.com/")
 
 
@@ -129,6 +140,9 @@ def test_checkout_idempotency_is_scoped_to_one_attempt(
                 {
                     "id": f"cs_test_{session_number}",
                     "url": (f"https://checkout.stripe.com/c/pay/test-{session_number}"),
+                    "expires_at": int(
+                        (datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp()
+                    ),
                 },
                 "stripe-test-secret",
             )
@@ -143,6 +157,7 @@ def test_checkout_idempotency_is_scoped_to_one_attempt(
         price_id="price_test_pro",
         success_url="https://www.taskminer.app/app/workspaces?billing=success",
         cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
     )
 
     first = provider.create_checkout_session(request)
@@ -165,7 +180,13 @@ def test_checkout_uses_owner_email_until_customer_is_known(
         captured["params"] = params
         captured["options"] = options
         return stripe.checkout.Session.construct_from(
-            {"id": "cs_test_safe", "url": "https://checkout.stripe.com/test"},
+            {
+                "id": "cs_test_safe",
+                "url": "https://checkout.stripe.com/test",
+                "expires_at": int(
+                    (datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp()
+                ),
+            },
             "stripe-test-secret",
         )
 
@@ -179,6 +200,7 @@ def test_checkout_uses_owner_email_until_customer_is_known(
             price_id="price_test_pro",
             success_url="https://www.taskminer.app/app/workspaces?billing=success",
             cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
         )
     )
 
@@ -239,6 +261,7 @@ def test_provider_hides_stripe_errors(monkeypatch: pytest.MonkeyPatch) -> None:
                 price_id="price_test_pro",
                 success_url="https://www.taskminer.app/app/workspaces?billing=success",
                 cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
             )
         )
 
@@ -291,6 +314,77 @@ def test_real_signature_verification_and_event_normalization() -> None:
         tz=timezone.utc,
     )
     assert event.created_at == datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
+
+def test_retrieve_subscription_returns_normalized_current_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = configured_provider()
+    workspace_id = uuid4()
+    now = int(time.time())
+
+    def retrieve(subscription_id: str) -> object:
+        assert subscription_id == "sub_test"
+        return stripe.Subscription.construct_from(
+            {
+                "id": "sub_test",
+                "customer": "cus_test",
+                "status": "active",
+                "metadata": {"workspace_id": str(workspace_id)},
+                "cancel_at_period_end": True,
+                "cancel_at": now + 3600,
+                "current_period_start": now,
+                "current_period_end": now + 3600,
+                "items": {"data": [{"price": {"id": "price_test_pro"}}]},
+            },
+            "stripe-test-secret",
+        )
+
+    monkeypatch.setattr(provider._client.v1.subscriptions, "retrieve", retrieve)
+
+    state = provider.retrieve_subscription("sub_test")
+
+    assert state.workspace_id == workspace_id
+    assert state.customer_id == "cus_test"
+    assert state.subscription_id == "sub_test"
+    assert state.price_id == "price_test_pro"
+    assert state.provider_status == "active"
+    assert state.cancel_at_period_end is True
+    assert state.cancel_at == datetime.fromtimestamp(now + 3600, tz=timezone.utc)
+
+
+def test_expired_checkout_event_exposes_only_normalized_session_identity() -> None:
+    webhook_secret = "stripe-test-webhook-secret"
+    provider = StripeBillingProvider("stripe-test-secret", webhook_secret)
+    workspace_id = uuid4()
+    timestamp = int(time.time())
+    payload = json.dumps(
+        {
+            "id": "evt_checkout_expired",
+            "type": "checkout.session.expired",
+            "created": timestamp,
+            "data": {
+                "object": {
+                    "id": "cs_test_expired",
+                    "metadata": {"workspace_id": str(workspace_id)},
+                    "status": "expired",
+                }
+            },
+        },
+        separators=(",", ":"),
+    ).encode()
+    signature = hmac.new(
+        webhook_secret.encode(),
+        f"{timestamp}.{payload.decode()}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    event = provider.parse_webhook(payload, f"t={timestamp},v1={signature}")
+
+    assert event.event_type == "checkout.session.expired"
+    assert event.workspace_id == workspace_id
+    assert event.checkout_session_id == "cs_test_expired"
+    assert event.subscription_id is None
 
 
 def test_invalid_webhook_signature_is_rejected() -> None:

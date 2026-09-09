@@ -62,6 +62,9 @@ Docker actuel.
 | `CORS_ORIGINS` | URL Vercel de production, sans `/` final |
 | `CORS_ORIGIN_REGEX` | Optionnel, previews Vercel du projet |
 | `STORAGE_PATH` | `/app/storage` avec un volume Railway |
+| `TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES` | `1073741824` (1 Gio par workspace) |
+| `TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS` | `20` uploads par utilisateur/workspace |
+| `TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS` | `60` secondes |
 | `TASKMINER_LOG_LEVEL` | `INFO` |
 | `TASKMINER_AI_PROVIDER` | `openai` en production |
 | `TASKMINER_OPENAI_MODEL` | `gpt-5.6-luna` ou le modèle validé pour la production |
@@ -69,6 +72,11 @@ Docker actuel.
 | `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Plafond d'urgence optionnel ; laisser absent pour appliquer Free=25 et Pro=500 |
 | `TASKMINER_AI_RATE_LIMIT_REQUESTS` | Générations par utilisateur et fenêtre, par exemple `10` |
 | `TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre glissante en secondes, par exemple `60` |
+| `TASKMINER_AUTH_LOGIN_RATE_LIMIT_REQUESTS` | `10` tentatives par IP et identité |
+| `TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | `300` secondes |
+| `TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS` | `5` inscriptions par IP et identité |
+| `TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS` | `3600` secondes |
+| `TASKMINER_TRUSTED_PROXY_HOPS` | Nombre de proxies de confiance entre Railway et le client ; vérifier la chaîne puis utiliser généralement `1` |
 | `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
 | `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
 | `TASKMINER_EMAIL_FROM` | Expéditeur d'un domaine vérifié, ex. `TaskMiner <invitations@taskminer.app>` |
@@ -150,7 +158,8 @@ de 60 secondes entre deux tentatives est imposé côté base de données.
 3. Créer un endpoint webhook Stripe pointant vers :
    `https://taskminer-production.up.railway.app/api/v1/billing/stripe/webhook`.
 4. Abonner cet endpoint aux événements suivants :
-   `checkout.session.completed`, `customer.subscription.created`,
+   `checkout.session.completed`, `checkout.session.expired`,
+   `customer.subscription.created`,
    `customer.subscription.updated`, `customer.subscription.deleted` et
    `invoice.payment_failed`.
 5. Copier le secret de signature de cet endpoint dans
@@ -163,6 +172,18 @@ webhook répondent avec une erreur TaskMiner stable. Stripe reste la source de
 vérité : le retour navigateur ne modifie jamais le plan localement, seul un
 webhook signé peut le faire. Les IDs d'événements traités sont persistés afin
 que les retries Stripe soient idempotents.
+Les tentatives Checkout ouvertes sont conservées pendant 31 minutes : deux
+requêtes concurrentes partagent la même tentative et la même clé d'idempotence
+Stripe, tandis qu'une session expirée libère une nouvelle tentative. Si deux
+événements Stripe ont le même timestamp, le backend réconcilie une seule fois
+l'état courant de la subscription auprès de Stripe avant de persister.
+
+Si un ancien doublon de subscription est détecté pour le même
+`metadata.workspace_id`, ne jamais corriger directement les IDs en base ni
+résilier automatiquement. Identifier la subscription canonique dans Stripe,
+annuler explicitement le doublon après vérification des paiements, puis laisser
+les webhooks signés resynchroniser TaskMiner. Les contraintes d'identité locales
+font échouer toute association ambiguë au lieu d'écraser un autre workspace.
 
 ## 3. Déploiement Vercel
 
@@ -233,6 +254,9 @@ Remplacer les valeurs après la création des services :
 5. Contrôler l'Activity Feed et l'Audit Log afin de valider les flux SSE CORS.
 6. Envoyer une pièce jointe, redéployer Railway puis vérifier sa persistance sur
    le volume configuré.
+7. Vérifier que le quota cumulé de 1 Gio par workspace et le rate limit d'upload
+   correspondent à la capacité du volume. La suppression directe d'une pièce
+   jointe conserve son soft delete en base et supprime son fichier du volume.
 
 Une erreur CORS signifie généralement que l'origine configurée contient un `/`
 final ou que l'URL Vercel réelle n'a pas été ajoutée à `CORS_ORIGINS`.

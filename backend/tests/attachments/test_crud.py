@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -92,7 +93,7 @@ def test_list_task_attachments(
     }
 
 
-def test_delete_attachment_is_soft_delete_and_keeps_file(
+def test_delete_attachment_is_soft_delete_and_removes_file(
     client: TestClient,
     attachment: CreatedAttachment,
     database_session: Session,
@@ -108,8 +109,7 @@ def test_delete_attachment_is_soft_delete_and_keeps_file(
     )
 
     assert response.status_code == 204
-    assert stored_path.is_file()
-    assert stored_path.read_bytes() == attachment.content
+    assert not stored_path.exists()
 
     database_session.expire_all()
     deleted_attachment = database_session.get(Attachment, attachment.id)
@@ -135,3 +135,33 @@ def test_delete_attachment_is_soft_delete_and_keeps_file(
     assert list_response.json() == []
     assert download_response.status_code == 404
     assert second_delete_response.status_code == 404
+
+
+def test_delete_database_failure_keeps_physical_file_and_active_metadata(
+    client: TestClient,
+    attachment: CreatedAttachment,
+    database_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.repositories.attachment import AttachmentRepository
+
+    model = database_session.get(Attachment, attachment.id)
+    assert model is not None
+    stored_path = settings.storage_path / model.stored_filename
+
+    def fail_commit(self: AttachmentRepository) -> None:
+        raise RuntimeError("database delete failed")
+
+    monkeypatch.setattr(AttachmentRepository, "commit", fail_commit)
+
+    with pytest.raises(RuntimeError, match="database delete failed"):
+        client.delete(
+            f"/api/v1/attachments/{attachment.id}",
+            headers=attachment.task.project.owner.headers,
+        )
+
+    database_session.expire_all()
+    model = database_session.get(Attachment, attachment.id)
+    assert model is not None
+    assert model.deleted_at is None
+    assert stored_path.read_bytes() == attachment.content

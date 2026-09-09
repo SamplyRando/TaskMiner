@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { ProtectedRoute } from "@/routes/protected-route";
@@ -12,18 +12,25 @@ describe("authentication routes", () => {
   });
 
   it("redirects anonymous visitors to login", () => {
+    const LoginTarget = () => {
+      const location = useLocation();
+      const from = (location.state as { from?: string } | null)?.from;
+      return <div>{from}</div>;
+    };
     render(
-      <MemoryRouter initialEntries={["/app"]}>
+      <MemoryRouter initialEntries={["/app/invitations?token=ABC#accept"]}>
         <Routes>
-          <Route element={<div>Connexion requise</div>} path="/login" />
+          <Route element={<LoginTarget />} path="/login" />
           <Route element={<ProtectedRoute />}>
-            <Route element={<div>Espace privé</div>} path="/app" />
+            <Route element={<div>Espace privé</div>} path="/app/invitations" />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Connexion requise")).toBeInTheDocument();
+    expect(
+      screen.getByText("/app/invitations?token=ABC#accept"),
+    ).toBeInTheDocument();
   });
 
   it("renders protected content for authenticated users", () => {

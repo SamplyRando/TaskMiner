@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,7 @@ class AttachmentRepository:
         stored_filename: str,
         content_type: str,
         file_size: int,
+        commit: bool = True,
     ) -> Attachment:
         attachment = Attachment(
             filename=filename,
@@ -37,12 +38,15 @@ class AttachmentRepository:
         )
         self.session.add(attachment)
 
-        try:
-            self.session.commit()
-            self.session.refresh(attachment)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(attachment)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
 
         return attachment
 
@@ -103,11 +107,57 @@ class AttachmentRepository:
         )
         return self.session.scalar(statement)
 
-    def delete(self, attachment: Attachment) -> None:
+    def lock_workspace(self, workspace_id: UUID) -> None:
+        self.session.execute(
+            select(Workspace.id)
+            .where(
+                Workspace.id == workspace_id,
+                Workspace.deleted_at.is_(None),
+            )
+            .with_for_update()
+        ).scalar_one()
+
+    def workspace_storage_bytes(self, workspace_id: UUID) -> int:
+        statement = (
+            select(func.coalesce(func.sum(Attachment.file_size), 0))
+            .join(Task, Attachment.task_id == Task.id)
+            .join(Project, Task.project_id == Project.id)
+            .where(
+                Project.workspace_id == workspace_id,
+                Attachment.deleted_at.is_(None),
+            )
+        )
+        return int(self.session.scalar(statement) or 0)
+
+    def deleted_stored_filenames(self, workspace_id: UUID) -> list[str]:
+        statement = (
+            select(Attachment.stored_filename)
+            .join(Task, Attachment.task_id == Task.id)
+            .join(Project, Task.project_id == Project.id)
+            .where(
+                Project.workspace_id == workspace_id,
+                Attachment.deleted_at.is_not(None),
+            )
+        )
+        return list(self.session.scalars(statement).all())
+
+    def delete(self, attachment: Attachment, *, commit: bool = True) -> None:
         attachment.deleted_at = datetime.now(timezone.utc)
-        try:
-            self.session.commit()
-            self.session.refresh(attachment)
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        if commit:
+            try:
+                self.session.commit()
+                self.session.refresh(attachment)
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+        else:
+            self.session.flush()
+
+    def commit(self) -> None:
+        self.session.commit()
+
+    def rollback(self) -> None:
+        self.session.rollback()
+
+    def refresh(self, attachment: Attachment) -> None:
+        self.session.refresh(attachment)

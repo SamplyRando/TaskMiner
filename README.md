@@ -90,6 +90,9 @@ que lorsque cette perte de données est volontaire.
 | `ALGORITHM` | Algorithme JWT, actuellement `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée de validité du token d'accès |
 | `STORAGE_PATH` | Répertoire persistant des pièces jointes |
+| `TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES` | Quota cumulé des pièces jointes par workspace (défaut : 1 Gio) |
+| `TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS` | Uploads autorisés par utilisateur/workspace et fenêtre |
+| `TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS` | Durée de la fenêtre fixe d'upload |
 | `TASKMINER_LOG_LEVEL` | Niveau de logs backend |
 | `TASKMINER_AI_PROVIDER` | Provider IA : `mock` en local/test, `openai` en production |
 | `TASKMINER_OPENAI_MODEL` | Modèle Responses API utilisé par le provider OpenAI |
@@ -97,6 +100,11 @@ que lorsque cette perte de données est volontaire.
 | `TASKMINER_AI_MONTHLY_REQUEST_LIMIT` | Plafond d'urgence optionnel appliqué aux quotas IA des plans |
 | `TASKMINER_AI_RATE_LIMIT_REQUESTS` | Générations autorisées par utilisateur et fenêtre |
 | `TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS` | Durée de la fenêtre glissante de rate limit |
+| `TASKMINER_AUTH_LOGIN_RATE_LIMIT_REQUESTS` | Tentatives de connexion autorisées par IP et identité |
+| `TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe de connexion en secondes |
+| `TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS` | Inscriptions autorisées par IP et identité |
+| `TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe d'inscription en secondes |
+| `TASKMINER_TRUSTED_PROXY_HOPS` | Nombre explicite de reverse proxies de confiance pour résoudre l'IP cliente |
 | `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
 | `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
 | `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |

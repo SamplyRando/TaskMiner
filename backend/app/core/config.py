@@ -84,6 +84,46 @@ class Settings(BaseSettings):
         gt=0,
         validation_alias="TASKMINER_AI_RATE_LIMIT_WINDOW_SECONDS",
     )
+    auth_login_rate_limit_requests: int = Field(
+        default=10,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_LOGIN_RATE_LIMIT_REQUESTS",
+    )
+    auth_login_rate_limit_window_seconds: int = Field(
+        default=300,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    auth_register_rate_limit_requests: int = Field(
+        default=5,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS",
+    )
+    auth_register_rate_limit_window_seconds: int = Field(
+        default=3600,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    trusted_proxy_hops: int = Field(
+        default=0,
+        ge=0,
+        validation_alias="TASKMINER_TRUSTED_PROXY_HOPS",
+    )
+    attachment_workspace_quota_bytes: int = Field(
+        default=1024 * 1024 * 1024,
+        gt=0,
+        validation_alias="TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES",
+    )
+    attachment_upload_rate_limit_requests: int = Field(
+        default=20,
+        gt=0,
+        validation_alias="TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS",
+    )
+    attachment_upload_rate_limit_window_seconds: int = Field(
+        default=60,
+        gt=0,
+        validation_alias="TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS",
+    )
     email_provider: Literal["noop", "resend"] = Field(
         default="noop",
         validation_alias="TASKMINER_EMAIL_PROVIDER",

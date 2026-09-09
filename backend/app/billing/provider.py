@@ -25,6 +25,7 @@ class CheckoutSessionRequest:
     price_id: str
     success_url: str
     cancel_url: str
+    expires_at: datetime
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,26 @@ class BillingPortalRequest:
 @dataclass(frozen=True)
 class BillingRedirect:
     url: str
+
+
+@dataclass(frozen=True)
+class BillingCheckoutSession:
+    id: str
+    url: str
+    expires_at: datetime
+
+
+@dataclass(frozen=True)
+class BillingSubscriptionState:
+    workspace_id: UUID | None
+    customer_id: str | None
+    subscription_id: str
+    price_id: str | None
+    provider_status: str
+    current_period_start: datetime | None
+    current_period_end: datetime | None
+    cancel_at_period_end: bool
+    cancel_at: datetime | None
 
 
 @dataclass(frozen=True)
@@ -53,6 +74,7 @@ class BillingEvent:
     current_period_end: datetime | None
     cancel_at_period_end: bool
     cancel_at: datetime | None
+    checkout_session_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -67,7 +89,7 @@ class BillingProvider(Protocol):
     def create_checkout_session(
         self,
         request: CheckoutSessionRequest,
-    ) -> BillingRedirect:
+    ) -> BillingCheckoutSession:
         """Create a hosted subscription Checkout session."""
         ...
 
@@ -80,4 +102,11 @@ class BillingProvider(Protocol):
 
     def parse_webhook(self, payload: bytes, signature: str | None) -> BillingEvent:
         """Verify and normalize a provider webhook without leaking raw data."""
+        ...
+
+    def retrieve_subscription(
+        self,
+        subscription_id: str,
+    ) -> BillingSubscriptionState:
+        """Return current normalized provider state for deterministic reconciliation."""
         ...

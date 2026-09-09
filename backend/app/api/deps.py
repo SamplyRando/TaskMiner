@@ -36,6 +36,7 @@ from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.dashboard import DashboardRepository
 from app.repositories.project import ProjectRepository
+from app.repositories.request_rate_limit import RequestRateLimitRepository
 from app.repositories.subscription import WorkspaceSubscriptionRepository
 from app.repositories.task import TaskRepository
 from app.repositories.user import UserRepository
@@ -53,6 +54,10 @@ from app.services.comment import CommentService
 from app.services.dashboard import DashboardService
 from app.services.permission import PermissionService
 from app.services.project import ProjectService
+from app.services.request_rate_limit import (
+    AuthRateLimitService,
+    RequestRateLimitService,
+)
 from app.services.task import TaskService
 from app.services.task_assignment import TaskAssignmentService
 from app.services.settings import SettingsService
@@ -107,6 +112,38 @@ def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+def get_request_rate_limit_service(session: SessionDep) -> RequestRateLimitService:
+    return RequestRateLimitService(
+        RequestRateLimitRepository(session),
+        settings.secret_key,
+    )
+
+
+RequestRateLimitServiceDep = Annotated[
+    RequestRateLimitService,
+    Depends(get_request_rate_limit_service),
+]
+
+
+def get_auth_rate_limit_service(
+    rate_limiter: RequestRateLimitServiceDep,
+) -> AuthRateLimitService:
+    return AuthRateLimitService(
+        rate_limiter,
+        login_requests=settings.auth_login_rate_limit_requests,
+        login_window_seconds=settings.auth_login_rate_limit_window_seconds,
+        register_requests=settings.auth_register_rate_limit_requests,
+        register_window_seconds=settings.auth_register_rate_limit_window_seconds,
+        trusted_proxy_hops=settings.trusted_proxy_hops,
+    )
+
+
+AuthRateLimitServiceDep = Annotated[
+    AuthRateLimitService,
+    Depends(get_auth_rate_limit_service),
+]
 
 
 def get_dashboard_service(session: SessionDep) -> DashboardService:
@@ -234,7 +271,10 @@ def get_task_service(session: SessionDep) -> TaskService:
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
 
 
-def get_attachment_service(session: SessionDep) -> AttachmentService:
+def get_attachment_service(
+    session: SessionDep,
+    rate_limiter: RequestRateLimitServiceDep,
+) -> AttachmentService:
     workspace_repository = WorkspaceRepository(session)
     return AttachmentService(
         AttachmentRepository(session),
@@ -244,6 +284,12 @@ def get_attachment_service(session: SessionDep) -> AttachmentService:
             workspace_repository,
         ),
         settings.storage_path,
+        rate_limiter,
+        workspace_quota_bytes=settings.attachment_workspace_quota_bytes,
+        upload_rate_limit_requests=settings.attachment_upload_rate_limit_requests,
+        upload_rate_limit_window_seconds=(
+            settings.attachment_upload_rate_limit_window_seconds
+        ),
     )
 
 

@@ -12,8 +12,10 @@ from app.services.attachment import (
     AttachmentNotFoundError,
     AttachmentTaskNotFoundError,
     AttachmentTooLargeError,
+    AttachmentWorkspaceQuotaExceededError,
 )
 from app.services.permission import PermissionDeniedError
+from app.services.request_rate_limit import RequestRateLimitExceededError
 
 
 router = APIRouter()
@@ -42,6 +44,23 @@ def upload_attachment(
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail="File exceeds the maximum size of 10 MB.",
+        ) from exc
+    except AttachmentWorkspaceQuotaExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "attachment_storage_quota_exceeded",
+                "message": "Workspace attachment storage quota exceeded.",
+            },
+        ) from exc
+    except RequestRateLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "attachment_upload_rate_limit_exceeded",
+                "message": "Too many attachment uploads. Please try again later.",
+            },
+            headers={"Retry-After": str(exc.retry_after_seconds)},
         ) from exc
     except AttachmentExtensionNotAllowedError as exc:
         raise HTTPException(
