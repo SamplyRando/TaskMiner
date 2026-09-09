@@ -88,6 +88,9 @@ class BillingRepository:
     def flush(self) -> None:
         self.session.flush()
 
+    def refresh(self, subscription: WorkspaceSubscription) -> None:
+        self.session.refresh(subscription)
+
     def commit(self) -> None:
         self.session.commit()
 

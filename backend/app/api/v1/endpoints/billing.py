@@ -142,6 +142,14 @@ async def stripe_webhook(
                 "message": "Billing event conflicts with persisted workspace state.",
             },
         ) from exc
+    except BillingProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "code": "billing_provider_unavailable",
+                "message": "Billing synchronization is temporarily unavailable.",
+            },
+        ) from exc
     return BillingWebhookRead(
         duplicate=result.duplicate,
         handled=result.handled,

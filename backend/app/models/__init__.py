@@ -7,6 +7,7 @@ from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.project import Project
+from app.models.request_rate_limit_bucket import RequestRateLimitBucket
 from app.models.stripe_webhook_event import StripeWebhookEvent
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.user import User
@@ -28,6 +29,7 @@ __all__ = [
     "Attachment",
     "Comment",
     "Project",
+    "RequestRateLimitBucket",
     "StripeWebhookEvent",
     "Task",
     "TaskPriority",

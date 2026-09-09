@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { registerUser } from "@/api/auth";
@@ -33,12 +33,25 @@ const fillRegisterForm = async (): Promise<void> => {
   await user.click(screen.getByRole("button", { name: "Créer mon compte" }));
 };
 
-const renderRegisterPage = () =>
+const LoginDestination = () => {
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? "missing";
+  return <div>{`Page de connexion — ${from}`}</div>;
+};
+
+const renderRegisterPage = (from?: string) =>
   render(
-    <MemoryRouter initialEntries={["/register"]}>
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/register",
+          state: from ? { from } : undefined,
+        },
+      ]}
+    >
       <Routes>
         <Route element={<RegisterPage />} path="/register" />
-        <Route element={<div>Page de connexion</div>} path="/login" />
+        <Route element={<LoginDestination />} path="/login" />
       </Routes>
     </MemoryRouter>,
   );
@@ -55,7 +68,9 @@ describe("RegisterPage", () => {
 
     await fillRegisterForm();
 
-    expect(await screen.findByText("Page de connexion")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Page de connexion — /app"),
+    ).toBeInTheDocument();
     expect(mockedRegisterUser).toHaveBeenCalledWith({
       email: "ada@example.com",
       fullName: "Ada Lovelace",
@@ -73,6 +88,19 @@ describe("RegisterPage", () => {
 
     expect(
       await screen.findByText("An account with this email already exists."),
+    ).toBeInTheDocument();
+  });
+
+  it("preserves the invitation destination through registration", async () => {
+    mockedRegisterUser.mockResolvedValue(fakeUser);
+    renderRegisterPage("/app/invitations?token=ABC#accept");
+
+    await fillRegisterForm();
+
+    expect(
+      await screen.findByText(
+        "Page de connexion — /app/invitations?token=ABC#accept",
+      ),
     ).toBeInTheDocument();
   });
 });

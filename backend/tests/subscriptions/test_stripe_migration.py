@@ -57,6 +57,11 @@ def test_stripe_billing_migration_upgrades_and_downgrades() -> None:
             "stripe_price_id",
             "stripe_event_created_at",
             "cancel_at",
+            "checkout_attempt_id",
+            "checkout_attempt_started_at",
+            "stripe_checkout_session_id",
+            "stripe_checkout_url",
+            "stripe_checkout_expires_at",
         } <= subscription_columns
         subscription_uniques = {
             constraint["name"]
@@ -67,7 +72,16 @@ def test_stripe_billing_migration_upgrades_and_downgrades() -> None:
         assert {
             "uq_workspace_subscriptions_stripe_customer_id",
             "uq_workspace_subscriptions_stripe_subscription_id",
+            "uq_workspace_subscriptions_stripe_checkout_session_id",
         } <= subscription_uniques
+        assert "request_rate_limit_buckets" in inspector.get_table_names()
+        rate_limit_uniques = {
+            constraint["name"]
+            for constraint in inspector.get_unique_constraints(
+                "request_rate_limit_buckets"
+            )
+        }
+        assert "uq_request_rate_limit_bucket_scope_window" in rate_limit_uniques
         event_uniques = {
             constraint["name"]
             for constraint in inspector.get_unique_constraints("stripe_webhook_events")
@@ -77,6 +91,7 @@ def test_stripe_billing_migration_upgrades_and_downgrades() -> None:
         run_alembic(migration_url, "downgrade", PRE_STRIPE_REVISION)
         inspector = inspect(migration_engine)
         assert "stripe_webhook_events" not in inspector.get_table_names()
+        assert "request_rate_limit_buckets" not in inspector.get_table_names()
         subscription_columns = {
             column["name"]
             for column in inspector.get_columns("workspace_subscriptions")

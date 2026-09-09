@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_password
+from app.core.config import settings
 from app.models.user import User
 from tests.factories import UserFactory
 
@@ -102,3 +103,24 @@ def test_register_trims_name_and_forbids_extra_fields(
     assert response.status_code == 201
     assert response.json()["full_name"] == "Ada Lovelace"
     assert injected.status_code == 422
+
+
+def test_register_rate_limit_runs_before_repeated_argon2_work(
+    client: TestClient,
+    user_factory: UserFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "auth_register_rate_limit_requests", 2)
+    first_payload = user_factory.build_payload()
+    second_payload = user_factory.build_payload()
+    third_payload = user_factory.build_payload()
+
+    first = client.post("/api/v1/auth/register", json=first_payload)
+    second = client.post("/api/v1/auth/register", json=second_payload)
+    blocked = client.post("/api/v1/auth/register", json=third_payload)
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert blocked.status_code == 429
+    assert blocked.json()["detail"]["code"] == "auth_rate_limit_exceeded"
+    assert 1 <= int(blocked.headers["Retry-After"]) <= 3600

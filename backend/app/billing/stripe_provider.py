@@ -1,5 +1,6 @@
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
+from math import ceil
 from typing import Literal, cast
 from urllib.parse import urlparse
 from uuid import UUID
@@ -7,11 +8,13 @@ from uuid import UUID
 import stripe
 
 from app.billing.provider import (
+    BillingCheckoutSession,
     BillingEvent,
     BillingPortalRequest,
     BillingProviderError,
     BillingRedirect,
     BillingSignatureError,
+    BillingSubscriptionState,
     CheckoutSessionRequest,
 )
 
@@ -34,7 +37,7 @@ class StripeBillingProvider:
     def create_checkout_session(
         self,
         request: CheckoutSessionRequest,
-    ) -> BillingRedirect:
+    ) -> BillingCheckoutSession:
         metadata = {"workspace_id": str(request.workspace_id)}
         params: stripe.params.checkout.SessionCreateParams = {
             "cancel_url": request.cancel_url,
@@ -44,6 +47,7 @@ class StripeBillingProvider:
             "mode": "subscription",
             "success_url": request.success_url,
             "subscription_data": {"metadata": metadata},
+            "expires_at": ceil(request.expires_at.timestamp()),
         }
         if request.customer_id is not None:
             params["customer"] = request.customer_id
@@ -65,7 +69,17 @@ class StripeBillingProvider:
                 "The billing provider is temporarily unavailable."
             ) from exc
 
-        return BillingRedirect(url=_provider_redirect_url(session.url))
+        session_id = _optional_string(session.id)
+        expires_at = _timestamp(session.expires_at)
+        if session_id is None or expires_at is None:
+            raise BillingProviderError(
+                "The billing provider returned an incomplete Checkout session."
+            )
+        return BillingCheckoutSession(
+            id=session_id,
+            url=_provider_redirect_url(session.url),
+            expires_at=expires_at,
+        )
 
     def create_portal_session(
         self,
@@ -96,6 +110,24 @@ class StripeBillingProvider:
 
         raw = cast(Mapping[str, object], event.to_dict())
         return _normalize_event(raw)
+
+    def retrieve_subscription(
+        self,
+        subscription_id: str,
+    ) -> BillingSubscriptionState:
+        try:
+            subscription = self._client.v1.subscriptions.retrieve(subscription_id)
+        except stripe.StripeError as exc:
+            raise BillingProviderError(
+                "The billing provider is temporarily unavailable."
+            ) from exc
+        raw = cast(Mapping[str, object], subscription.to_dict())
+        try:
+            return _normalize_subscription_state(raw)
+        except BillingSignatureError as exc:
+            raise BillingProviderError(
+                "The billing provider returned an invalid subscription state."
+            ) from exc
 
 
 def _provider_redirect_url(value: str | None) -> str:
@@ -144,6 +176,30 @@ def _normalize_event(raw: Mapping[str, object]) -> BillingEvent:
         price_id=_price_id(obj),
         provider_status=provider_status,
         payment_status=payment_status,
+        current_period_start=_period_timestamp(obj, "current_period_start", min),
+        current_period_end=_period_timestamp(obj, "current_period_end", max),
+        cancel_at_period_end=obj.get("cancel_at_period_end") is True,
+        cancel_at=_timestamp(obj.get("cancel_at")),
+        checkout_session_id=(
+            _identifier(obj.get("id"))
+            if event_type.startswith("checkout.session.")
+            else None
+        ),
+    )
+
+
+def _normalize_subscription_state(
+    obj: Mapping[str, object],
+) -> BillingSubscriptionState:
+    subscription_id = _required_string(obj.get("id"))
+    provider_status = _required_string(obj.get("status"))
+    metadata = _mapping(obj.get("metadata"))
+    return BillingSubscriptionState(
+        workspace_id=_workspace_id(metadata.get("workspace_id")),
+        customer_id=_identifier(obj.get("customer")),
+        subscription_id=subscription_id,
+        price_id=_price_id(obj),
+        provider_status=provider_status,
         current_period_start=_period_timestamp(obj, "current_period_start", min),
         current_period_end=_period_timestamp(obj, "current_period_end", max),
         cancel_at_period_end=obj.get("cancel_at_period_end") is True,

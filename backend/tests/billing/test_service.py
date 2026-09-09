@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from typing import Literal
 from uuid import UUID
 
@@ -12,10 +14,13 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_billing_provider_dependency
 from app.billing.provider import (
+    BillingCheckoutSession,
     BillingEvent,
     BillingPortalRequest,
     BillingRedirect,
+    BillingProviderError,
     BillingSignatureError,
+    BillingSubscriptionState,
     CheckoutSessionRequest,
 )
 from app.billing.service import BillingService
@@ -46,13 +51,27 @@ class StubBillingProvider:
         self.checkout_requests: list[CheckoutSessionRequest] = []
         self.portal_requests: list[BillingPortalRequest] = []
         self.event: BillingEvent | None = None
+        self.current_subscription: BillingSubscriptionState | None = None
+        self.retrieve_requests: list[str] = []
+        self.checkout_failures_remaining = 0
+        self.checkout_barrier: Barrier | None = None
 
     def create_checkout_session(
         self,
         request: CheckoutSessionRequest,
-    ) -> BillingRedirect:
+    ) -> BillingCheckoutSession:
         self.checkout_requests.append(request)
-        return BillingRedirect("https://checkout.stripe.com/c/pay/test")
+        if self.checkout_barrier is not None:
+            self.checkout_barrier.wait(timeout=5)
+        if self.checkout_failures_remaining:
+            self.checkout_failures_remaining -= 1
+            raise BillingProviderError("private provider failure")
+        number = len({item.attempt_id for item in self.checkout_requests})
+        return BillingCheckoutSession(
+            id=f"cs_test_{number}",
+            url=f"https://checkout.stripe.com/c/pay/test-{number}",
+            expires_at=request.expires_at,
+        )
 
     def create_portal_session(
         self,
@@ -67,6 +86,15 @@ class StubBillingProvider:
             raise BillingSignatureError("Invalid signature")
         return self.event
 
+    def retrieve_subscription(
+        self,
+        subscription_id: str,
+    ) -> BillingSubscriptionState:
+        self.retrieve_requests.append(subscription_id)
+        if self.current_subscription is None:
+            raise AssertionError("Current Stripe subscription state was not configured")
+        return self.current_subscription
+
 
 def make_event(
     workspace_id: UUID,
@@ -80,6 +108,7 @@ def make_event(
     provider_status: str | None = "active",
     cancel_at_period_end: bool = False,
     cancel_at: datetime | None = None,
+    checkout_session_id: str | None = None,
 ) -> BillingEvent:
     now = created_at or datetime.now(timezone.utc)
     return BillingEvent(
@@ -92,6 +121,28 @@ def make_event(
         price_id=price_id,
         provider_status=provider_status,
         payment_status="paid",
+        current_period_start=now,
+        current_period_end=now + timedelta(days=30),
+        cancel_at_period_end=cancel_at_period_end,
+        cancel_at=cancel_at,
+        checkout_session_id=checkout_session_id,
+    )
+
+
+def make_subscription_state(
+    workspace_id: UUID,
+    *,
+    provider_status: str = "active",
+    cancel_at_period_end: bool = False,
+    cancel_at: datetime | None = None,
+) -> BillingSubscriptionState:
+    now = datetime.now(timezone.utc)
+    return BillingSubscriptionState(
+        workspace_id=workspace_id,
+        customer_id="cus_test",
+        subscription_id="sub_test",
+        price_id="price_test_pro",
+        provider_status=provider_status,
         current_period_start=now,
         current_period_end=now + timedelta(days=30),
         cancel_at_period_end=cancel_at_period_end,
@@ -178,21 +229,27 @@ def test_owner_checkout_uses_server_price_and_reuses_customer(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
-        json={"price_id": "price_attacker"},
+        json={
+            "price_id": "price_attacker",
+            "attempt_id": "00000000-0000-0000-0000-000000000000",
+            "customer_id": "cus_attacker",
+            "subscription_id": "sub_attacker",
+        },
     )
 
     assert response.status_code == 200
     assert response.json() == {
-        "checkout_url": "https://checkout.stripe.com/c/pay/test",
+        "checkout_url": "https://checkout.stripe.com/c/pay/test-1",
     }
     assert len(provider.checkout_requests) == 1
     request = provider.checkout_requests[0]
     assert request.price_id == "price_test_pro"
     assert request.customer_id == "cus_existing"
     assert request.workspace_id == workspace.id
+    assert str(request.attempt_id) != "00000000-0000-0000-0000-000000000000"
 
 
-def test_later_checkout_attempt_uses_a_new_server_attempt_id(
+def test_open_checkout_is_reused_for_a_sequential_retry(
     client: TestClient,
     workspace: CreatedWorkspace,
     monkeypatch: pytest.MonkeyPatch,
@@ -211,10 +268,106 @@ def test_later_checkout_attempt_uses_a_new_server_attempt_id(
 
     assert first.status_code == 200
     assert later.status_code == 200
+    assert len(provider.checkout_requests) == 1
+    assert first.json()["checkout_url"] == later.json()["checkout_url"]
+
+
+def test_expired_checkout_gets_a_new_server_attempt_and_session(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+
+    first = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    first_attempt = subscription.checkout_attempt_id
+    subscription.checkout_attempt_started_at = datetime.now(timezone.utc) - timedelta(
+        hours=1
+    )
+    subscription.stripe_checkout_expires_at = datetime.now(timezone.utc) - timedelta(
+        minutes=1
+    )
+    database_session.commit()
+
+    later = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+
+    assert first.status_code == 200
+    assert later.status_code == 200
+    assert first.json()["checkout_url"] != later.json()["checkout_url"]
+    assert len(provider.checkout_requests) == 2
+    assert provider.checkout_requests[0].attempt_id == first_attempt
+    assert provider.checkout_requests[1].attempt_id != first_attempt
+
+
+def test_concurrent_checkout_requests_share_one_logical_attempt(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    provider.checkout_barrier = Barrier(2)
+    override_billing(monkeypatch, provider)
+
+    def start_checkout() -> tuple[int, str]:
+        response = client.post(
+            f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+            headers=workspace.owner.headers,
+        )
+        return response.status_code, response.json().get("checkout_url", "")
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda _: start_checkout(), range(2)))
+
+    assert results == [
+        (200, "https://checkout.stripe.com/c/pay/test-1"),
+        (200, "https://checkout.stripe.com/c/pay/test-1"),
+    ]
     assert len(provider.checkout_requests) == 2
     assert (
         provider.checkout_requests[0].attempt_id
-        != provider.checkout_requests[1].attempt_id
+        == provider.checkout_requests[1].attempt_id
+    )
+
+
+def test_checkout_provider_retry_reuses_reserved_attempt(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    provider.checkout_failures_remaining = 1
+    override_billing(monkeypatch, provider)
+
+    failed = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+    retried = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+
+    assert failed.status_code == 502
+    assert failed.json()["detail"]["code"] == "billing_provider_unavailable"
+    assert retried.status_code == 200
+    assert len(provider.checkout_requests) == 2
+    assert (
+        provider.checkout_requests[0].attempt_id
+        == provider.checkout_requests[1].attempt_id
     )
 
 
@@ -464,11 +617,17 @@ def test_checkout_completion_links_identity_without_granting_pro(
 ) -> None:
     provider = StubBillingProvider()
     override_billing(monkeypatch, provider)
+    checkout = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+    assert checkout.status_code == 200
     provider.event = make_event(
         workspace.id,
         event_id="evt_checkout",
         event_type="checkout.session.completed",
         provider_status="complete",
+        checkout_session_id="cs_test_1",
     )
 
     response = client.post(
@@ -488,6 +647,60 @@ def test_checkout_completion_links_identity_without_granting_pro(
     assert subscription.plan_code == PlanCode.FREE
     assert subscription.stripe_customer_id == "cus_test"
     assert subscription.stripe_subscription_id == "sub_test"
+    assert subscription.checkout_attempt_id is None
+    assert subscription.stripe_checkout_session_id is None
+    assert subscription.stripe_checkout_url is None
+
+
+def test_expired_checkout_webhook_releases_the_attempt(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+    assert (
+        client.post(
+            f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+            headers=workspace.owner.headers,
+        ).status_code
+        == 200
+    )
+    first_attempt = provider.checkout_requests[0].attempt_id
+    provider.event = make_event(
+        workspace.id,
+        event_id="evt_checkout_expired",
+        event_type="checkout.session.expired",
+        customer_id=None,
+        subscription_id=None,
+        price_id=None,
+        provider_status="expired",
+        checkout_session_id="cs_test_1",
+    )
+
+    expired = client.post(
+        "/api/v1/billing/stripe/webhook",
+        content=b"signed-payload",
+        headers={"Stripe-Signature": "signed"},
+    )
+    fresh = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+    )
+
+    assert expired.status_code == 200
+    assert fresh.status_code == 200
+    assert len(provider.checkout_requests) == 2
+    assert provider.checkout_requests[1].attempt_id != first_attempt
+    database_session.expire_all()
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.stripe_checkout_session_id == "cs_test_2"
 
 
 @pytest.mark.parametrize("cancel_at_period_end", [False, True])
@@ -815,3 +1028,223 @@ def test_old_subscription_event_cannot_overwrite_newer_state(
     assert subscription is not None
     assert subscription.plan_code == PlanCode.PRO
     assert subscription.status == SubscriptionStatus.ACTIVE
+
+
+@pytest.mark.parametrize(
+    "first_type,first_status,second_type,second_status",
+    [
+        (
+            "customer.subscription.deleted",
+            "canceled",
+            "customer.subscription.updated",
+            "active",
+        ),
+        (
+            "customer.subscription.updated",
+            "active",
+            "customer.subscription.deleted",
+            "canceled",
+        ),
+    ],
+)
+def test_equal_timestamp_events_reconcile_to_current_active_stripe_state(
+    database_session: Session,
+    workspace: CreatedWorkspace,
+    first_type: str,
+    first_status: str,
+    second_type: str,
+    second_status: str,
+) -> None:
+    provider = StubBillingProvider()
+    provider.current_subscription = make_subscription_state(workspace.id)
+    service = BillingService(
+        BillingRepository(database_session),
+        PermissionService(
+            WorkspaceMemberRepository(database_session),
+            WorkspaceRepository(database_session),
+        ),
+        provider,
+        pro_price_id="price_test_pro",
+        success_url="https://www.taskminer.app/app/workspaces?billing=success",
+        cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+    )
+    created_at = datetime.now(timezone.utc)
+
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_equal_first",
+            event_type=first_type,
+            created_at=created_at,
+            provider_status=first_status,
+        )
+    )
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_equal_second",
+            event_type=second_type,
+            created_at=created_at,
+            provider_status=second_status,
+        )
+    )
+
+    database_session.expire_all()
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.plan_code == PlanCode.PRO
+    assert subscription.status == SubscriptionStatus.ACTIVE
+    assert provider.retrieve_requests == ["sub_test"]
+
+
+@pytest.mark.parametrize(
+    "first_type,first_status,second_type,second_status",
+    [
+        (
+            "customer.subscription.deleted",
+            "canceled",
+            "customer.subscription.updated",
+            "active",
+        ),
+        (
+            "customer.subscription.updated",
+            "active",
+            "customer.subscription.deleted",
+            "canceled",
+        ),
+    ],
+)
+def test_equal_timestamp_events_reconcile_to_current_terminal_stripe_state(
+    database_session: Session,
+    workspace: CreatedWorkspace,
+    first_type: str,
+    first_status: str,
+    second_type: str,
+    second_status: str,
+) -> None:
+    provider = StubBillingProvider()
+    provider.current_subscription = make_subscription_state(
+        workspace.id,
+        provider_status="canceled",
+    )
+    service = BillingService(
+        BillingRepository(database_session),
+        PermissionService(
+            WorkspaceMemberRepository(database_session),
+            WorkspaceRepository(database_session),
+        ),
+        provider,
+        pro_price_id="price_test_pro",
+        success_url="https://www.taskminer.app/app/workspaces?billing=success",
+        cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+    )
+    created_at = datetime.now(timezone.utc)
+
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_equal_first",
+            event_type=first_type,
+            created_at=created_at,
+            provider_status=first_status,
+        )
+    )
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_equal_second",
+            event_type=second_type,
+            created_at=created_at,
+            provider_status=second_status,
+        )
+    )
+
+    database_session.expire_all()
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.plan_code == PlanCode.FREE
+    assert subscription.status == SubscriptionStatus.CANCELED
+    assert subscription.stripe_subscription_id is None
+    assert provider.retrieve_requests == ["sub_test"]
+
+
+def test_equal_timestamp_cancellation_and_reactivation_follow_current_stripe_state(
+    database_session: Session,
+    workspace: CreatedWorkspace,
+) -> None:
+    provider = StubBillingProvider()
+    repository = BillingRepository(database_session)
+    service = BillingService(
+        repository,
+        PermissionService(
+            WorkspaceMemberRepository(database_session),
+            WorkspaceRepository(database_session),
+        ),
+        provider,
+        pro_price_id="price_test_pro",
+        success_url="https://www.taskminer.app/app/workspaces?billing=success",
+        cancel_url="https://www.taskminer.app/app/workspaces?billing=cancelled",
+    )
+    created_at = datetime.now(timezone.utc)
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_cancel_base",
+            created_at=created_at,
+        )
+    )
+    cancellation_at = created_at + timedelta(days=30)
+    provider.current_subscription = make_subscription_state(
+        workspace.id,
+        cancel_at_period_end=True,
+        cancel_at=cancellation_at,
+    )
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_cancel_equal",
+            created_at=created_at,
+            cancel_at_period_end=True,
+            cancel_at=cancellation_at,
+        )
+    )
+
+    database_session.expire_all()
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.plan_code == PlanCode.PRO
+    assert subscription.cancel_at_period_end is True
+    assert subscription.cancel_at == cancellation_at
+
+    provider.current_subscription = make_subscription_state(workspace.id)
+    service.handle_webhook(
+        make_event(
+            workspace.id,
+            event_id="evt_reactivate_equal",
+            created_at=created_at,
+        )
+    )
+
+    database_session.expire_all()
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.plan_code == PlanCode.PRO
+    assert subscription.cancel_at_period_end is False
+    assert subscription.cancel_at is None
+    assert provider.retrieve_requests == ["sub_test", "sub_test"]

@@ -10,15 +10,13 @@ import {
 } from "@/components/ui/card";
 import { LoginForm } from "@/features/auth/components/login-form";
 import type { LoginValues } from "@/features/auth/schemas";
+import {
+  authStateWithDestination,
+  getSafeAuthDestination,
+  type AuthLocationState,
+} from "@/features/auth/redirect";
 import { useAuthStore } from "@/store/auth-store";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-
-type LoginLocationState = {
-  from?: {
-    pathname?: string;
-  };
-  registrationSuccess?: boolean;
-};
 
 export function LoginPage() {
   useDocumentTitle("Connexion");
@@ -27,12 +25,12 @@ export function LoginPage() {
   const login = useAuthStore((state) => state.login);
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as LoginLocationState | null;
+  const state = location.state as AuthLocationState | null;
 
   const handleLogin = async (values: LoginValues): Promise<void> => {
     try {
       await login(values);
-      const destination = state?.from?.pathname ?? "/app";
+      const destination = getSafeAuthDestination(state?.from);
       void navigate(destination, { replace: true });
     } catch {
       return;
@@ -69,6 +67,7 @@ export function LoginPage() {
             Pas encore de compte ?{" "}
             <Link
               className="text-primary font-medium hover:underline"
+              state={authStateWithDestination(state?.from)}
               to="/register"
             >
               S’inscrire

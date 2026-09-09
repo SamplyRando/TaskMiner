@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
 import {
@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/card";
 import { RegisterForm } from "@/features/auth/components/register-form";
 import type { RegisterValues } from "@/features/auth/schemas";
+import {
+  authStateWithDestination,
+  type AuthLocationState,
+} from "@/features/auth/redirect";
 import { useAuthStore } from "@/store/auth-store";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
@@ -18,7 +22,9 @@ export function RegisterPage() {
   const error = useAuthStore((state) => state.error);
   const isLoading = useAuthStore((state) => state.isLoading);
   const registerAccount = useAuthStore((state) => state.register);
+  const location = useLocation();
   const navigate = useNavigate();
+  const state = location.state as AuthLocationState | null;
 
   const handleRegister = async (values: RegisterValues): Promise<void> => {
     try {
@@ -29,7 +35,7 @@ export function RegisterPage() {
       });
       void navigate("/login", {
         replace: true,
-        state: { registrationSuccess: true },
+        state: authStateWithDestination(state?.from, true),
       });
     } catch {
       return;
@@ -58,6 +64,7 @@ export function RegisterPage() {
             Déjà inscrit ?{" "}
             <Link
               className="text-primary font-medium hover:underline"
+              state={authStateWithDestination(state?.from)}
               to="/login"
             >
               Se connecter
