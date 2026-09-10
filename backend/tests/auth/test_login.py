@@ -49,6 +49,41 @@ def test_login_rejects_unknown_user(client: TestClient) -> None:
     assert response.json() == {"detail": "Invalid email or password."}
 
 
+def test_login_rate_limit_uses_the_resolved_real_ip(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "auth_login_rate_limit_requests", 1)
+    first = client.post(
+        "/api/v1/auth/login",
+        headers={"X-Real-IP": "198.51.100.10"},
+        json={
+            "email": "first-unknown@example.com",
+            "password": "Strong-test-password-123!",
+        },
+    )
+    different_address = client.post(
+        "/api/v1/auth/login",
+        headers={"X-Real-IP": "198.51.100.11"},
+        json={
+            "email": "second-unknown@example.com",
+            "password": "Strong-test-password-123!",
+        },
+    )
+    same_address = client.post(
+        "/api/v1/auth/login",
+        headers={"X-Real-IP": "198.51.100.10"},
+        json={
+            "email": "third-unknown@example.com",
+            "password": "Strong-test-password-123!",
+        },
+    )
+
+    assert first.status_code == 401
+    assert different_address.status_code == 401
+    assert same_address.status_code == 429
+
+
 def test_login_rejects_inactive_user(
     client: TestClient,
     user: RegisteredUser,

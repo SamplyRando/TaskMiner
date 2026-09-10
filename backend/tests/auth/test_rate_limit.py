@@ -93,6 +93,7 @@ def test_auth_rate_limit_normalizes_email_across_different_ips(
         "login",
         email="USER@EXAMPLE.COM",
         peer_host="192.0.2.1",
+        real_ip=None,
         forwarded_for=None,
     )
 
@@ -101,6 +102,7 @@ def test_auth_rate_limit_normalizes_email_across_different_ips(
             "login",
             email="user@example.com",
             peer_host="192.0.2.2",
+            real_ip=None,
             forwarded_for=None,
         )
     stored_hashes = list(
@@ -129,4 +131,63 @@ def test_client_address_uses_an_explicit_trusted_proxy_hop_count() -> None:
             trusted_proxy_hops=2,
         )
         == "198.51.100.8"
+    )
+
+
+def test_client_address_prefers_a_valid_real_ip() -> None:
+    assert (
+        resolve_client_address(
+            "10.0.0.20",
+            "203.0.113.20, 10.0.0.10",
+            real_ip=" 2001:0db8::1 ",
+            trusted_proxy_hops=2,
+        )
+        == "2001:db8::1"
+    )
+
+
+def test_client_address_ignores_an_invalid_real_ip_and_uses_proxy_fallback() -> None:
+    assert (
+        resolve_client_address(
+            "10.0.0.20",
+            "198.51.100.8, 10.0.0.10",
+            real_ip="not-an-ip-address",
+            trusted_proxy_hops=2,
+        )
+        == "198.51.100.8"
+    )
+
+
+def test_client_address_uses_peer_without_valid_proxy_headers() -> None:
+    assert (
+        resolve_client_address(
+            "192.0.2.10",
+            None,
+            real_ip=None,
+            trusted_proxy_hops=1,
+        )
+        == "192.0.2.10"
+    )
+
+
+def test_spoofed_forwarded_prefix_does_not_bypass_trusted_proxy_policy() -> None:
+    forwarded = "203.0.113.66, 198.51.100.8"
+
+    assert (
+        resolve_client_address(
+            "10.0.0.20",
+            forwarded,
+            real_ip=None,
+            trusted_proxy_hops=1,
+        )
+        == "198.51.100.8"
+    )
+    assert (
+        resolve_client_address(
+            "10.0.0.20",
+            forwarded,
+            real_ip=None,
+            trusted_proxy_hops=0,
+        )
+        == "10.0.0.20"
     )

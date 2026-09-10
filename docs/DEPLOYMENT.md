@@ -76,7 +76,7 @@ Docker actuel.
 | `TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | `300` secondes |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS` | `5` inscriptions par IP et identité |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS` | `3600` secondes |
-| `TASKMINER_TRUSTED_PROXY_HOPS` | Nombre de proxies de confiance entre Railway et le client ; vérifier la chaîne puis utiliser généralement `1` |
+| `TASKMINER_TRUSTED_PROXY_HOPS` | `0` sur Railway (`X-Real-IP` est prioritaire) ; augmenter seulement pour une chaîne `X-Forwarded-For` explicitement vérifiée |
 | `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
 | `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
 | `TASKMINER_EMAIL_FROM` | Expéditeur d'un domaine vérifié, ex. `TaskMiner <invitations@taskminer.app>` |
