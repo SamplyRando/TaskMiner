@@ -27,6 +27,7 @@ def register_user(
             "register",
             email=str(data.email),
             peer_host=request.client.host if request.client is not None else None,
+            real_ip=request.headers.get("X-Real-IP"),
             forwarded_for=request.headers.get("X-Forwarded-For"),
         )
         return service.register(data)
@@ -51,6 +52,7 @@ def login_user(
             "login",
             email=str(data.email),
             peer_host=request.client.host if request.client is not None else None,
+            real_ip=request.headers.get("X-Real-IP"),
             forwarded_for=request.headers.get("X-Forwarded-For"),
         )
         access_token = service.authenticate(str(data.email), data.password)

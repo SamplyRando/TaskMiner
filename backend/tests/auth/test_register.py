@@ -124,3 +124,30 @@ def test_register_rate_limit_runs_before_repeated_argon2_work(
     assert blocked.status_code == 429
     assert blocked.json()["detail"]["code"] == "auth_rate_limit_exceeded"
     assert 1 <= int(blocked.headers["Retry-After"]) <= 3600
+
+
+def test_register_rate_limit_uses_the_resolved_real_ip(
+    client: TestClient,
+    user_factory: UserFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "auth_register_rate_limit_requests", 1)
+    first = client.post(
+        "/api/v1/auth/register",
+        headers={"X-Real-IP": "198.51.100.20"},
+        json=user_factory.build_payload(),
+    )
+    different_address = client.post(
+        "/api/v1/auth/register",
+        headers={"X-Real-IP": "198.51.100.21"},
+        json=user_factory.build_payload(),
+    )
+    same_address = client.post(
+        "/api/v1/auth/register",
+        headers={"X-Real-IP": "198.51.100.20"},
+        json=user_factory.build_payload(),
+    )
+
+    assert first.status_code == 201
+    assert different_address.status_code == 201
+    assert same_address.status_code == 429

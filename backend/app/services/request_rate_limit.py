@@ -113,11 +113,13 @@ class AuthRateLimitService:
         *,
         email: str,
         peer_host: str | None,
+        real_ip: str | None,
         forwarded_for: str | None,
     ) -> None:
         address = resolve_client_address(
             peer_host,
             forwarded_for,
+            real_ip=real_ip,
             trusted_proxy_hops=self.trusted_proxy_hops,
         )
         if action == "login":
@@ -141,8 +143,12 @@ def resolve_client_address(
     peer_host: str | None,
     forwarded_for: str | None,
     *,
+    real_ip: str | None = None,
     trusted_proxy_hops: int,
 ) -> str:
+    if real_address := _normalized_ip((real_ip or "").strip()):
+        return real_address
+
     peer_address = _normalized_ip(peer_host or "")
     forwarded_addresses = [
         normalized
