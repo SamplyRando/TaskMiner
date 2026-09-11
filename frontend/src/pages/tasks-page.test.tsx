@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/api/client";
+import { listTaskAttachments } from "@/api/attachments";
 import { listProjects } from "@/api/projects";
 import { getUserPreferences } from "@/api/settings";
 import {
@@ -36,6 +37,12 @@ vi.mock("@/api/projects", () => ({
   listProjects: vi.fn(),
   updateProject: vi.fn(),
 }));
+vi.mock("@/api/attachments", () => ({
+  deleteAttachment: vi.fn(),
+  downloadAttachment: vi.fn(),
+  listTaskAttachments: vi.fn(),
+  uploadTaskAttachment: vi.fn(),
+}));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 vi.mock("@/api/tasks", () => ({
@@ -61,6 +68,7 @@ vi.mock("@/api/workspace-permissions", () => ({
 }));
 
 const mockedAssignTask = vi.mocked(assignTask);
+const mockedListTaskAttachments = vi.mocked(listTaskAttachments);
 const mockedCreateTask = vi.mocked(createTask);
 const mockedListAllTasks = vi.mocked(listAllTasks);
 const mockedListProjects = vi.mocked(listProjects);
@@ -75,6 +83,7 @@ describe("TasksPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
+    mockedListTaskAttachments.mockResolvedValue([]);
     localStorage.clear();
     useTaskViewStore.setState({ mode: "list" });
     useWorkspaceStore.setState({ activeWorkspaceId: null });
@@ -242,6 +251,28 @@ describe("TasksPage", () => {
     expect(
       screen.queryByRole("button", { name: `Assigner ${taskFixture.title}` }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: `Pièces jointes de ${taskFixture.title}`,
+      }),
+    ).toBeEnabled();
+  });
+
+  it("opens task attachments from the task list", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByText(taskFixture.title);
+    await user.click(
+      screen.getByRole("button", {
+        name: `Pièces jointes de ${taskFixture.title}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Pièces jointes" }),
+    ).toBeInTheDocument();
+    expect(mockedListTaskAttachments).toHaveBeenCalledWith(taskFixture.id);
   });
 
   it("assigns a task to the authenticated user", async () => {

@@ -36,6 +36,7 @@ const renderKanban = (
       canManageTasks
       currentUserId={userId}
       isLoading={false}
+      onOpenAttachments={vi.fn()}
       onStatusChange={vi.fn().mockResolvedValue(undefined)}
       projects={[projectFixture]}
       statusFilter=""
@@ -110,6 +111,23 @@ describe("TaskKanban", () => {
     expect(
       screen.queryByText(`${userId.slice(0, 8)}…`),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Pièces jointes de/ }),
+    ).toHaveLength(3);
+  });
+
+  it("opens task attachments without triggering a drag", async () => {
+    const user = userEvent.setup();
+    const onOpenAttachments = vi.fn();
+    renderKanban({ onOpenAttachments });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: `Pièces jointes de ${taskFixture.title}`,
+      }),
+    );
+
+    expect(onOpenAttachments).toHaveBeenCalledWith(taskFixture);
   });
 
   it("supports a one-column mobile navigation", async () => {

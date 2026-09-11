@@ -18,6 +18,7 @@ import type { Task, TaskStatus } from "@/types/task";
 type TaskKanbanColumnProps = {
   canDrag: boolean;
   currentUserId: string;
+  onOpenAttachments: (task: Task) => void;
   projectsById: Map<string, Project>;
   status: TaskStatus;
   tasks: Task[];
@@ -26,6 +27,7 @@ type TaskKanbanColumnProps = {
 export function TaskKanbanColumn({
   canDrag,
   currentUserId,
+  onOpenAttachments,
   projectsById,
   status,
   tasks,
@@ -77,6 +79,7 @@ export function TaskKanbanColumn({
                 canDrag={canDrag}
                 currentUserId={currentUserId}
                 key={task.id}
+                onOpenAttachments={onOpenAttachments}
                 project={projectsById.get(task.project_id)}
                 task={task}
               />
