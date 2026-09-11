@@ -1,8 +1,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, GripVertical, UserRound } from "lucide-react";
+import { CalendarDays, GripVertical, Paperclip, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   taskPriorityClasses,
   taskPriorityLabels,
@@ -15,6 +16,7 @@ type TaskKanbanCardProps = {
   canDrag: boolean;
   currentUserId: string;
   isOverlay?: boolean;
+  onOpenAttachments: (task: Task) => void;
   project: Project | undefined;
   task: Task;
 };
@@ -45,6 +47,7 @@ export function TaskKanbanCard({
   canDrag,
   currentUserId,
   isOverlay = false,
+  onOpenAttachments,
   project,
   task,
 }: TaskKanbanCardProps) {
@@ -120,6 +123,30 @@ export function TaskKanbanCard({
           </div>
         ) : null}
       </div>
+
+      {!isOverlay ? (
+        <div className="mt-3 flex justify-end border-t pt-2">
+          <Button
+            aria-label={`Pièces jointes de ${task.title}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenAttachments(task);
+            }}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+            }}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+            }}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <Paperclip aria-hidden="true" className="size-4" />
+            Pièces jointes
+          </Button>
+        </div>
+      ) : null}
 
       {!canDrag ? (
         <p

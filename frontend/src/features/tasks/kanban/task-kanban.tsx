@@ -33,6 +33,7 @@ type TaskKanbanProps = {
   currentUserId: string;
   emptyAction?: ReactNode;
   isLoading: boolean;
+  onOpenAttachments: (task: Task) => void;
   onStatusChange: (task: Task, status: TaskStatus) => Promise<void>;
   projects: Project[];
   statusFilter: TaskStatus | "";
@@ -44,6 +45,7 @@ export function TaskKanban({
   currentUserId,
   emptyAction,
   isLoading,
+  onOpenAttachments,
   onStatusChange,
   projects,
   statusFilter,
@@ -205,6 +207,7 @@ export function TaskKanban({
               canDrag={canManageTasks}
               currentUserId={currentUserId}
               key={status}
+              onOpenAttachments={onOpenAttachments}
               projectsById={projectsById}
               status={status}
               tasks={tasksByStatus.get(status) ?? []}
@@ -218,6 +221,7 @@ export function TaskKanban({
               canDrag
               currentUserId={currentUserId}
               isOverlay
+              onOpenAttachments={onOpenAttachments}
               project={projectsById.get(activeTask.project_id)}
               task={activeTask}
             />

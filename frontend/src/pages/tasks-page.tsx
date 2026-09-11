@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { WorkspaceSelector } from "@/components/workspace-selector";
+import { TaskAttachmentsDialog } from "@/features/attachments/task-attachments-dialog";
 import { useProjects } from "@/features/projects/hooks";
 import { useUserPreferences } from "@/features/settings/hooks";
 import {
@@ -85,6 +86,7 @@ export function TasksPage() {
   );
   const [formOpen, setFormOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -156,6 +158,10 @@ export function TasksPage() {
           assignTask.reset();
           setSelectedTask(task);
           setAssignmentOpen(true);
+        },
+        onAttachments: (task) => {
+          setSelectedTask(task);
+          setAttachmentsOpen(true);
         },
         onDelete: (task) => {
           deleteTask.reset();
@@ -399,6 +405,10 @@ export function TasksPage() {
             kanbanQuery.isPending ||
             permissionsQuery.isPending
           }
+          onOpenAttachments={(task) => {
+            setSelectedTask(task);
+            setAttachmentsOpen(true);
+          }}
           onStatusChange={async (task, nextStatus) => {
             await updateTask.mutateAsync({
               data: { status: nextStatus },
@@ -475,6 +485,13 @@ export function TasksPage() {
         onSubmit={handleSubmit}
         open={formOpen}
         projects={projects}
+        task={selectedTask}
+      />
+
+      <TaskAttachmentsDialog
+        canManage={canManageTasks}
+        onOpenChange={setAttachmentsOpen}
+        open={attachmentsOpen}
         task={selectedTask}
       />
 
