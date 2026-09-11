@@ -35,6 +35,9 @@ const MarketingLayout = lazy(async () => ({
 const ProjectsPage = lazy(async () => ({
   default: (await import("@/pages/projects-page")).ProjectsPage,
 }));
+const PrivacyPage = lazy(async () => ({
+  default: (await import("@/pages/privacy-page")).PrivacyPage,
+}));
 const RegisterPage = lazy(async () => ({
   default: (await import("@/pages/register-page")).RegisterPage,
 }));
@@ -67,6 +70,8 @@ export function AppRouter() {
           <Route element={<MarketingLayout />}>
             <Route element={<LandingPage />} path="/" />
           </Route>
+
+          <Route element={<PrivacyPage />} path="/privacy" />
 
           <Route element={<PublicRoute />}>
             <Route element={<LoginPage />} path="/login" />

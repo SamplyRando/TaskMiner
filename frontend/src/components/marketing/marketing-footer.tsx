@@ -41,6 +41,7 @@ const footerColumns = [
         href: "mailto:hello@taskminer.app?subject=TaskMiner%20Enterprise",
         label: "Enterprise inquiry",
       },
+      { href: "/privacy", label: "Confidentialité" },
     ],
     title: "Contact",
   },
@@ -80,7 +81,11 @@ export function MarketingFooter() {
                 <ul>
                   {column.links.map((link) => (
                     <li key={link.label}>
-                      <a href={link.href}>{link.label}</a>
+                      {link.href.startsWith("/") ? (
+                        <Link to={link.href}>{link.label}</Link>
+                      ) : (
+                        <a href={link.href}>{link.label}</a>
+                      )}
                     </li>
                   ))}
                 </ul>

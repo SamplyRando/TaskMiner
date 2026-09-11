@@ -60,6 +60,17 @@ export function RegisterPage() {
             onSubmit={handleRegister}
             serverError={error}
           />
+          <p className="text-muted-foreground text-center text-xs leading-5">
+            En créant un compte, vous reconnaissez avoir pris connaissance de
+            notre{" "}
+            <Link
+              className="text-primary font-medium underline underline-offset-4"
+              to="/privacy"
+            >
+              Politique de confidentialité
+            </Link>
+            .
+          </p>
           <p className="text-muted-foreground text-center text-sm">
             Déjà inscrit ?{" "}
             <Link

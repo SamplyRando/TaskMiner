@@ -78,6 +78,17 @@ describe("RegisterPage", () => {
     });
   });
 
+  it("shows a non-blocking link to the privacy policy", () => {
+    renderRegisterPage();
+
+    expect(
+      screen.getByRole("link", { name: "Politique de confidentialité" }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("button", { name: "Créer mon compte" }),
+    ).toBeEnabled();
+  });
+
   it("displays a registration error returned by the backend", async () => {
     mockedRegisterUser.mockRejectedValue(
       new ApiError("An account with this email already exists.", 409),
