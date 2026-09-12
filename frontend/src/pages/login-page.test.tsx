@@ -3,10 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { loginUser, registerUser } from "@/api/auth";
+import {
+  confirmEmailVerification,
+  loginUser,
+  registerUser,
+  requestEmailVerification,
+} from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { LoginPage } from "@/pages/login-page";
 import { RegisterPage } from "@/pages/register-page";
+import { VerifyEmailPage } from "@/pages/verify-email-page";
 import { useAuthStore } from "@/store/auth-store";
 import {
   createFakeAccessToken,
@@ -15,12 +21,16 @@ import {
 } from "@/test/auth-fixtures";
 
 vi.mock("@/api/auth", () => ({
+  confirmEmailVerification: vi.fn(),
   loginUser: vi.fn(),
   registerUser: vi.fn(),
+  requestEmailVerification: vi.fn(),
 }));
 
+const mockedConfirmEmailVerification = vi.mocked(confirmEmailVerification);
 const mockedLoginUser = vi.mocked(loginUser);
 const mockedRegisterUser = vi.mocked(registerUser);
+const mockedRequestEmailVerification = vi.mocked(requestEmailVerification);
 
 const fillLoginForm = async (): Promise<void> => {
   const user = userEvent.setup();
@@ -62,7 +72,17 @@ const renderLoginPage = (from?: string) =>
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     resetAuthStore();
+    mockedConfirmEmailVerification.mockResolvedValue({
+      already_completed: false,
+      message: "Votre adresse e-mail est vérifiée.",
+    });
+    mockedRequestEmailVerification.mockResolvedValue({
+      already_completed: false,
+      message:
+        "Si ce compte peut être vérifié, un e-mail vient de lui être envoyé.",
+    });
   });
 
   it("logs in, persists the token and redirects to the application", async () => {
@@ -98,6 +118,52 @@ describe("LoginPage", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
+  it("explains email verification and can resend without exposing backend details", async () => {
+    mockedLoginUser.mockRejectedValue(
+      new ApiError("Please verify your email address before signing in.", 403, {
+        detail: {
+          code: "email_not_verified",
+          message: "Please verify your email address before signing in.",
+        },
+      }),
+    );
+    renderLoginPage();
+
+    await fillLoginForm();
+
+    expect(
+      await screen.findByText("Adresse e-mail non vérifiée"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Vérifiez votre adresse avant de vous connecter à TaskMiner.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Please verify/)).not.toBeInTheDocument();
+    expect(useAuthStore.getState().accessToken).toBeNull();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Renvoyer l’e-mail de vérification",
+      }),
+    );
+
+    expect(mockedRequestEmailVerification).toHaveBeenCalledWith(
+      "ada@example.com",
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Si ce compte peut être vérifié, un e-mail vient de lui être envoyé.",
+    );
+  });
+
+  it("links to the public password reset request", () => {
+    renderLoginPage();
+
+    expect(
+      screen.getByRole("link", { name: "Mot de passe oublié ?" }),
+    ).toHaveAttribute("href", "/forgot-password");
+  });
+
   it("restores the invitation query and hash after login", async () => {
     mockedLoginUser.mockResolvedValue({
       access_token: createFakeAccessToken(),
@@ -122,7 +188,7 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("preserves an invitation through register, login, and final handoff", async () => {
+  it("preserves an invitation through register, verification, login, and final handoff", async () => {
     const accessToken = createFakeAccessToken();
     mockedRegisterUser.mockResolvedValue(fakeUser);
     mockedLoginUser.mockResolvedValue({
@@ -141,6 +207,7 @@ describe("LoginPage", () => {
         <Routes>
           <Route element={<LoginPage />} path="/login" />
           <Route element={<RegisterPage />} path="/register" />
+          <Route element={<VerifyEmailPage />} path="/verify-email" />
           <Route element={<Destination />} path="/app/invitations" />
         </Routes>
       </MemoryRouter>,
@@ -164,14 +231,54 @@ describe("LoginPage", () => {
     await user.click(screen.getByRole("button", { name: "Créer mon compte" }));
     expect(
       await screen.findByText(
-        "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
+        "Votre compte a été créé. Consultez votre boîte de réception ou demandez un nouveau lien.",
       ),
     ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("link", { name: "Continuer vers la connexion" }),
+    );
 
     await fillLoginForm();
 
     expect(
       await screen.findByText("/app/invitations?token=NEW%2FUSER#accept"),
     ).toBeInTheDocument();
+  });
+
+  it("restores a remembered invitation after confirming an email link", async () => {
+    sessionStorage.setItem(
+      "taskminer-auth-destination",
+      "/app/invitations?token=VERIFIED%2FUSER#accept",
+    );
+    mockedLoginUser.mockResolvedValue({
+      access_token: createFakeAccessToken(),
+      token_type: "bearer",
+    });
+    render(
+      <MemoryRouter initialEntries={["/verify-email?token=email-token"]}>
+        <Routes>
+          <Route element={<VerifyEmailPage />} path="/verify-email" />
+          <Route element={<LoginPage />} path="/login" />
+          <Route element={<Destination />} path="/app/invitations" />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const user = userEvent.setup();
+
+    expect(
+      await screen.findByText(
+        "Votre adresse e-mail est vérifiée. Vous pouvez vous connecter.",
+      ),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("link", { name: "Continuer vers la connexion" }),
+    );
+    await fillLoginForm();
+
+    expect(
+      await screen.findByText("/app/invitations?token=VERIFIED%2FUSER#accept"),
+    ).toBeInTheDocument();
+    expect(sessionStorage.getItem("taskminer-auth-destination")).toBeNull();
   });
 });

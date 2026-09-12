@@ -33,10 +33,12 @@ const fillRegisterForm = async (): Promise<void> => {
   await user.click(screen.getByRole("button", { name: "Créer mon compte" }));
 };
 
-const LoginDestination = () => {
+const VerificationDestination = () => {
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? "missing";
-  return <div>{`Page de connexion — ${from}`}</div>;
+  const state = location.state as { email?: string; from?: string } | null;
+  return (
+    <div>{`Vérification — ${state?.email ?? "missing"} — ${state?.from ?? "missing"}`}</div>
+  );
 };
 
 const renderRegisterPage = (from?: string) =>
@@ -51,7 +53,7 @@ const renderRegisterPage = (from?: string) =>
     >
       <Routes>
         <Route element={<RegisterPage />} path="/register" />
-        <Route element={<LoginDestination />} path="/login" />
+        <Route element={<VerificationDestination />} path="/verify-email" />
       </Routes>
     </MemoryRouter>,
   );
@@ -59,17 +61,18 @@ const renderRegisterPage = (from?: string) =>
 describe("RegisterPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     resetAuthStore();
   });
 
-  it("registers an account and redirects to login", async () => {
+  it("registers an account and opens the verification instructions", async () => {
     mockedRegisterUser.mockResolvedValue(fakeUser);
     renderRegisterPage();
 
     await fillRegisterForm();
 
     expect(
-      await screen.findByText("Page de connexion — /app"),
+      await screen.findByText("Vérification — ada@example.com — /app"),
     ).toBeInTheDocument();
     expect(mockedRegisterUser).toHaveBeenCalledWith({
       email: "ada@example.com",
@@ -110,7 +113,7 @@ describe("RegisterPage", () => {
 
     expect(
       await screen.findByText(
-        "Page de connexion — /app/invitations?token=ABC#accept",
+        "Vérification — ada@example.com — /app/invitations?token=ABC#accept",
       ),
     ).toBeInTheDocument();
   });

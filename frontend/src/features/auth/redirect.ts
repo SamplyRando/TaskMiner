@@ -7,7 +7,10 @@ export type AuthDestination = {
 export type AuthLocationState = {
   from?: AuthDestination | string;
   registrationSuccess?: boolean;
+  email?: string;
 };
+
+const AUTH_DESTINATION_STORAGE_KEY = "taskminer-auth-destination";
 
 const isAllowedAppPath = (pathname: string): boolean =>
   pathname === "/app" || pathname.startsWith("/app/");
@@ -41,3 +44,20 @@ export const authStateWithDestination = (
   from: getSafeAuthDestination(from),
   ...(registrationSuccess ? { registrationSuccess: true } : {}),
 });
+
+export const rememberAuthDestination = (
+  from: AuthLocationState["from"],
+): string => {
+  const destination = getSafeAuthDestination(from);
+  sessionStorage.setItem(AUTH_DESTINATION_STORAGE_KEY, destination);
+  return destination;
+};
+
+export const getRememberedAuthDestination = (): string | undefined => {
+  const destination = sessionStorage.getItem(AUTH_DESTINATION_STORAGE_KEY);
+  return destination ? getSafeAuthDestination(destination) : undefined;
+};
+
+export const clearRememberedAuthDestination = (): void => {
+  sessionStorage.removeItem(AUTH_DESTINATION_STORAGE_KEY);
+};

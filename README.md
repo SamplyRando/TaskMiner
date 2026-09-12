@@ -104,10 +104,18 @@ que lorsque cette perte de données est volontaire.
 | `TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe de connexion en secondes |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS` | Inscriptions autorisées par IP et identité |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe d'inscription en secondes |
+| `TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_REQUESTS` | Demandes de reset autorisées par IP et identité |
+| `TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe des demandes de reset |
+| `TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_REQUESTS` | Renvois de vérification autorisés par IP et identité |
+| `TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_WINDOW_SECONDS` | Fenêtre fixe des renvois de vérification |
+| `TASKMINER_PASSWORD_RESET_TOKEN_EXPIRE_MINUTES` | Durée de validité d'un lien de reset |
+| `TASKMINER_PASSWORD_RESET_COOLDOWN_SECONDS` | Délai minimal entre deux e-mails de reset |
+| `TASKMINER_EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS` | Durée de validité d'un lien de vérification |
+| `TASKMINER_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS` | Délai minimal entre deux e-mails de vérification |
 | `TASKMINER_TRUSTED_PROXY_HOPS` | Nombre explicite de reverse proxies de confiance pour résoudre l'IP cliente |
 | `TASKMINER_EMAIL_PROVIDER` | Provider transactionnel : `noop` ou `resend` |
 | `TASKMINER_EMAIL_FROM` | Expéditeur vérifié des invitations |
-| `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation |
+| `TASKMINER_FRONTEND_URL` | URL frontend utilisée dans les liens d'invitation et de cycle de compte |
 | `RESEND_API_KEY` | Clé serveur Resend, jamais exposée à Vite |
 | `STRIPE_SECRET_KEY` | Clé serveur Stripe, uniquement dans le backend |
 | `STRIPE_WEBHOOK_SECRET` | Secret de signature du webhook Stripe |
@@ -121,6 +129,17 @@ que lorsque cette perte de données est volontaire.
 
 Les fichiers `.env` ne sont jamais versionnés. Les exemples présents à la
 racine, dans `backend/` et dans `frontend/` ne contiennent aucun secret réel.
+
+## Cycle de vie des comptes
+
+Les nouveaux comptes reçoivent un lien de vérification à usage unique. Les
+jetons de vérification et de réinitialisation sont aléatoires, expirants et
+stockés uniquement sous forme de condensat HMAC. Une réinitialisation de mot de
+passe incrémente `auth_version` et invalide ainsi les JWT déjà émis.
+
+La migration considère les comptes créés avant son déploiement comme déjà
+vérifiés. Les nouveaux comptes doivent vérifier leur adresse avant que le
+backend n'émette un JWT ; l'état `email_verified_at` reste la source de vérité.
 
 ## Plans workspace
 

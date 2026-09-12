@@ -12,6 +12,8 @@ import { RegisterForm } from "@/features/auth/components/register-form";
 import type { RegisterValues } from "@/features/auth/schemas";
 import {
   authStateWithDestination,
+  getRememberedAuthDestination,
+  rememberAuthDestination,
   type AuthLocationState,
 } from "@/features/auth/redirect";
 import { useAuthStore } from "@/store/auth-store";
@@ -33,9 +35,15 @@ export function RegisterPage() {
         fullName: values.fullName,
         password: values.password,
       });
-      void navigate("/login", {
+      const destination = rememberAuthDestination(
+        state?.from ?? getRememberedAuthDestination(),
+      );
+      void navigate("/verify-email", {
         replace: true,
-        state: authStateWithDestination(state?.from, true),
+        state: {
+          ...authStateWithDestination(destination, true),
+          email: values.email,
+        },
       });
     } catch {
       return;

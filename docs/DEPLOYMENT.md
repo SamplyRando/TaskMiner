@@ -76,6 +76,14 @@ Docker actuel.
 | `TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS` | `300` secondes |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS` | `5` inscriptions par IP et identité |
 | `TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS` | `3600` secondes |
+| `TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_REQUESTS` | `5` demandes par IP et identité |
+| `TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS` | `3600` secondes |
+| `TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_REQUESTS` | `5` renvois par IP et identité |
+| `TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_WINDOW_SECONDS` | `3600` secondes |
+| `TASKMINER_PASSWORD_RESET_TOKEN_EXPIRE_MINUTES` | `30` minutes |
+| `TASKMINER_PASSWORD_RESET_COOLDOWN_SECONDS` | `60` secondes |
+| `TASKMINER_EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS` | `24` heures |
+| `TASKMINER_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS` | `60` secondes |
 | `TASKMINER_TRUSTED_PROXY_HOPS` | `0` sur Railway (`X-Real-IP` est prioritaire) ; augmenter seulement pour une chaîne `X-Forwarded-For` explicitement vérifiée |
 | `TASKMINER_EMAIL_PROVIDER` | `resend` en production |
 | `RESEND_API_KEY` | Clé API Resend stockée uniquement dans Railway |
@@ -92,6 +100,12 @@ Génération locale d'un secret :
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
+
+La migration du cycle de vie des comptes marque les utilisateurs existants
+comme vérifiés à leur date de création. Les nouveaux comptes doivent vérifier
+leur adresse avant connexion ; les liens de vérification expirent après 24
+heures et ceux de réinitialisation après 30 minutes avec les valeurs par défaut
+ci-dessus.
 
 Pour autoriser plusieurs domaines, les séparer par des virgules :
 

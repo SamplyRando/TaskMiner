@@ -104,6 +104,46 @@ class Settings(BaseSettings):
         gt=0,
         validation_alias="TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS",
     )
+    auth_password_reset_rate_limit_requests: int = Field(
+        default=5,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_REQUESTS",
+    )
+    auth_password_reset_rate_limit_window_seconds: int = Field(
+        default=3600,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    auth_email_verification_rate_limit_requests: int = Field(
+        default=5,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_REQUESTS",
+    )
+    auth_email_verification_rate_limit_window_seconds: int = Field(
+        default=3600,
+        gt=0,
+        validation_alias="TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    password_reset_token_expire_minutes: int = Field(
+        default=30,
+        gt=0,
+        validation_alias="TASKMINER_PASSWORD_RESET_TOKEN_EXPIRE_MINUTES",
+    )
+    password_reset_cooldown_seconds: int = Field(
+        default=60,
+        gt=0,
+        validation_alias="TASKMINER_PASSWORD_RESET_COOLDOWN_SECONDS",
+    )
+    email_verification_token_expire_hours: int = Field(
+        default=24,
+        gt=0,
+        validation_alias="TASKMINER_EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS",
+    )
+    email_verification_resend_cooldown_seconds: int = Field(
+        default=60,
+        gt=0,
+        validation_alias="TASKMINER_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS",
+    )
     trusted_proxy_hops: int = Field(
         default=0,
         ge=0,

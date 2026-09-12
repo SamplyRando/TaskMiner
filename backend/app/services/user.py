@@ -12,6 +12,10 @@ class InvalidCredentialsError(Exception):
     """Raised when user authentication cannot be completed."""
 
 
+class EmailNotVerifiedError(Exception):
+    """Raised after valid credentials are supplied for an unverified account."""
+
+
 class UserService:
     """Application service for user-related use cases."""
 
@@ -44,6 +48,8 @@ class UserService:
 
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsError
+        if user.email_verified_at is None:
+            raise EmailNotVerifiedError
 
         user = self.repository.record_login(user)
         return create_access_token(

@@ -87,6 +87,10 @@ def test_auth_rate_limit_normalizes_email_across_different_ips(
         login_window_seconds=60,
         register_requests=1,
         register_window_seconds=60,
+        password_reset_requests=1,
+        password_reset_window_seconds=60,
+        email_verification_requests=1,
+        email_verification_window_seconds=60,
         trusted_proxy_hops=0,
     )
     auth.enforce(
