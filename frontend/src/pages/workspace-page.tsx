@@ -20,6 +20,7 @@ import {
 import { useAuthStore } from "@/store/auth-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
+import { BillingCheckoutConsentDialog } from "@/features/subscriptions/billing-checkout-consent-dialog";
 import { WorkspacePlanCard } from "@/features/subscriptions/workspace-plan-card";
 import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import {
@@ -66,6 +67,7 @@ export function WorkspacePage() {
     getBillingReturnNotice,
   );
   const [billingRedirectError, setBillingRedirectError] = useState<unknown>();
+  const [checkoutConsentOpen, setCheckoutConsentOpen] = useState(false);
   const [search, setSearch] = useSessionState(
     "taskminer-workspaces-search",
     "",
@@ -198,8 +200,12 @@ export function WorkspacePage() {
     portal.reset();
     try {
       if (kind === "checkout") {
-        const redirect = await checkout.mutateAsync(activeWorkspace.id);
+        const redirect = await checkout.mutateAsync({
+          immediateServiceRequested: true,
+          workspaceId: activeWorkspace.id,
+        });
         redirectToBillingUrl(redirect.checkout_url);
+        setCheckoutConsentOpen(false);
       } else {
         const redirect = await portal.mutateAsync(activeWorkspace.id);
         redirectToBillingUrl(redirect.portal_url);
@@ -251,7 +257,9 @@ export function WorkspacePage() {
       {activeWorkspace ? (
         <WorkspacePlanCard
           actionError={
-            billingRedirectError ?? checkout.error ?? portal.error ?? null
+            checkoutConsentOpen
+              ? (portal.error ?? null)
+              : (billingRedirectError ?? checkout.error ?? portal.error ?? null)
           }
           actionPending={checkout.isPending || portal.isPending}
           canManageBilling={activeWorkspace.owner_id === currentUserId}
@@ -263,7 +271,9 @@ export function WorkspacePage() {
           }}
           onRetry={() => void subscriptionQuery.refetch()}
           onUpgrade={() => {
-            void handleBillingAction("checkout");
+            checkout.reset();
+            setBillingRedirectError(undefined);
+            setCheckoutConsentOpen(true);
           }}
           workspaceName={activeWorkspace.name}
         />
@@ -342,6 +352,18 @@ export function WorkspacePage() {
         open={deleteOpen}
         title="Supprimer le workspace ?"
       />
+      {activeWorkspace && checkoutConsentOpen ? (
+        <BillingCheckoutConsentDialog
+          error={billingRedirectError ?? checkout.error}
+          isPending={checkout.isPending}
+          onConfirm={() => {
+            void handleBillingAction("checkout");
+          }}
+          onOpenChange={setCheckoutConsentOpen}
+          open={checkoutConsentOpen}
+          workspaceName={activeWorkspace.name}
+        />
+      ) : null}
       <NoticeToast
         notice={billingNotice}
         onDismiss={() => {

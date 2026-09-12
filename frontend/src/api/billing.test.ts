@@ -20,10 +20,14 @@ describe("billing API", () => {
       },
     });
 
-    await createBillingCheckout(workspaceId);
+    await createBillingCheckout({
+      immediateServiceRequested: true,
+      workspaceId,
+    });
 
     expect(post).toHaveBeenCalledWith(
       `/workspaces/${workspaceId}/billing/checkout`,
+      { immediate_service_requested: true },
     );
   });
 

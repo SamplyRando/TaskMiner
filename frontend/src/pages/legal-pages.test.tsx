@@ -113,7 +113,47 @@ describe("public legal routes", () => {
         ),
     ).toBe(true);
     expect(
-      screen.getByText(/recueil d’une demande expresse du consommateur/),
+      screen.getByText(/TaskMiner recueille une demande expresse/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "11. Formulaire type de rétractation",
+      }),
+    ).toBeInTheDocument();
+    const withdrawalForm = screen.getByLabelText(
+      "Modèle de formulaire de rétractation",
+    );
+    expect(withdrawalForm).toHaveTextContent("Iskander Hadji");
+    expect(withdrawalForm).toHaveTextContent(
+      "15 rue François de Vaux de Foletier",
+    );
+    expect(withdrawalForm).toHaveTextContent("17000 La Rochelle");
+    expect(withdrawalForm).toHaveTextContent("France");
+    expect(withdrawalForm).toHaveTextContent("hello@taskminer.app");
+    expect(withdrawalForm).toHaveTextContent("Date de souscription");
+    expect(withdrawalForm).toHaveTextContent("Nom du consommateur");
+    expect(withdrawalForm).toHaveTextContent("Adresse du consommateur");
+    expect(withdrawalForm).toHaveTextContent("Date de la demande");
+    expect(withdrawalForm).toHaveTextContent(
+      /uniquement en cas d’envoi du formulaire sur papier/,
+    );
+    expect(
+      screen.getByText(/le montant payé est remboursé intégralement/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /déduction faite uniquement de la part strictement proportionnelle au service déjà fourni/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Aucun frais fixe ni aucune pénalité/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/remboursement applicable est traité manuellement/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/L’utilisation de ce formulaire n’est pas obligatoire/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -126,16 +166,45 @@ describe("public legal routes", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Après réclamation écrite préalable auprès de TaskMiner restée sans solution/,
-      ),
+      screen.getByRole("heading", {
+        level: 2,
+        name: "16. Médiation de la consommation",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Cette procédure concerne uniquement les consommateurs/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/d’abord adresser une réclamation écrite à TaskMiner/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/saisir gratuitement le médiateur/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "[À COMPLÉTER AVANT LANCEMENT B2C : nom, adresse, site internet et coordonnées du médiateur de la consommation référencé auquel l’entreprise aura adhéré]",
+        /Centre de la Médiation de la Consommation des Conciliateurs de Justice \(CM2C\)/,
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Iskander Hadji/)).not.toBeInTheDocument();
+    const mediatorDetails = screen.getByLabelText("Coordonnées du CM2C");
+    expect(mediatorDetails).toHaveTextContent("49 rue de Ponthieu");
+    expect(mediatorDetails).toHaveTextContent("75008 Paris");
+    expect(screen.getByRole("link", { name: "www.cm2c.net" })).toHaveAttribute(
+      "href",
+      "https://www.cm2c.net/",
+    );
+    expect(
+      screen.getByRole("link", { name: "les modalités de saisine du CM2C" }),
+    ).toHaveAttribute("href", "https://www.cm2c.net/comment-nous-saisir.php");
+    expect(
+      screen.queryByText(
+        /nom, adresse, site internet et coordonnées du médiateur/,
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /confirmer les modalités de remboursement et fournir le formulaire type/,
+      ),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(/droit applicable, juridiction compétente/),
     ).toBeInTheDocument();

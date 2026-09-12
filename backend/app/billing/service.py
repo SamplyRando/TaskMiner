@@ -3,6 +3,10 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID, uuid4
 
+from app.billing.consent import (
+    IMMEDIATE_SERVICE_CONSENT_TEXT_VERSION,
+    IMMEDIATE_SERVICE_CONSENT_TYPE,
+)
 from app.billing.provider import (
     BillingEvent,
     BillingPortalRequest,
@@ -40,6 +44,10 @@ class BillingStateError(Exception):
     """Raised when the current subscription cannot start a billing action."""
 
 
+class BillingConsentRequiredError(Exception):
+    """Raised when explicit immediate-service consent was not provided."""
+
+
 class BillingEventConflictError(Exception):
     """Raised when a signed event conflicts with persisted Stripe identity."""
 
@@ -68,7 +76,13 @@ class BillingService:
         self.success_url = success_url
         self.cancel_url = cancel_url
 
-    def create_checkout(self, user: User, workspace_id: UUID) -> BillingRedirect:
+    def create_checkout(
+        self,
+        user: User,
+        workspace_id: UUID,
+        *,
+        immediate_service_requested: bool,
+    ) -> BillingRedirect:
         workspace = self.permission_service.require_workspace_view(user, workspace_id)
         if workspace.owner_id != user.id:
             raise PermissionDeniedError
@@ -80,16 +94,9 @@ class BillingService:
             or subscription.stripe_subscription_id is not None
         ):
             raise BillingStateError("This workspace cannot start a Pro checkout.")
+        if not immediate_service_requested:
+            raise BillingConsentRequiredError
         now = datetime.now(timezone.utc)
-        if (
-            subscription.stripe_checkout_url is not None
-            and subscription.stripe_checkout_expires_at is not None
-            and subscription.stripe_checkout_expires_at > now
-        ):
-            redirect = BillingRedirect(subscription.stripe_checkout_url)
-            self.repository.commit()
-            return redirect
-
         if (
             subscription.checkout_attempt_id is not None
             and subscription.checkout_attempt_started_at is not None
@@ -108,9 +115,34 @@ class BillingService:
             subscription.stripe_checkout_session_id = None
             subscription.stripe_checkout_url = None
             subscription.stripe_checkout_expires_at = None
+        reusable_checkout_url = (
+            subscription.stripe_checkout_url
+            if subscription.stripe_checkout_url is not None
+            and subscription.stripe_checkout_expires_at is not None
+            and subscription.stripe_checkout_expires_at > now
+            else None
+        )
+        if (
+            self.repository.get_checkout_consent(
+                workspace_id,
+                attempt_id,
+                IMMEDIATE_SERVICE_CONSENT_TYPE,
+            )
+            is None
+        ):
+            self.repository.create_checkout_consent(
+                workspace_id=workspace_id,
+                user_id=user.id,
+                checkout_attempt_id=attempt_id,
+                consent_type=IMMEDIATE_SERVICE_CONSENT_TYPE,
+                text_version=IMMEDIATE_SERVICE_CONSENT_TEXT_VERSION,
+            )
         customer_id = subscription.stripe_customer_id
         self.repository.flush()
         self.repository.commit()
+
+        if reusable_checkout_url is not None:
+            return BillingRedirect(reusable_checkout_url)
 
         checkout = self.provider.create_checkout_session(
             CheckoutSessionRequest(

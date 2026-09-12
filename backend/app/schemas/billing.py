@@ -1,4 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StrictBool
+
+
+class BillingCheckoutCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    immediate_service_requested: StrictBool
 
 
 class BillingCheckoutRead(BaseModel):

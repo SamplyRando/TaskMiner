@@ -4,11 +4,13 @@ import type {
   BillingPortalRedirect,
 } from "@/types/billing";
 
-export const createBillingCheckout = async (
-  workspaceId: string,
-): Promise<BillingCheckoutRedirect> => {
+export const createBillingCheckout = async (request: {
+  immediateServiceRequested: boolean;
+  workspaceId: string;
+}): Promise<BillingCheckoutRedirect> => {
   const response = await apiClient.post<BillingCheckoutRedirect>(
-    `/workspaces/${workspaceId}/billing/checkout`,
+    `/workspaces/${request.workspaceId}/billing/checkout`,
+    { immediate_service_requested: request.immediateServiceRequested },
   );
   return response.data;
 };

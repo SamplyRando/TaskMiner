@@ -13,6 +13,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_billing_provider_dependency
+from app.billing.consent import (
+    IMMEDIATE_SERVICE_CONSENT_TEXT_VERSION,
+    IMMEDIATE_SERVICE_CONSENT_TYPE,
+)
 from app.billing.provider import (
     BillingCheckoutSession,
     BillingEvent,
@@ -26,6 +30,7 @@ from app.billing.provider import (
 from app.billing.service import BillingService
 from app.core.config import settings
 from app.main import app
+from app.models.billing_checkout_consent import BillingCheckoutConsent
 from app.models.project import Project
 from app.models.stripe_webhook_event import StripeWebhookEvent
 from app.models.workspace_member import WorkspaceMemberRole
@@ -42,6 +47,9 @@ from tests.factories import (
     WorkspaceFactory,
     WorkspaceMemberFactory,
 )
+
+
+CHECKOUT_CONSENT_PAYLOAD = {"immediate_service_requested": True}
 
 
 class StubBillingProvider:
@@ -200,6 +208,7 @@ def test_unconfigured_checkout_endpoint_fails_without_breaking_application(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert response.status_code == 503
@@ -229,12 +238,7 @@ def test_owner_checkout_uses_server_price_and_reuses_customer(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
-        json={
-            "price_id": "price_attacker",
-            "attempt_id": "00000000-0000-0000-0000-000000000000",
-            "customer_id": "cus_attacker",
-            "subscription_id": "sub_attacker",
-        },
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert response.status_code == 200
@@ -248,10 +252,78 @@ def test_owner_checkout_uses_server_price_and_reuses_customer(
     assert request.workspace_id == workspace.id
     assert str(request.attempt_id) != "00000000-0000-0000-0000-000000000000"
 
+    consent = database_session.scalar(
+        select(BillingCheckoutConsent).where(
+            BillingCheckoutConsent.workspace_id == workspace.id
+        )
+    )
+    assert consent is not None
+    assert consent.user_id == workspace.owner.id
+    assert consent.checkout_attempt_id == request.attempt_id
+    assert consent.consent_type == IMMEDIATE_SERVICE_CONSENT_TYPE
+    assert consent.text_version == IMMEDIATE_SERVICE_CONSENT_TEXT_VERSION
+    assert consent.accepted_at.tzinfo is not None
+
+
+def test_checkout_rejects_missing_explicit_consent_without_side_effects(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    database_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+
+    response = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+        json={"immediate_service_requested": False},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == {
+        "code": "billing_immediate_service_consent_required",
+        "message": "Explicit consent is required before starting Pro Checkout.",
+    }
+    assert provider.checkout_requests == []
+    subscription = database_session.scalar(
+        select(WorkspaceSubscription).where(
+            WorkspaceSubscription.workspace_id == workspace.id
+        )
+    )
+    assert subscription is not None
+    assert subscription.checkout_attempt_id is None
+    assert database_session.scalar(select(func.count(BillingCheckoutConsent.id))) == 0
+
+
+def test_checkout_rejects_client_selected_billing_identifiers(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = StubBillingProvider()
+    override_billing(monkeypatch, provider)
+
+    response = client.post(
+        f"/api/v1/workspaces/{workspace.id}/billing/checkout",
+        headers=workspace.owner.headers,
+        json={
+            **CHECKOUT_CONSENT_PAYLOAD,
+            "price_id": "price_attacker",
+            "attempt_id": "00000000-0000-0000-0000-000000000000",
+            "customer_id": "cus_attacker",
+            "subscription_id": "sub_attacker",
+        },
+    )
+
+    assert response.status_code == 422
+    assert provider.checkout_requests == []
+
 
 def test_open_checkout_is_reused_for_a_sequential_retry(
     client: TestClient,
     workspace: CreatedWorkspace,
+    database_session: Session,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     provider = StubBillingProvider()
@@ -260,16 +332,19 @@ def test_open_checkout_is_reused_for_a_sequential_retry(
     first = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
     later = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert first.status_code == 200
     assert later.status_code == 200
     assert len(provider.checkout_requests) == 1
     assert first.json()["checkout_url"] == later.json()["checkout_url"]
+    assert database_session.scalar(select(func.count(BillingCheckoutConsent.id))) == 1
 
 
 def test_expired_checkout_gets_a_new_server_attempt_and_session(
@@ -284,6 +359,7 @@ def test_expired_checkout_gets_a_new_server_attempt_and_session(
     first = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
     subscription = database_session.scalar(
         select(WorkspaceSubscription).where(
@@ -303,6 +379,7 @@ def test_expired_checkout_gets_a_new_server_attempt_and_session(
     later = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert first.status_code == 200
@@ -316,6 +393,7 @@ def test_expired_checkout_gets_a_new_server_attempt_and_session(
 def test_concurrent_checkout_requests_share_one_logical_attempt(
     client: TestClient,
     workspace: CreatedWorkspace,
+    database_session: Session,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     provider = StubBillingProvider()
@@ -326,6 +404,7 @@ def test_concurrent_checkout_requests_share_one_logical_attempt(
         response = client.post(
             f"/api/v1/workspaces/{workspace.id}/billing/checkout",
             headers=workspace.owner.headers,
+            json=CHECKOUT_CONSENT_PAYLOAD,
         )
         return response.status_code, response.json().get("checkout_url", "")
 
@@ -341,11 +420,13 @@ def test_concurrent_checkout_requests_share_one_logical_attempt(
         provider.checkout_requests[0].attempt_id
         == provider.checkout_requests[1].attempt_id
     )
+    assert database_session.scalar(select(func.count(BillingCheckoutConsent.id))) == 1
 
 
 def test_checkout_provider_retry_reuses_reserved_attempt(
     client: TestClient,
     workspace: CreatedWorkspace,
+    database_session: Session,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     provider = StubBillingProvider()
@@ -355,10 +436,12 @@ def test_checkout_provider_retry_reuses_reserved_attempt(
     failed = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
     retried = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert failed.status_code == 502
@@ -369,6 +452,7 @@ def test_checkout_provider_retry_reuses_reserved_attempt(
         provider.checkout_requests[0].attempt_id
         == provider.checkout_requests[1].attempt_id
     )
+    assert database_session.scalar(select(func.count(BillingCheckoutConsent.id))) == 1
 
 
 def test_non_owner_and_outsider_cannot_start_checkout(
@@ -391,10 +475,12 @@ def test_non_owner_and_outsider_cannot_start_checkout(
     member_response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=other_user.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
     outsider_response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=outsider.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert member_response.status_code == 403
@@ -420,6 +506,7 @@ def test_deleted_workspace_cannot_start_checkout(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert response.status_code == 404
@@ -493,6 +580,7 @@ def test_only_free_workspace_can_start_checkout(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert response.status_code == 409
@@ -520,6 +608,7 @@ def test_workspace_with_stripe_subscription_cannot_start_second_checkout(
     response = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert response.status_code == 409
@@ -620,6 +709,7 @@ def test_checkout_completion_links_identity_without_granting_pro(
     checkout = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
     assert checkout.status_code == 200
     provider.event = make_event(
@@ -664,6 +754,7 @@ def test_expired_checkout_webhook_releases_the_attempt(
         client.post(
             f"/api/v1/workspaces/{workspace.id}/billing/checkout",
             headers=workspace.owner.headers,
+            json=CHECKOUT_CONSENT_PAYLOAD,
         ).status_code
         == 200
     )
@@ -687,6 +778,7 @@ def test_expired_checkout_webhook_releases_the_attempt(
     fresh = client.post(
         f"/api/v1/workspaces/{workspace.id}/billing/checkout",
         headers=workspace.owner.headers,
+        json=CHECKOUT_CONSENT_PAYLOAD,
     )
 
     assert expired.status_code == 200
