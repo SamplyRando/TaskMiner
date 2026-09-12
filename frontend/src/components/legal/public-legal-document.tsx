@@ -30,10 +30,18 @@ export function LegalSection({ children, title }: LegalSectionProps) {
   );
 }
 
-export function LegalPlaceholder({ children }: { children: ReactNode }) {
+type LegalPlaceholderProps = {
+  children: ReactNode;
+  scope?: "LANCEMENT B2C" | "LANCEMENT PUBLIC";
+};
+
+export function LegalPlaceholder({
+  children,
+  scope = "LANCEMENT PUBLIC",
+}: LegalPlaceholderProps) {
   return (
     <p className="border-primary/25 bg-primary/5 text-foreground rounded-lg border px-4 py-3 font-medium break-words">
-      [À COMPLÉTER AVANT LANCEMENT PUBLIC : {children}]
+      [À COMPLÉTER AVANT {scope} : {children}]
     </p>
   );
 }

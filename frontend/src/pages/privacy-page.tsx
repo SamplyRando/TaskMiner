@@ -61,9 +61,10 @@ export function PrivacyPage() {
           </header>
 
           <PrivacySection title="1. Responsable du traitement">
-            <p className="border-primary/25 bg-primary/5 text-foreground rounded-lg border px-4 py-3 font-medium break-words">
-              [À COMPLÉTER AVANT LANCEMENT PUBLIC : identité juridique et
-              coordonnées postales du responsable du traitement]
+            <p>
+              Le responsable du traitement est Iskander Hadji, entrepreneur
+              individuel, dont l’adresse professionnelle est 15 rue François de
+              Vaux de Foletier, 17000 La Rochelle, France.
             </p>
             <p>
               Pour toute question relative à vos données personnelles, vous
