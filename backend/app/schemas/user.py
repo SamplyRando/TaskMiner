@@ -66,6 +66,7 @@ class UserRead(BaseModel):
     email: EmailStr
     full_name: str
     is_active: bool
+    email_verified_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -95,6 +96,7 @@ class UserProfileRead(BaseModel):
     full_name: str
     avatar_url: str | None
     is_active: bool
+    email_verified_at: datetime | None
     created_at: datetime
     updated_at: datetime
     last_login_at: datetime | None

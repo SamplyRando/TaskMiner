@@ -49,6 +49,46 @@ def test_login_rejects_unknown_user(client: TestClient) -> None:
     assert response.json() == {"detail": "Invalid email or password."}
 
 
+def test_login_rejects_unverified_account_without_issuing_a_token(
+    client: TestClient,
+    user_factory: UserFactory,
+) -> None:
+    payload = user_factory.build_payload()
+    registration = client.post("/api/v1/auth/register", json=payload)
+    assert registration.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {
+        "detail": {
+            "code": "email_not_verified",
+            "message": "Please verify your email address before signing in.",
+        }
+    }
+    assert "access_token" not in response.json()
+
+
+def test_unverified_account_with_wrong_password_keeps_generic_auth_error(
+    client: TestClient,
+    user_factory: UserFactory,
+) -> None:
+    payload = user_factory.build_payload()
+    registration = client.post("/api/v1/auth/register", json=payload)
+    assert registration.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": "Wrong-password-123!"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Invalid email or password."}
+
+
 def test_login_rate_limit_uses_the_resolved_real_ip(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,

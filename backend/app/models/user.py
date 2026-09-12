@@ -68,6 +68,10 @@ class User(TimestampMixin, Base):
         default=0,
         server_default=text("0"),
     )
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     preferences: Mapped[UserPreference] = relationship(
         back_populates="user",

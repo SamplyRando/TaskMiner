@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -37,6 +38,13 @@ class UserFactory:
         payload = self.build_payload()
         registration = self.client.post("/api/v1/auth/register", json=payload)
         assert registration.status_code == 201, registration.text
+        registration_data = cast(dict[str, object], registration.json())
+        user_id = UUID(str(registration_data["id"]))
+        with SessionLocal() as session:
+            database_user = session.get(User, user_id)
+            assert database_user is not None
+            database_user.email_verified_at = datetime.now(timezone.utc)
+            session.commit()
 
         login = self.client.post(
             "/api/v1/auth/login",
@@ -47,10 +55,9 @@ class UserFactory:
         )
         assert login.status_code == 200, login.text
 
-        registration_data = cast(dict[str, object], registration.json())
         login_data = cast(dict[str, object], login.json())
         return RegisteredUser(
-            id=UUID(str(registration_data["id"])),
+            id=user_id,
             email=payload["email"],
             password=payload["password"],
             full_name=payload["full_name"],

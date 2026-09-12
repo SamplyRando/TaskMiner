@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const registerPasswordSchema = z
+export const passwordSchema = z
   .string()
   .min(12, "Le mot de passe doit contenir au moins 12 caractères.")
   .max(128, "Le mot de passe ne peut pas dépasser 128 caractères.")
@@ -25,7 +25,7 @@ export const registerSchema = z
       .min(1, "Le nom est obligatoire.")
       .max(255, "Le nom ne peut pas dépasser 255 caractères."),
     email: z.email("Saisissez une adresse e-mail valide."),
-    password: registerPasswordSchema,
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine(({ confirmPassword, password }) => confirmPassword === password, {
@@ -35,3 +35,20 @@ export const registerSchema = z
 
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
+
+export const accountEmailSchema = z.object({
+  email: z.email("Saisissez une adresse e-mail valide."),
+});
+
+export const passwordResetSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine(({ confirmPassword, password }) => confirmPassword === password, {
+    message: "Les mots de passe ne correspondent pas.",
+    path: ["confirmPassword"],
+  });
+
+export type AccountEmailValues = z.infer<typeof accountEmailSchema>;
+export type PasswordResetValues = z.infer<typeof passwordResetSchema>;

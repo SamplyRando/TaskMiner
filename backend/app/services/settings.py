@@ -61,6 +61,7 @@ class SettingsService:
             full_name=user.full_name,
             avatar_url=user.avatar_url,
             is_active=user.is_active,
+            email_verified_at=user.email_verified_at,
             created_at=user.created_at,
             updated_at=user.updated_at,
             last_login_at=user.last_login_at,

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -26,6 +27,7 @@ from app.database.database import get_db
 from app.email.factory import get_email_provider
 from app.email.provider import EmailProvider
 from app.email.service import EmailService
+from app.repositories.account_action_token import AccountActionTokenRepository
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
 from app.repositories.ai_plan_application import AIPlanApplicationRepository
@@ -48,6 +50,7 @@ from app.realtime.activity_stream import ActivityStreamBroker
 from app.realtime.audit_stream import AuditStreamBroker
 from app.realtime.registry import activity_stream_broker, audit_stream_broker
 from app.services.attachment import AttachmentService
+from app.services.account_lifecycle import AccountLifecycleService
 from app.services.activity import ActivityService
 from app.services.audit import AuditService
 from app.services.comment import CommentService
@@ -136,6 +139,16 @@ def get_auth_rate_limit_service(
         login_window_seconds=settings.auth_login_rate_limit_window_seconds,
         register_requests=settings.auth_register_rate_limit_requests,
         register_window_seconds=settings.auth_register_rate_limit_window_seconds,
+        password_reset_requests=settings.auth_password_reset_rate_limit_requests,
+        password_reset_window_seconds=(
+            settings.auth_password_reset_rate_limit_window_seconds
+        ),
+        email_verification_requests=(
+            settings.auth_email_verification_rate_limit_requests
+        ),
+        email_verification_window_seconds=(
+            settings.auth_email_verification_rate_limit_window_seconds
+        ),
         trusted_proxy_hops=settings.trusted_proxy_hops,
     )
 
@@ -375,6 +388,36 @@ def get_email_service(provider: EmailProviderDep) -> EmailService:
 
 
 EmailServiceDep = Annotated[EmailService, Depends(get_email_service)]
+
+
+def get_account_lifecycle_service(
+    session: SessionDep,
+    email_service: EmailServiceDep,
+) -> AccountLifecycleService:
+    return AccountLifecycleService(
+        UserRepository(session),
+        AccountActionTokenRepository(session),
+        email_service,
+        secret_key=settings.secret_key,
+        verification_token_lifetime=timedelta(
+            hours=settings.email_verification_token_expire_hours
+        ),
+        password_reset_token_lifetime=timedelta(
+            minutes=settings.password_reset_token_expire_minutes
+        ),
+        verification_resend_cooldown=timedelta(
+            seconds=settings.email_verification_resend_cooldown_seconds
+        ),
+        password_reset_cooldown=timedelta(
+            seconds=settings.password_reset_cooldown_seconds
+        ),
+    )
+
+
+AccountLifecycleServiceDep = Annotated[
+    AccountLifecycleService,
+    Depends(get_account_lifecycle_service),
+]
 
 
 def get_workspace_invitation_service(

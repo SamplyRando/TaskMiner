@@ -101,6 +101,14 @@ def test_auth_and_attachment_protection_defaults_are_safe() -> None:
     assert deployment_settings.auth_login_rate_limit_window_seconds == 300
     assert deployment_settings.auth_register_rate_limit_requests == 5
     assert deployment_settings.auth_register_rate_limit_window_seconds == 3600
+    assert deployment_settings.auth_password_reset_rate_limit_requests == 5
+    assert deployment_settings.auth_password_reset_rate_limit_window_seconds == 3600
+    assert deployment_settings.auth_email_verification_rate_limit_requests == 5
+    assert deployment_settings.auth_email_verification_rate_limit_window_seconds == 3600
+    assert deployment_settings.password_reset_token_expire_minutes == 30
+    assert deployment_settings.password_reset_cooldown_seconds == 60
+    assert deployment_settings.email_verification_token_expire_hours == 24
+    assert deployment_settings.email_verification_resend_cooldown_seconds == 60
     assert deployment_settings.trusted_proxy_hops == 0
     assert deployment_settings.attachment_workspace_quota_bytes == 1024**3
     assert deployment_settings.attachment_upload_rate_limit_requests == 20
@@ -114,6 +122,14 @@ def test_auth_and_attachment_protection_defaults_are_safe() -> None:
         ("TASKMINER_AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS", 0),
         ("TASKMINER_AUTH_REGISTER_RATE_LIMIT_REQUESTS", 0),
         ("TASKMINER_AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS", 0),
+        ("TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_REQUESTS", 0),
+        ("TASKMINER_AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS", 0),
+        ("TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_REQUESTS", 0),
+        ("TASKMINER_AUTH_EMAIL_VERIFICATION_RATE_LIMIT_WINDOW_SECONDS", 0),
+        ("TASKMINER_PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", 0),
+        ("TASKMINER_PASSWORD_RESET_COOLDOWN_SECONDS", 0),
+        ("TASKMINER_EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS", 0),
+        ("TASKMINER_EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS", 0),
         ("TASKMINER_TRUSTED_PROXY_HOPS", -1),
         ("TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES", 0),
         ("TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS", 0),

@@ -20,6 +20,9 @@ const AIPage = lazy(async () => ({
 const HomePage = lazy(async () => ({
   default: (await import("@/pages/home-page")).HomePage,
 }));
+const ForgotPasswordPage = lazy(async () => ({
+  default: (await import("@/pages/forgot-password-page")).ForgotPasswordPage,
+}));
 const InvitationsPage = lazy(async () => ({
   default: (await import("@/pages/invitations-page")).InvitationsPage,
 }));
@@ -41,11 +44,17 @@ const PrivacyPage = lazy(async () => ({
 const RegisterPage = lazy(async () => ({
   default: (await import("@/pages/register-page")).RegisterPage,
 }));
+const ResetPasswordPage = lazy(async () => ({
+  default: (await import("@/pages/reset-password-page")).ResetPasswordPage,
+}));
 const SettingsPage = lazy(async () => ({
   default: (await import("@/pages/settings-page")).SettingsPage,
 }));
 const TasksPage = lazy(async () => ({
   default: (await import("@/pages/tasks-page")).TasksPage,
+}));
+const VerifyEmailPage = lazy(async () => ({
+  default: (await import("@/pages/verify-email-page")).VerifyEmailPage,
 }));
 const WorkspacePage = lazy(async () => ({
   default: (await import("@/pages/workspace-page")).WorkspacePage,
@@ -72,6 +81,9 @@ export function AppRouter() {
           </Route>
 
           <Route element={<PrivacyPage />} path="/privacy" />
+          <Route element={<ForgotPasswordPage />} path="/forgot-password" />
+          <Route element={<ResetPasswordPage />} path="/reset-password" />
+          <Route element={<VerifyEmailPage />} path="/verify-email" />
 
           <Route element={<PublicRoute />}>
             <Route element={<LoginPage />} path="/login" />

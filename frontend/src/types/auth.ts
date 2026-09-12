@@ -3,6 +3,7 @@ export type UserProfile = {
   email: string;
   full_name: string | null;
   is_active: boolean;
+  email_verified_at?: string | null;
   created_at: string | null;
   updated_at: string | null;
   avatar_url?: string | null;
@@ -27,4 +28,15 @@ export type RegisterData = LoginCredentials & {
 export type TokenResponse = {
   access_token: string;
   token_type: "bearer";
+};
+
+export type AccountActionResponse = {
+  message: string;
+  already_completed: boolean;
+};
+
+export type PasswordResetData = {
+  token: string;
+  newPassword: string;
+  confirmation: string;
 };

@@ -179,6 +179,7 @@ def test_admin_can_resend_pending_invitation(
         admin,
         role=WorkspaceMemberRole.ADMIN,
     )
+    email_provider.messages.clear()
     allow_resend(database_session, workspace_invitation.id)
 
     response = client.post(

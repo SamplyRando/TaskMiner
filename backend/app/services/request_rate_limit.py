@@ -84,7 +84,12 @@ class RequestRateLimitService:
             raise
 
 
-AuthRateLimitAction = Literal["login", "register"]
+AuthRateLimitAction = Literal[
+    "email_verification",
+    "login",
+    "password_reset",
+    "register",
+]
 
 
 class AuthRateLimitService:
@@ -98,6 +103,10 @@ class AuthRateLimitService:
         login_window_seconds: int,
         register_requests: int,
         register_window_seconds: int,
+        password_reset_requests: int,
+        password_reset_window_seconds: int,
+        email_verification_requests: int,
+        email_verification_window_seconds: int,
         trusted_proxy_hops: int,
     ) -> None:
         self.rate_limiter = rate_limiter
@@ -105,6 +114,10 @@ class AuthRateLimitService:
         self.login_window_seconds = login_window_seconds
         self.register_requests = register_requests
         self.register_window_seconds = register_window_seconds
+        self.password_reset_requests = password_reset_requests
+        self.password_reset_window_seconds = password_reset_window_seconds
+        self.email_verification_requests = email_verification_requests
+        self.email_verification_window_seconds = email_verification_window_seconds
         self.trusted_proxy_hops = trusted_proxy_hops
 
     def enforce(
@@ -125,9 +138,15 @@ class AuthRateLimitService:
         if action == "login":
             limit = self.login_requests
             window = self.login_window_seconds
-        else:
+        elif action == "register":
             limit = self.register_requests
             window = self.register_window_seconds
+        elif action == "password_reset":
+            limit = self.password_reset_requests
+            window = self.password_reset_window_seconds
+        else:
+            limit = self.email_verification_requests
+            window = self.email_verification_window_seconds
         self.rate_limiter.enforce(
             action=f"auth_{action}",
             scopes=(

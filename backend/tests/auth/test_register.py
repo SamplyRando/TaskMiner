@@ -23,6 +23,7 @@ def test_register_valid_user(
     assert data["email"] == payload["email"]
     assert data["full_name"] == payload["full_name"]
     assert data["is_active"] is True
+    assert data["email_verified_at"] is None
     assert "password" not in data
     assert "hashed_password" not in data
 
