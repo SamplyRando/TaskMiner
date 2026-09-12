@@ -205,7 +205,8 @@ describe("WorkspacePage", () => {
     expect(mockedDeleteWorkspace).toHaveBeenCalledOnce();
   });
 
-  it("starts one hosted checkout and redirects to its URL", async () => {
+  it("requires explicit consent and starts only one hosted checkout", async () => {
+    const user = userEvent.setup();
     let resolveCheckout:
       ((value: { checkout_url: string }) => void) | undefined;
     mockedCheckout.mockReturnValue(
@@ -216,14 +217,41 @@ describe("WorkspacePage", () => {
     renderWithQuery(<WorkspacePage />);
 
     const button = await screen.findByRole("button", { name: "Passer à Pro" });
-    fireEvent.click(button);
-    fireEvent.click(button);
+    await user.click(button);
+
+    expect(
+      screen.getByRole("dialog", {
+        name: "Commencer TaskMiner Pro immédiatement",
+      }),
+    ).toBeInTheDocument();
+    const consent = screen.getByRole("checkbox", {
+      name: /Je demande que l’accès à TaskMiner Pro commence immédiatement/,
+    });
+    const continueButton = screen.getByRole("button", {
+      name: "Continuer vers Stripe",
+    });
+    expect(consent).not.toBeChecked();
+    expect(continueButton).toBeDisabled();
+    expect(
+      screen.getByText(/délai légal de rétractation de 14 jours/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/un montant proportionnel au service déjà fourni/),
+    ).toBeInTheDocument();
+    expect(mockedCheckout).not.toHaveBeenCalled();
+
+    await user.click(consent);
+    fireEvent.click(continueButton);
+    fireEvent.click(continueButton);
 
     await waitFor(() => {
       expect(mockedCheckout).toHaveBeenCalledTimes(1);
     });
     expect(mockedCheckout).toHaveBeenCalledWith(
-      workspaceFixture.id,
+      {
+        immediateServiceRequested: true,
+        workspaceId: workspaceFixture.id,
+      },
       expect.anything(),
     );
     resolveCheckout?.({
@@ -235,6 +263,38 @@ describe("WorkspacePage", () => {
     expect(mockedRedirect).toHaveBeenCalledWith(
       "https://checkout.stripe.com/c/pay/test",
     );
+  });
+
+  it("shows a stable consent error returned by the backend", async () => {
+    const user = userEvent.setup();
+    mockedCheckout.mockRejectedValue(
+      new ApiError("Internal backend wording", 422, {
+        detail: {
+          code: "billing_immediate_service_consent_required",
+          message: "Internal backend wording",
+        },
+      }),
+    );
+    renderWithQuery(<WorkspacePage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Passer à Pro" }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /Je demande que l’accès à TaskMiner Pro commence immédiatement/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Continuer vers Stripe" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Vous devez confirmer votre demande d’accès immédiat à TaskMiner Pro.",
+      ),
+    ).toBeInTheDocument();
+    expect(mockedRedirect).not.toHaveBeenCalled();
   });
 
   it("opens the Stripe customer portal for a Pro workspace", async () => {

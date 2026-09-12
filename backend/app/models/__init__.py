@@ -6,6 +6,7 @@ from app.models.ai_plan_application import AIPlanApplication
 from app.models.ai_usage_event import AIUsageEvent
 from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
+from app.models.billing_checkout_consent import BillingCheckoutConsent
 from app.models.comment import Comment
 from app.models.project import Project
 from app.models.request_rate_limit_bucket import RequestRateLimitBucket
@@ -29,6 +30,7 @@ __all__ = [
     "AIUsageEvent",
     "AuditLog",
     "Attachment",
+    "BillingCheckoutConsent",
     "Comment",
     "Project",
     "RequestRateLimitBucket",

@@ -8,11 +8,13 @@ from app.billing.provider import (
     BillingSignatureError,
 )
 from app.billing.service import (
+    BillingConsentRequiredError,
     BillingEventConflictError,
     BillingEventInvalidError,
     BillingStateError,
 )
 from app.schemas.billing import (
+    BillingCheckoutCreate,
     BillingCheckoutRead,
     BillingPortalRead,
     BillingWebhookRead,
@@ -31,11 +33,16 @@ workspace_router = APIRouter()
 )
 def create_checkout_session(
     workspace_id: UUID,
+    payload: BillingCheckoutCreate,
     current_user: CurrentUserDep,
     service: BillingServiceDep,
 ) -> BillingCheckoutRead:
     try:
-        redirect = service.create_checkout(current_user, workspace_id)
+        redirect = service.create_checkout(
+            current_user,
+            workspace_id,
+            immediate_service_requested=payload.immediate_service_requested,
+        )
     except WorkspaceNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -45,6 +52,16 @@ def create_checkout_session(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the workspace owner can manage billing.",
+        ) from exc
+    except BillingConsentRequiredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "code": "billing_immediate_service_consent_required",
+                "message": (
+                    "Explicit consent is required before starting Pro Checkout."
+                ),
+            },
         ) from exc
     except BillingStateError as exc:
         raise HTTPException(

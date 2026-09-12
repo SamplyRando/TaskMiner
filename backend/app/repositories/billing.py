@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.models.billing_checkout_consent import BillingCheckoutConsent
 from app.models.stripe_webhook_event import StripeWebhookEvent
 from app.models.workspace import Workspace
 from app.models.workspace_subscription import WorkspaceSubscription
@@ -59,6 +60,39 @@ class BillingRepository:
                 Workspace.deleted_at.is_(None),
             )
         )
+
+    def get_checkout_consent(
+        self,
+        workspace_id: UUID,
+        checkout_attempt_id: UUID,
+        consent_type: str,
+    ) -> BillingCheckoutConsent | None:
+        return self.session.scalar(
+            select(BillingCheckoutConsent).where(
+                BillingCheckoutConsent.workspace_id == workspace_id,
+                BillingCheckoutConsent.checkout_attempt_id == checkout_attempt_id,
+                BillingCheckoutConsent.consent_type == consent_type,
+            )
+        )
+
+    def create_checkout_consent(
+        self,
+        *,
+        workspace_id: UUID,
+        user_id: UUID,
+        checkout_attempt_id: UUID,
+        consent_type: str,
+        text_version: str,
+    ) -> BillingCheckoutConsent:
+        consent = BillingCheckoutConsent(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            checkout_attempt_id=checkout_attempt_id,
+            consent_type=consent_type,
+            text_version=text_version,
+        )
+        self.session.add(consent)
+        return consent
 
     def claim_event(
         self,

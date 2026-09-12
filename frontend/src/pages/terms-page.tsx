@@ -167,17 +167,31 @@ export function TermsPage() {
           jours à compter de sa conclusion.
         </p>
         <p>
-          TaskMiner est accessible immédiatement après la souscription. Si le
-          consommateur demande expressément que l’exécution du service commence
-          avant la fin du délai de 14 jours puis exerce son droit de
-          rétractation, il peut rester redevable d’un montant correspondant au
-          service fourni jusqu’à la communication de sa décision. Ce montant est
-          proportionnel au prix total convenu, conformément au régime
-          applicable.
+          TaskMiner Pro est accessible immédiatement après validation du
+          paiement. Si le consommateur demande expressément que l’exécution du
+          service commence avant la fin du délai de 14 jours puis exerce son
+          droit de rétractation, le montant éventuellement conservé par
+          TaskMiner est strictement proportionnel au service fourni jusqu’à la
+          communication de sa décision.
         </p>
         <p className="text-foreground font-medium">
           Le paiement ou l’accès immédiat au service n’emporte aucune
           renonciation automatique au droit de rétractation.
+        </p>
+        <p>
+          Si l’exécution du service n’a pas commencé, le montant payé est
+          remboursé intégralement. Si elle a commencé à la demande expresse du
+          consommateur, TaskMiner rembourse le montant payé, déduction faite
+          uniquement de la part strictement proportionnelle au service déjà
+          fourni jusqu’à la notification de la rétractation. Aucun frais fixe ni
+          aucune pénalité de rétractation n’est appliqué.
+        </p>
+        <p>
+          Le remboursement applicable est traité manuellement après réception de
+          la demande, sans automatisme de remboursement dans Stripe. La demande
+          est traitée sans retard injustifié et au plus tard dans les 14 jours
+          suivant la date à laquelle TaskMiner est informé de la décision de
+          rétractation.
         </p>
         <p>
           Le consommateur peut notifier sa décision de se rétracter au moyen
@@ -191,18 +205,67 @@ export function TermsPage() {
           , en indiquant l’adresse e-mail de son compte et le workspace
           concerné.
         </p>
-        <LegalPlaceholder scope="LANCEMENT B2C">
-          ajouter au parcours de souscription le recueil d’une demande expresse
-          du consommateur lorsque celui-ci souhaite que l’exécution du service
-          commence avant la fin du délai de rétractation
-        </LegalPlaceholder>
-        <LegalPlaceholder scope="LANCEMENT B2C">
-          confirmer les modalités de remboursement et fournir le formulaire type
-          de rétractation requis
-        </LegalPlaceholder>
+        <p>
+          Avant l’ouverture du paiement de l’offre Pro, TaskMiner recueille une
+          demande expresse lorsque l’utilisateur souhaite que l’exécution du
+          service commence immédiatement, avant la fin du délai de rétractation
+          de 14 jours.
+        </p>
       </LegalSection>
 
-      <LegalSection title="11. Résiliation de l’abonnement">
+      <LegalSection title="11. Formulaire type de rétractation">
+        <p>
+          Le consommateur peut copier le modèle ci-dessous dans un e-mail ou
+          l’imprimer, puis le compléter uniquement s’il souhaite exercer son
+          droit de rétractation concernant TaskMiner Pro.
+        </p>
+        <div
+          aria-label="Modèle de formulaire de rétractation"
+          className="border-border bg-muted/30 space-y-4 rounded-xl border p-4 select-text sm:p-5"
+        >
+          <p>
+            <span className="text-foreground font-medium">
+              À l’attention de :
+            </span>
+            <br />
+            Iskander Hadji
+            <br />
+            15 rue François de Vaux de Foletier
+            <br />
+            17000 La Rochelle
+            <br />
+            France
+            <br />
+            hello@taskminer.app
+          </p>
+          <p>
+            Je vous informe sans ambiguïté de ma décision d’exercer mon droit de
+            rétractation concernant le contrat TaskMiner Pro souscrit pour le
+            workspace : [nom du workspace].
+          </p>
+          <p>Date de souscription : [jour / mois / année]</p>
+          <p>Nom du consommateur : [nom et prénom]</p>
+          <p>Adresse du consommateur : [adresse postale]</p>
+          <p>Date de la demande : [jour / mois / année]</p>
+          <p>
+            Signature du consommateur : [uniquement en cas d’envoi du formulaire
+            sur papier]
+          </p>
+        </div>
+        <p>
+          Vous pouvez également exercer votre droit de rétractation en envoyant
+          une déclaration non ambiguë à{" "}
+          <a
+            className="text-primary font-medium underline underline-offset-4"
+            href="mailto:hello@taskminer.app?subject=TaskMiner%20-%20R%C3%A9tractation"
+          >
+            hello@taskminer.app
+          </a>
+          . L’utilisation de ce formulaire n’est pas obligatoire.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="12. Résiliation de l’abonnement">
         <p>
           Le propriétaire du workspace peut résilier l’abonnement en ligne
           depuis son espace client TaskMiner. Dans la section du plan du
@@ -219,7 +282,7 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Responsabilité">
+      <LegalSection title="13. Responsabilité">
         <p>
           L’utilisateur doit vérifier les informations importantes avant de les
           utiliser, notamment les propositions générées par TaskMiner AI. Chaque
@@ -233,7 +296,7 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="13. Modification des conditions">
+      <LegalSection title="14. Modification des conditions">
         <p>
           Ces conditions peuvent être mises à jour pour tenir compte de
           l’évolution du service ou des obligations applicables. La date
@@ -243,22 +306,72 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="14. Droit applicable et règlement des différends">
+      <LegalSection title="15. Droit applicable et règlement des différends">
         <LegalPlaceholder>
           droit applicable, juridiction compétente et procédure de réclamation
         </LegalPlaceholder>
-        <p>
-          Après réclamation écrite préalable auprès de TaskMiner restée sans
-          solution, le consommateur peut saisir gratuitement le médiateur de la
-          consommation dont relève l’entreprise.
-        </p>
-        <LegalPlaceholder scope="LANCEMENT B2C">
-          nom, adresse, site internet et coordonnées du médiateur de la
-          consommation référencé auquel l’entreprise aura adhéré
-        </LegalPlaceholder>
       </LegalSection>
 
-      <LegalSection title="15. Contact">
+      <LegalSection title="16. Médiation de la consommation">
+        <p>
+          Cette procédure concerne uniquement les consommateurs. Le consommateur
+          doit d’abord adresser une réclamation écrite à TaskMiner. Si le litige
+          n’est pas résolu à la suite de cette réclamation, il peut saisir
+          gratuitement le médiateur de la consommation compétent :
+        </p>
+        <div
+          aria-label="Coordonnées du CM2C"
+          className="border-border bg-muted/30 space-y-3 rounded-xl border p-4 sm:p-5"
+        >
+          <p className="text-foreground font-medium">
+            Centre de la Médiation de la Consommation des Conciliateurs de
+            Justice (CM2C)
+          </p>
+          <address className="not-italic">
+            CM2C
+            <br />
+            49 rue de Ponthieu
+            <br />
+            75008 Paris
+            <br />
+            France
+          </address>
+          <p>
+            Téléphone :{" "}
+            <a
+              className="text-primary font-medium underline underline-offset-4"
+              href="tel:+33189470014"
+            >
+              01 89 47 00 14
+            </a>
+          </p>
+          <p>
+            Site officiel :{" "}
+            <a
+              className="text-primary font-medium underline underline-offset-4"
+              href="https://www.cm2c.net/"
+              rel="noreferrer"
+              target="_blank"
+            >
+              www.cm2c.net
+            </a>
+          </p>
+          <p>
+            Pour saisir le médiateur, consultez{" "}
+            <a
+              className="text-primary font-medium underline underline-offset-4"
+              href="https://www.cm2c.net/comment-nous-saisir.php"
+              rel="noreferrer"
+              target="_blank"
+            >
+              les modalités de saisine du CM2C
+            </a>
+            .
+          </p>
+        </div>
+      </LegalSection>
+
+      <LegalSection title="17. Contact">
         <p>
           Toute question relative à ces conditions peut être adressée à{" "}
           <a
