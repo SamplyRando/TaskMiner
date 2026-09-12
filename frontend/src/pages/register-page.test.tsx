@@ -81,9 +81,12 @@ describe("RegisterPage", () => {
     });
   });
 
-  it("shows a non-blocking link to the privacy policy", () => {
+  it("shows non-blocking links to the terms and privacy policy", () => {
     renderRegisterPage();
 
+    expect(
+      screen.getByRole("link", { name: "Conditions d’utilisation" }),
+    ).toHaveAttribute("href", "/terms");
     expect(
       screen.getByRole("link", { name: "Politique de confidentialité" }),
     ).toHaveAttribute("href", "/privacy");

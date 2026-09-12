@@ -70,7 +70,14 @@ export function RegisterPage() {
           />
           <p className="text-muted-foreground text-center text-xs leading-5">
             En créant un compte, vous reconnaissez avoir pris connaissance de
-            notre{" "}
+            nos{" "}
+            <Link
+              className="text-primary font-medium underline underline-offset-4"
+              to="/terms"
+            >
+              Conditions d’utilisation
+            </Link>{" "}
+            et de notre{" "}
             <Link
               className="text-primary font-medium underline underline-offset-4"
               to="/privacy"

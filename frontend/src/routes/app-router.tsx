@@ -32,6 +32,9 @@ const LoginPage = lazy(async () => ({
 const LandingPage = lazy(async () => ({
   default: (await import("@/pages/marketing/landing")).LandingPage,
 }));
+const LegalPage = lazy(async () => ({
+  default: (await import("@/pages/legal-page")).LegalPage,
+}));
 const MarketingLayout = lazy(async () => ({
   default: (await import("@/layouts/marketing-layout")).MarketingLayout,
 }));
@@ -52,6 +55,9 @@ const SettingsPage = lazy(async () => ({
 }));
 const TasksPage = lazy(async () => ({
   default: (await import("@/pages/tasks-page")).TasksPage,
+}));
+const TermsPage = lazy(async () => ({
+  default: (await import("@/pages/terms-page")).TermsPage,
 }));
 const VerifyEmailPage = lazy(async () => ({
   default: (await import("@/pages/verify-email-page")).VerifyEmailPage,
@@ -81,6 +87,8 @@ export function AppRouter() {
           </Route>
 
           <Route element={<PrivacyPage />} path="/privacy" />
+          <Route element={<LegalPage />} path="/legal" />
+          <Route element={<TermsPage />} path="/terms" />
           <Route element={<ForgotPasswordPage />} path="/forgot-password" />
           <Route element={<ResetPasswordPage />} path="/reset-password" />
           <Route element={<VerifyEmailPage />} path="/verify-email" />
