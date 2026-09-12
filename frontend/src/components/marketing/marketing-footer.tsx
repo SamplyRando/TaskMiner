@@ -42,6 +42,8 @@ const footerColumns = [
         label: "Enterprise inquiry",
       },
       { href: "/privacy", label: "Confidentialité" },
+      { href: "/legal", label: "Mentions légales" },
+      { href: "/terms", label: "Conditions d’utilisation" },
     ],
     title: "Contact",
   },

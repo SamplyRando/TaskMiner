@@ -33,6 +33,12 @@ describe("PrivacyPage public route", () => {
       screen.getByRole("link", { name: "Retour à TaskMiner" }),
     ).toHaveAttribute("href", "/");
     expect(
+      screen.getByRole("link", { name: "Mentions légales" }),
+    ).toHaveAttribute("href", "/legal");
+    expect(
+      screen.getByRole("link", { name: "Conditions d’utilisation" }),
+    ).toHaveAttribute("href", "/terms");
+    expect(
       screen.queryByRole("heading", { name: "Connexion" }),
     ).not.toBeInTheDocument();
 

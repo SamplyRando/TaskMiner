@@ -261,14 +261,33 @@ export function PrivacyPage() {
       </main>
 
       <footer className="border-border border-t">
-        <div className="text-muted-foreground mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-6 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="text-muted-foreground mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <span>© 2026 TaskMiner</span>
-          <Link
-            className="hover:text-foreground rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
-            to="/"
-          >
-            Revenir à l’accueil
-          </Link>
+          <nav aria-label="Informations légales">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2">
+              <li>
+                <Link className="hover:text-foreground hover:underline" to="/">
+                  Accueil
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="hover:text-foreground hover:underline"
+                  to="/legal"
+                >
+                  Mentions légales
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="hover:text-foreground hover:underline"
+                  to="/terms"
+                >
+                  Conditions d’utilisation
+                </Link>
+              </li>
+            </ul>
+          </nav>
         </div>
       </footer>
     </div>
