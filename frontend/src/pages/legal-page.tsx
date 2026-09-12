@@ -19,17 +19,36 @@ export function LegalPage() {
           TaskMiner est le nom du service accessible notamment depuis le domaine
           taskminer.app.
         </p>
-        <LegalPlaceholder>
-          identité ou raison sociale de l’éditeur, forme juridique, adresse du
-          siège ou domicile, numéro d’immatriculation et capital social lorsque
-          ces mentions sont applicables
-        </LegalPlaceholder>
+        <dl className="grid gap-3 sm:grid-cols-[minmax(10rem,auto)_1fr]">
+          <dt className="text-foreground font-medium">Éditeur</dt>
+          <dd>Iskander Hadji</dd>
+          <dt className="text-foreground font-medium">Forme et régime</dt>
+          <dd>Entrepreneur individuel — micro-entreprise</dd>
+          <dt className="text-foreground font-medium">
+            Adresse professionnelle
+          </dt>
+          <dd>
+            15 rue François de Vaux de Foletier, 17000 La Rochelle, France
+          </dd>
+          <dt className="text-foreground font-medium">SIREN</dt>
+          <dd>988 573 580</dd>
+          <dt className="text-foreground font-medium">SIRET</dt>
+          <dd>988 573 580 00012</dd>
+          <dt className="text-foreground font-medium">RCS</dt>
+          <dd>988 573 580 R.C.S. La Rochelle</dd>
+          <dt className="text-foreground font-medium">RNE</dt>
+          <dd>Inscrit au Registre national des entreprises</dd>
+          <dt className="text-foreground font-medium">Code APE</dt>
+          <dd>47.91B</dd>
+          <dt className="text-foreground font-medium">Activité déclarée</dt>
+          <dd>
+            Vente à distance sur catalogue spécialisé / activité numérique
+          </dd>
+        </dl>
       </LegalSection>
 
       <LegalSection title="2. Responsable de la publication">
-        <LegalPlaceholder>
-          nom et qualité du responsable de la publication
-        </LegalPlaceholder>
+        <p>Le responsable de la publication est Iskander Hadji.</p>
       </LegalSection>
 
       <LegalSection title="3. Coordonnées et contact">
@@ -44,10 +63,20 @@ export function LegalPage() {
           </a>
           .
         </p>
-        <LegalPlaceholder>
-          adresse postale et, si la réglementation applicable l’exige, numéro de
-          téléphone de l’éditeur
-        </LegalPlaceholder>
+        <p>
+          Adresse professionnelle : 15 rue François de Vaux de Foletier, 17000
+          La Rochelle, France.
+        </p>
+        <p>
+          Téléphone professionnel :{" "}
+          <a
+            className="text-primary font-medium underline underline-offset-4"
+            href="tel:+33614713020"
+          >
+            06 14 71 30 20
+          </a>
+          .
+        </p>
       </LegalSection>
 
       <LegalSection title="4. Hébergement technique">

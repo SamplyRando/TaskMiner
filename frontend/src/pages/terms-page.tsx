@@ -24,6 +24,11 @@ export function TermsPage() {
           et à l’utilisation de TaskMiner. Elles doivent être lues avec la
           Politique de confidentialité et les informations légales du service.
         </p>
+        <p>
+          TaskMiner est proposé aux particuliers comme aux professionnels. Les
+          dispositions impératives applicables à chaque catégorie d’utilisateur
+          restent réservées.
+        </p>
       </LegalSection>
 
       <LegalSection title="2. Création et accès au compte">
@@ -132,28 +137,89 @@ export function TermsPage() {
           par le service.
         </p>
         <p>
-          L’offre Pro est affichée au tarif de 12 € par mois et par workspace.
-          Elle comprend jusqu’à 15 membres, 50 projets et 500 requêtes TaskMiner
-          AI par mois pour le workspace. L’abonnement est récurrent
-          mensuellement et le paiement est traité dans l’interface Stripe.
+          L’offre Pro est affichée au tarif de 12 € / mois / workspace. Elle
+          comprend jusqu’à 15 membres, 50 projets et 500 requêtes TaskMiner AI
+          par mois pour le workspace. L’abonnement est mensuel et récurrent, et
+          le paiement est traité dans l’interface Stripe.
         </p>
         <p>
-          Le propriétaire du workspace peut gérer ou programmer l’annulation de
-          l’abonnement depuis le portail client Stripe accessible dans
-          TaskMiner. Lorsqu’une annulation est programmée, les capacités Pro
-          restent actives jusqu’à la fin de la période payée indiquée, puis les
-          limites Free s’appliquent. Les ressources existantes ne sont pas
-          supprimées automatiquement lors de ce changement de plan, mais de
-          nouvelles créations peuvent être bloquées au-delà des limites Free.
+          <span className="text-foreground font-medium">
+            TVA non applicable, art. 293 B du CGI.
+          </span>{" "}
+          Cette mention s’applique tant que le régime applicable reste celui de
+          la franchise en base.
+        </p>
+        <p>
+          Les règles de rétractation présentées ci-dessous concernent uniquement
+          les consommateurs. Elles ne s’appliquent pas aux clients
+          professionnels agissant dans le cadre de leur activité.
         </p>
         <LegalPlaceholder>
-          préciser avant commercialisation si le prix est TTC ou HT, les règles
-          de TVA applicables, le public B2B/B2C visé, les modalités légales de
-          rétractation et les informations de facturation obligatoires
+          informations précontractuelles et de facturation complémentaires
+          requises selon la qualité de particulier ou de professionnel
         </LegalPlaceholder>
       </LegalSection>
 
-      <LegalSection title="10. Responsabilité">
+      <LegalSection title="10. Droit de rétractation des consommateurs">
+        <p>
+          Pour les consommateurs uniquement, un contrat de service conclu à
+          distance bénéficie en principe d’un délai légal de rétractation de 14
+          jours à compter de sa conclusion.
+        </p>
+        <p>
+          TaskMiner est accessible immédiatement après la souscription. Si le
+          consommateur demande expressément que l’exécution du service commence
+          avant la fin du délai de 14 jours puis exerce son droit de
+          rétractation, il peut rester redevable d’un montant correspondant au
+          service fourni jusqu’à la communication de sa décision. Ce montant est
+          proportionnel au prix total convenu, conformément au régime
+          applicable.
+        </p>
+        <p className="text-foreground font-medium">
+          Le paiement ou l’accès immédiat au service n’emporte aucune
+          renonciation automatique au droit de rétractation.
+        </p>
+        <p>
+          Le consommateur peut notifier sa décision de se rétracter au moyen
+          d’une déclaration dénuée d’ambiguïté envoyée à{" "}
+          <a
+            className="text-primary font-medium underline underline-offset-4"
+            href="mailto:hello@taskminer.app?subject=TaskMiner%20-%20R%C3%A9tractation"
+          >
+            hello@taskminer.app
+          </a>
+          , en indiquant l’adresse e-mail de son compte et le workspace
+          concerné.
+        </p>
+        <LegalPlaceholder scope="LANCEMENT B2C">
+          ajouter au parcours de souscription le recueil d’une demande expresse
+          du consommateur lorsque celui-ci souhaite que l’exécution du service
+          commence avant la fin du délai de rétractation
+        </LegalPlaceholder>
+        <LegalPlaceholder scope="LANCEMENT B2C">
+          confirmer les modalités de remboursement et fournir le formulaire type
+          de rétractation requis
+        </LegalPlaceholder>
+      </LegalSection>
+
+      <LegalSection title="11. Résiliation de l’abonnement">
+        <p>
+          Le propriétaire du workspace peut résilier l’abonnement en ligne
+          depuis son espace client TaskMiner. Dans la section du plan du
+          workspace, l’action « Gérer l’abonnement » ouvre le Stripe Customer
+          Portal, où l’annulation peut être demandée puis confirmée.
+        </p>
+        <p>
+          Sauf obligation légale contraire, la résiliation prend effet à la fin
+          de la période déjà payée. Les capacités Pro restent actives jusqu’à
+          cette date, puis les limites Free s’appliquent. Les ressources
+          existantes ne sont pas supprimées automatiquement, mais de nouvelles
+          créations peuvent être bloquées lorsqu’elles dépassent les limites
+          Free.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="12. Responsabilité">
         <p>
           L’utilisateur doit vérifier les informations importantes avant de les
           utiliser, notamment les propositions générées par TaskMiner AI. Chaque
@@ -167,7 +233,7 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="11. Modification des conditions">
+      <LegalSection title="13. Modification des conditions">
         <p>
           Ces conditions peuvent être mises à jour pour tenir compte de
           l’évolution du service ou des obligations applicables. La date
@@ -177,15 +243,22 @@ export function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Droit applicable et règlement des différends">
+      <LegalSection title="14. Droit applicable et règlement des différends">
         <LegalPlaceholder>
-          droit applicable, juridiction compétente, procédure de réclamation et,
-          selon le public B2B/B2C retenu, dispositif de médiation de la
-          consommation
+          droit applicable, juridiction compétente et procédure de réclamation
+        </LegalPlaceholder>
+        <p>
+          Après réclamation écrite préalable auprès de TaskMiner restée sans
+          solution, le consommateur peut saisir gratuitement le médiateur de la
+          consommation dont relève l’entreprise.
+        </p>
+        <LegalPlaceholder scope="LANCEMENT B2C">
+          nom, adresse, site internet et coordonnées du médiateur de la
+          consommation référencé auquel l’entreprise aura adhéré
         </LegalPlaceholder>
       </LegalSection>
 
-      <LegalSection title="13. Contact">
+      <LegalSection title="15. Contact">
         <p>
           Toute question relative à ces conditions peut être adressée à{" "}
           <a

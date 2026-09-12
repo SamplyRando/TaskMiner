@@ -30,6 +30,30 @@ describe("PrivacyPage public route", () => {
       }),
     ).toBeInTheDocument();
     expect(
+      screen.getByText(/responsable du traitement est Iskander Hadji/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /15 rue François de Vaux de Foletier, 17000 La Rochelle/,
+      ),
+    ).toBeInTheDocument();
+    const privacyContactLinks = screen.getAllByRole("link", {
+      name: "hello@taskminer.app",
+    });
+    expect(privacyContactLinks).not.toHaveLength(0);
+    for (const link of privacyContactLinks) {
+      expect(link).toHaveAttribute(
+        "href",
+        "mailto:hello@taskminer.app?subject=TaskMiner%20-%20Données%20personnelles",
+      );
+    }
+    expect(
+      screen.getByText(/régions d’hébergement et garanties de transfert/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/durées de conservation par catégorie de données/),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("link", { name: "Retour à TaskMiner" }),
     ).toHaveAttribute("href", "/");
     expect(
