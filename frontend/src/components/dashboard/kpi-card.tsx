@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { memo } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type KpiCardProps = {
@@ -43,18 +44,15 @@ export const KpiCard = memo(function KpiCard({
             <p className="text-muted-foreground truncate text-sm font-medium">
               {title}
             </p>
-            <span className="group relative shrink-0" tabIndex={0}>
-              <Info
+            <Tooltip content={tooltip}>
+              <button
                 aria-label={`Information sur ${title}`}
-                className="text-muted-foreground size-3.5"
-              />
-              <span
-                className="bg-popover text-popover-foreground pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-52 -translate-x-1/2 rounded-md border p-2 text-xs shadow-md group-hover:block group-focus:block"
-                role="tooltip"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring shrink-0 rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+                type="button"
               >
-                {tooltip}
-              </span>
-            </span>
+                <Info aria-hidden="true" className="size-3.5" />
+              </button>
+            </Tooltip>
           </div>
           <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
           <p

@@ -26,9 +26,7 @@ export const DashboardFilters = memo(function DashboardFilters({
   onChange,
   options,
 }: DashboardFiltersProps) {
-  const hasFilters = Boolean(
-    filters.workspace_id ?? filters.project_id ?? filters.user_id,
-  );
+  const hasFilters = Boolean(filters.project_id ?? filters.user_id);
 
   return (
     <section
@@ -47,6 +45,7 @@ export const DashboardFilters = memo(function DashboardFilters({
             const workspaceId = event.target.value;
             const nextFilters = { ...filters };
             delete nextFilters.project_id;
+            delete nextFilters.user_id;
             delete nextFilters.workspace_id;
             if (workspaceId) {
               nextFilters.workspace_id = workspaceId;
@@ -55,7 +54,6 @@ export const DashboardFilters = memo(function DashboardFilters({
           }}
           value={filters.workspace_id ?? ""}
         >
-          <option value="">Tous les workspaces</option>
           {options.workspaces.map((workspace) => (
             <option key={workspace.id} value={workspace.id}>
               {workspace.name}
@@ -134,6 +132,9 @@ export const DashboardFilters = memo(function DashboardFilters({
           onChange({
             activity_limit: filters.activity_limit,
             period: filters.period,
+            ...(filters.workspace_id
+              ? { workspace_id: filters.workspace_id }
+              : {}),
           });
         }}
         type="button"

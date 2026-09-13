@@ -51,6 +51,7 @@ type AIProjectPlanProps = {
   members?: AssignableWorkspaceMember[];
   membersError?: unknown;
   onApply: (request: AIApplyProjectPlanRequest) => Promise<void>;
+  onCancel: () => void;
   onRetryMembers?: () => void;
   onReviewChange: (values: AIPlanReviewValues) => void;
   plan: AIProjectPlanResponse;
@@ -73,6 +74,7 @@ export function AIProjectPlan({
   members = [],
   membersError = null,
   onApply,
+  onCancel,
   onRetryMembers = () => undefined,
   onReviewChange,
   plan,
@@ -476,20 +478,31 @@ export function AIProjectPlan({
               Une confirmation explicite est requise avant toute création.
             </p>
           </div>
-          <Button
-            disabled={
-              isApplying ||
-              selectedTaskCount === 0 ||
-              hasBlockingWarning ||
-              !form.formState.isValid
-            }
-            className="w-full sm:w-auto"
-            isLoading={isApplying}
-            loadingLabel="Application du plan en cours"
-            type="submit"
-          >
-            Appliquer le plan
-          </Button>
+          <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+            <Button
+              className="w-full sm:w-auto"
+              disabled={isApplying}
+              onClick={onCancel}
+              type="button"
+              variant="outline"
+            >
+              Ignorer le brouillon
+            </Button>
+            <Button
+              disabled={
+                isApplying ||
+                selectedTaskCount === 0 ||
+                hasBlockingWarning ||
+                !form.formState.isValid
+              }
+              className="w-full sm:w-auto"
+              isLoading={isApplying}
+              loadingLabel="Application du plan en cours"
+              type="submit"
+            >
+              Appliquer le plan
+            </Button>
+          </div>
         </div>
       </form>
 

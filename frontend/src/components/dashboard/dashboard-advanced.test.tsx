@@ -25,6 +25,7 @@ describe("advanced dashboard components", () => {
       activity_limit: 8,
       period: "30d",
       project_id: project.id,
+      workspace_id: workspace.id,
     };
 
     const { rerender } = render(
@@ -47,7 +48,11 @@ describe("advanced dashboard components", () => {
 
     rerender(
       <DashboardFilters
-        filters={{ activity_limit: 8, period: "30d" }}
+        filters={{
+          activity_limit: 8,
+          period: "30d",
+          workspace_id: workspace.id,
+        }}
         onChange={onChange}
         options={dashboardFixture.filter_options}
       />,
@@ -59,6 +64,7 @@ describe("advanced dashboard components", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       activity_limit: 8,
       period: "90d",
+      workspace_id: workspace.id,
     });
   });
 
@@ -81,7 +87,7 @@ describe("advanced dashboard components", () => {
 
   it("exposes KPI context and the previous-period variation", async () => {
     const user = userEvent.setup();
-    render(
+    const { container } = render(
       <KpiCard
         color="emerald"
         icon={TrendingUp}
@@ -94,9 +100,58 @@ describe("advanced dashboard components", () => {
 
     expect(screen.getByText("+12,5 % vs période précédente")).toBeVisible();
     await user.tab();
-    expect(screen.getByRole("tooltip")).toHaveTextContent(
-      "Part des tâches terminées.",
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("Part des tâches terminées.");
+    expect(container).not.toContainElement(tooltip);
+    expect(tooltip).toHaveClass("z-[100]");
+  });
+
+  it("keeps left and right edge KPI tooltips readable in a narrow viewport", async () => {
+    const user = userEvent.setup();
+    const originalInnerWidth = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 375,
+    });
+    const { container } = render(
+      <div className="flex justify-between overflow-hidden">
+        <KpiCard
+          color="violet"
+          icon={TrendingUp}
+          title="Bord gauche"
+          tooltip="Ce texte reste lisible près du bord gauche."
+          value="12"
+        />
+        <KpiCard
+          color="blue"
+          icon={TrendingUp}
+          title="Bord droit"
+          tooltip="Ce texte reste lisible près du bord droit."
+          value="8"
+        />
+      </div>,
     );
+
+    await user.tab();
+    const leftTooltip = await screen.findByRole("tooltip");
+    expect(leftTooltip).toBeVisible();
+    expect(leftTooltip).toHaveTextContent(
+      "Ce texte reste lisible près du bord gauche.",
+    );
+    expect(container).not.toContainElement(leftTooltip);
+
+    await user.tab();
+    const rightTooltip = await screen.findByRole("tooltip");
+    expect(rightTooltip).toBeVisible();
+    expect(rightTooltip).toHaveTextContent(
+      "Ce texte reste lisible près du bord droit.",
+    );
+    expect(container).not.toContainElement(rightTooltip);
+
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: originalInnerWidth,
+    });
   });
 
   it("renders actor, relative time, direct link and configurable activity limit", async () => {

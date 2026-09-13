@@ -60,6 +60,7 @@ const suggestProjectName = (prompt: string): string => {
 export function AIPage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
   const workspaceState = useActiveWorkspace();
+  const selectWorkspace = workspaceState.selectWorkspace;
   const capabilitiesQuery = useAICapabilities();
   const generatePlan = useGenerateProjectPlan();
   const applyPlan = useApplyProjectPlan();
@@ -101,6 +102,7 @@ export function AIPage() {
       : null;
   const handleWorkspaceChange = useCallback(
     (workspaceId: string) => {
+      selectWorkspace(workspaceId);
       setUsageWorkspaceId(workspaceId);
       setSelectedWorkspaceId((currentWorkspaceId) => {
         if (currentWorkspaceId !== null && currentWorkspaceId !== workspaceId) {
@@ -111,7 +113,7 @@ export function AIPage() {
         return workspaceId;
       });
     },
-    [resetApplyPlan, setDraft],
+    [resetApplyPlan, selectWorkspace, setDraft],
   );
   const projectsQuery = useProjects(
     {
@@ -173,6 +175,13 @@ export function AIPage() {
     [setDraft],
   );
 
+  const handleCancelPlan = useCallback(() => {
+    setDraft(null);
+    setAppliedPlan(null);
+    applyPlan.reset();
+    generatePlan.reset();
+  }, [applyPlan, generatePlan, setDraft]);
+
   const handleCreateNewPlan = useCallback(() => {
     setDraft(null);
     setAppliedPlan(null);
@@ -180,6 +189,14 @@ export function AIPage() {
     generatePlan.reset();
     setPlannerCycle((cycle) => cycle + 1);
   }, [applyPlan, generatePlan, setDraft]);
+
+  const handleChangeUsageWorkspace = useCallback(
+    (workspaceId: string) => {
+      setUsageWorkspaceId(workspaceId);
+      selectWorkspace(workspaceId);
+    },
+    [selectWorkspace],
+  );
 
   if (workspaceState.isError) {
     return (
@@ -276,7 +293,7 @@ export function AIPage() {
         <AIProjectChangeWorkflow
           activeWorkspaceId={workspaceState.activeWorkspaceId}
           isWorkspacesPending={workspaceState.isPending}
-          onUsageWorkspaceChange={setUsageWorkspaceId}
+          onUsageWorkspaceChange={handleChangeUsageWorkspace}
           quotaReachedWorkspaceId={quotaReachedWorkspaceId}
           workspaces={workspaceState.workspaces}
         />
@@ -299,6 +316,7 @@ export function AIPage() {
           members={assignableMembersQuery.data?.items ?? []}
           membersError={assignableMembersQuery.error}
           onApply={handleApply}
+          onCancel={handleCancelPlan}
           onRetryMembers={() => {
             void assignableMembersQuery.refetch();
           }}

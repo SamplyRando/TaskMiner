@@ -43,6 +43,7 @@ const renderReview = (
       initialReviewValues={null}
       isPending={false}
       onApply={onApply}
+      onCancel={() => undefined}
       onReviewChange={() => undefined}
       plan={aiPlanFixture}
       suggestedProjectName="Mobile launch"

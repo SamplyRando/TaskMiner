@@ -138,6 +138,13 @@ export function AIProjectChangeWorkflow({
     setDraft(null);
   };
 
+  const handleCancelDraft = useCallback(() => {
+    setDraft(null);
+    setAppliedChanges(null);
+    generatePlan.reset();
+    applyPlan.reset();
+  }, [applyPlan, generatePlan, setDraft]);
+
   const handleNewInstruction = useCallback(() => {
     setDraft(null);
     setAppliedChanges(null);
@@ -178,6 +185,7 @@ export function AIProjectChangeWorkflow({
           initialReviewValues={draft.reviewValues}
           isPending={applyPlan.isPending}
           onApply={handleApply}
+          onCancel={handleCancelDraft}
           onReviewChange={handleReviewChange}
           plan={draft.plan}
           projectName={draft.projectName}

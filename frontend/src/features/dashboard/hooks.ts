@@ -14,8 +14,9 @@ export const dashboardKeys = {
     [...dashboardKeys.all, "projects", params] as const,
 };
 
-export const useDashboard = (params: DashboardParams) =>
+export const useDashboard = (params: DashboardParams, enabled = true) =>
   useQuery({
+    enabled,
     queryKey: dashboardKeys.detail(params),
     queryFn: () => getDashboard(params),
     placeholderData: keepPreviousData,
@@ -24,8 +25,12 @@ export const useDashboard = (params: DashboardParams) =>
     staleTime: 30_000,
   });
 
-export const useDashboardProjects = (params: DashboardProjectListParams) =>
+export const useDashboardProjects = (
+  params: DashboardProjectListParams,
+  enabled = true,
+) =>
   useQuery({
+    enabled,
     queryKey: dashboardKeys.projects(params),
     queryFn: () => getDashboardProjects(params),
     placeholderData: keepPreviousData,

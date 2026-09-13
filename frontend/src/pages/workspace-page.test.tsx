@@ -93,6 +93,64 @@ describe("WorkspacePage", () => {
     expect(screen.getByText("Aucun résultat")).toBeInTheDocument();
   });
 
+  it("exposes the canonical active workspace and switches plan context both ways", async () => {
+    const user = userEvent.setup();
+    const invitedWorkspace = {
+      ...workspaceFixture,
+      id: "00000000-0000-4000-8000-000000000012",
+      name: "Workspace invité",
+      owner_id: "00000000-0000-4000-8000-000000000099",
+    };
+    mockedListWorkspaces.mockResolvedValue([
+      workspaceFixture,
+      invitedWorkspace,
+    ]);
+    mockedSubscription.mockImplementation((workspaceId) =>
+      Promise.resolve(
+        workspaceId === invitedWorkspace.id
+          ? {
+              ...proSubscriptionFixture,
+              usage: {
+                ai_requests_this_month: 42,
+                members: 7,
+                projects: 12,
+              },
+            }
+          : freeSubscriptionFixture,
+      ),
+    );
+
+    renderWithQuery(<WorkspacePage />);
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Workspace actif",
+    });
+    await waitFor(() => {
+      expect(selector).toHaveValue(workspaceFixture.id);
+    });
+    expect(await screen.findByText("Plan Free")).toBeInTheDocument();
+    expect(screen.getByText("4 / 5")).toBeInTheDocument();
+
+    await user.selectOptions(selector, invitedWorkspace.id);
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+      invitedWorkspace.id,
+    );
+    expect(await screen.findByText("Plan Pro")).toBeInTheDocument();
+    expect(screen.getByText("12 / 50")).toBeInTheDocument();
+    expect(
+      screen.getByText("Facturation gérée par le propriétaire"),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(selector, workspaceFixture.id);
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+      workspaceFixture.id,
+    );
+    expect(await screen.findByText("Plan Free")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Passer à Pro" })).toBeEnabled();
+    expect(mockedSubscription).toHaveBeenCalledWith(invitedWorkspace.id);
+    expect(mockedSubscription).toHaveBeenCalledWith(workspaceFixture.id);
+  });
+
   it("creates a workspace and refreshes the list", async () => {
     const user = userEvent.setup();
     const createdWorkspace = {
@@ -123,7 +181,7 @@ describe("WorkspacePage", () => {
         expect.anything(),
       );
     });
-    expect(await screen.findByText("Workspace Beta")).toBeInTheDocument();
+    expect(await screen.findAllByText("Workspace Beta")).not.toHaveLength(0);
   });
 
   it("optimistically updates a workspace", async () => {

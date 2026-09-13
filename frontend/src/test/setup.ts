@@ -18,6 +18,24 @@ Object.defineProperty(window, "matchMedia", {
   writable: true,
 });
 
+class TestResizeObserver implements ResizeObserver {
+  disconnect(): void {
+    return undefined;
+  }
+  observe(): void {
+    return undefined;
+  }
+  unobserve(): void {
+    return undefined;
+  }
+}
+
+Object.defineProperty(globalThis, "ResizeObserver", {
+  configurable: true,
+  value: TestResizeObserver,
+  writable: true,
+});
+
 afterEach(() => {
   cleanup();
   sessionStorage.clear();

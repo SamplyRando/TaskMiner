@@ -11,7 +11,10 @@ import { ProjectsPage } from "@/pages/projects-page";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { projectFixture, workspaceFixture } from "@/test/resource-fixtures";
 import { settingsPreferencesFixture } from "@/test/settings-fixtures";
-import { freeSubscriptionFixture } from "@/test/subscription-fixtures";
+import {
+  freeSubscriptionFixture,
+  proSubscriptionFixture,
+} from "@/test/subscription-fixtures";
 import { useWorkspaceStore } from "@/store/workspace-store";
 
 vi.mock("@/api/projects", () => ({
@@ -70,6 +73,104 @@ describe("ProjectsPage", () => {
       sort: "-created_at",
       workspace_id: workspaceFixture.id,
     });
+  });
+
+  it("switches project, permission and quota context from owner to member and back", async () => {
+    const user = userEvent.setup();
+    const invitedWorkspace = {
+      ...workspaceFixture,
+      id: "00000000-0000-4000-8000-000000000012",
+      name: "Workspace invité",
+      owner_id: "00000000-0000-4000-8000-000000000099",
+    };
+    const invitedProject = {
+      ...projectFixture,
+      id: "00000000-0000-4000-8000-000000000013",
+      name: "Projet partagé",
+      workspace_id: invitedWorkspace.id,
+    };
+    useWorkspaceStore.setState({ activeWorkspaceId: workspaceFixture.id });
+    mockedListWorkspaces.mockResolvedValue([
+      workspaceFixture,
+      invitedWorkspace,
+    ]);
+    mockedListProjects.mockImplementation((params) =>
+      Promise.resolve({
+        items:
+          params.workspace_id === invitedWorkspace.id
+            ? [invitedProject]
+            : [projectFixture],
+        limit: 20,
+        skip: 0,
+        total: 1,
+      }),
+    );
+    mockedPermissions.mockImplementation((workspaceId) =>
+      Promise.resolve(
+        workspaceId === invitedWorkspace.id
+          ? {
+              permissions: {
+                manage_invitations: false,
+                manage_members: false,
+                manage_projects: false,
+                manage_tasks: true,
+                manage_workspace: false,
+                read: true,
+              },
+              role: "member",
+            }
+          : {
+              permissions: {
+                manage_invitations: true,
+                manage_members: true,
+                manage_projects: true,
+                manage_tasks: true,
+                manage_workspace: true,
+                read: true,
+              },
+              role: "owner",
+            },
+      ),
+    );
+    mockedSubscription.mockImplementation((workspaceId) =>
+      Promise.resolve(
+        workspaceId === invitedWorkspace.id
+          ? {
+              ...proSubscriptionFixture,
+              usage: { ...proSubscriptionFixture.usage, projects: 50 },
+            }
+          : freeSubscriptionFixture,
+      ),
+    );
+
+    renderWithQuery(<ProjectsPage />);
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Workspace actif",
+    });
+    expect(await screen.findByText(projectFixture.name)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nouveau projet" }),
+    ).toBeEnabled();
+
+    await user.selectOptions(selector, invitedWorkspace.id);
+    expect(await screen.findByText(invitedProject.name)).toBeInTheDocument();
+    expect(screen.queryByText(projectFixture.name)).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Limite de 50 projets atteinte pour le plan Pro."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nouveau projet" }),
+    ).toBeDisabled();
+
+    await user.selectOptions(selector, workspaceFixture.id);
+    expect(await screen.findByText(projectFixture.name)).toBeInTheDocument();
+    expect(screen.queryByText(invitedProject.name)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nouveau projet" }),
+    ).toBeEnabled();
+    expect(mockedPermissions).toHaveBeenCalledWith(invitedWorkspace.id);
+    expect(mockedSubscription).toHaveBeenCalledWith(invitedWorkspace.id);
   });
 
   it("creates a project and invalidates the list", async () => {

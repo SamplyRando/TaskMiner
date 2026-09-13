@@ -11,14 +11,15 @@ import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { WorkspaceSelector } from "@/components/workspace-selector";
 import { useUserPreferences } from "@/features/settings/hooks";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useSessionState } from "@/hooks/use-session-state";
 import {
   useBillingCheckout,
   useBillingPortal,
 } from "@/features/subscriptions/billing-hooks";
 import { useAuthStore } from "@/store/auth-store";
-import { useWorkspaceStore } from "@/store/workspace-store";
 import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
 import { BillingCheckoutConsentDialog } from "@/features/subscriptions/billing-checkout-consent-dialog";
 import { WorkspacePlanCard } from "@/features/subscriptions/workspace-plan-card";
@@ -27,7 +28,6 @@ import {
   useCreateWorkspace,
   useDeleteWorkspace,
   useUpdateWorkspace,
-  useWorkspaces,
 } from "@/features/workspaces/hooks";
 import { getWorkspaceDeletionErrorMessage } from "@/features/workspaces/errors";
 import { getWorkspaceColumns } from "@/features/workspaces/workspace-columns";
@@ -57,9 +57,7 @@ const getBillingReturnNotice = (): Notice | null => {
 
 export function WorkspacePage() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id ?? "");
-  const activeWorkspaceId = useWorkspaceStore(
-    (state) => state.activeWorkspaceId,
-  );
+  const workspace = useActiveWorkspace();
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
   const billingActionLocked = useRef(false);
@@ -96,11 +94,7 @@ export function WorkspacePage() {
     );
   }, [preferences.data, setPagination]);
 
-  const workspacesQuery = useWorkspaces();
-  const activeWorkspace =
-    workspacesQuery.data?.find(({ id }) => id === activeWorkspaceId) ??
-    workspacesQuery.data?.[0] ??
-    null;
+  const activeWorkspace = workspace.activeWorkspace;
   const subscriptionQuery = useWorkspaceSubscription(
     activeWorkspace?.id ?? null,
   );
@@ -132,17 +126,17 @@ export function WorkspacePage() {
   const filteredWorkspaces = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("fr");
     if (!normalizedSearch) {
-      return workspacesQuery.data ?? [];
+      return workspace.workspaces;
     }
 
-    return (workspacesQuery.data ?? []).filter(
+    return workspace.workspaces.filter(
       (workspace) =>
         workspace.name.toLocaleLowerCase("fr").includes(normalizedSearch) ||
         workspace.description
           ?.toLocaleLowerCase("fr")
           .includes(normalizedSearch),
     );
-  }, [search, workspacesQuery.data]);
+  }, [search, workspace.workspaces]);
 
   const columns = useMemo(
     () =>
@@ -237,6 +231,16 @@ export function WorkspacePage() {
         title="Workspaces"
       />
 
+      <WorkspaceSelector
+        disabled={workspace.isPending}
+        onValueChange={(workspaceId) => {
+          workspace.selectWorkspace(workspaceId);
+          setPagination((current) => ({ ...current, pageIndex: 0 }));
+        }}
+        value={workspace.activeWorkspaceId}
+        workspaces={workspace.workspaces}
+      />
+
       <div className="relative max-w-md">
         <Search
           aria-hidden="true"
@@ -279,10 +283,10 @@ export function WorkspacePage() {
         />
       ) : null}
 
-      {workspacesQuery.isError ? (
+      {workspace.isError ? (
         <ErrorState
-          error={workspacesQuery.error}
-          onRetry={() => void workspacesQuery.refetch()}
+          error={workspace.error}
+          onRetry={() => void workspace.refetch()}
         />
       ) : (
         <DataTable
@@ -305,7 +309,7 @@ export function WorkspacePage() {
           }
           emptyDescription="Créez votre premier workspace pour commencer."
           emptyTitle={search ? "Aucun résultat" : "Aucun workspace"}
-          isLoading={workspacesQuery.isPending}
+          isLoading={workspace.isPending}
           manualPagination={false}
           manualSorting={false}
           mobileLabels={{

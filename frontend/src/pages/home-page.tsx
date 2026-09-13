@@ -23,9 +23,11 @@ import { QuickStats } from "@/components/dashboard/quick-stats";
 import { RecentProjects } from "@/components/dashboard/recent-projects";
 import { RecentTasks } from "@/components/dashboard/recent-tasks";
 import { StatusDistribution } from "@/components/dashboard/status-distribution";
+import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { useDashboard, useDashboardProjects } from "@/features/dashboard/hooks";
 import { useUserPreferences } from "@/features/settings/hooks";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useSessionState } from "@/hooks/use-session-state";
 import { useAuthStore } from "@/store/auth-store";
@@ -48,6 +50,7 @@ const periodLabels = {
 
 export function HomePage() {
   const currentUser = useAuthStore((state) => state.currentUser);
+  const workspace = useActiveWorkspace();
   const preferences = useUserPreferences();
   const defaultPeriodApplied = useRef(false);
   const [filters, setFilters] = useSessionState<DashboardParams>(
@@ -67,6 +70,45 @@ export function HomePage() {
     0,
   );
 
+  const scopedFilters = useMemo<DashboardParams>(() => {
+    const workspaceChanged =
+      filters.workspace_id !== workspace.activeWorkspaceId;
+    return {
+      activity_limit: filters.activity_limit,
+      period: filters.period,
+      ...(workspace.activeWorkspaceId
+        ? { workspace_id: workspace.activeWorkspaceId }
+        : {}),
+      ...(!workspaceChanged && filters.project_id
+        ? { project_id: filters.project_id }
+        : {}),
+      ...(!workspaceChanged && filters.user_id
+        ? { user_id: filters.user_id }
+        : {}),
+    };
+  }, [filters, workspace.activeWorkspaceId]);
+
+  useEffect(() => {
+    const activeWorkspaceId = workspace.activeWorkspaceId;
+    if (
+      activeWorkspaceId === null ||
+      filters.workspace_id === activeWorkspaceId
+    ) {
+      return;
+    }
+    setFilters((current) => ({
+      activity_limit: current.activity_limit,
+      period: current.period,
+      workspace_id: activeWorkspaceId,
+    }));
+    setProjectOffset(0);
+  }, [
+    filters.workspace_id,
+    setFilters,
+    setProjectOffset,
+    workspace.activeWorkspaceId,
+  ]);
+
   useEffect(() => {
     if (!preferences.data || defaultPeriodApplied.current) return;
     defaultPeriodApplied.current = true;
@@ -80,30 +122,40 @@ export function HomePage() {
     );
   }, [preferences.data, setFilters]);
   const debouncedProjectSearch = useDebouncedValue(projectSearch);
-  const dashboardQuery = useDashboard(filters);
+  const dashboardQuery = useDashboard(
+    scopedFilters,
+    workspace.activeWorkspaceId !== null,
+  );
   const dashboard = dashboardQuery.data;
   const projectParams = useMemo<DashboardProjectListParams>(
     () => ({
       limit: 5,
       offset: projectOffset,
-      period: filters.period,
+      period: scopedFilters.period,
       sort: projectSort,
-      ...(filters.workspace_id ? { workspace_id: filters.workspace_id } : {}),
-      ...(filters.project_id ? { project_id: filters.project_id } : {}),
-      ...(filters.user_id ? { user_id: filters.user_id } : {}),
+      ...(scopedFilters.workspace_id
+        ? { workspace_id: scopedFilters.workspace_id }
+        : {}),
+      ...(scopedFilters.project_id
+        ? { project_id: scopedFilters.project_id }
+        : {}),
+      ...(scopedFilters.user_id ? { user_id: scopedFilters.user_id } : {}),
       ...(debouncedProjectSearch ? { search: debouncedProjectSearch } : {}),
     }),
     [
       debouncedProjectSearch,
-      filters.period,
-      filters.project_id,
-      filters.user_id,
-      filters.workspace_id,
+      scopedFilters.period,
+      scopedFilters.project_id,
+      scopedFilters.user_id,
+      scopedFilters.workspace_id,
       projectOffset,
       projectSort,
     ],
   );
-  const projectsQuery = useDashboardProjects(projectParams);
+  const projectsQuery = useDashboardProjects(
+    projectParams,
+    workspace.activeWorkspaceId !== null,
+  );
 
   const kpis = useMemo(() => {
     if (!dashboard) {
@@ -195,11 +247,23 @@ export function HomePage() {
     ];
   }, [dashboard]);
 
-  if (dashboardQuery.isError) {
+  if (dashboardQuery.isError || workspace.isError) {
     return (
       <ErrorState
-        error={dashboardQuery.error}
-        onRetry={() => void dashboardQuery.refetch()}
+        error={dashboardQuery.error ?? workspace.error}
+        onRetry={() => {
+          void dashboardQuery.refetch();
+          void workspace.refetch();
+        }}
+      />
+    );
+  }
+
+  if (!workspace.isPending && workspace.workspaces.length === 0) {
+    return (
+      <EmptyState
+        description="Créez un workspace pour afficher un dashboard dédié."
+        title="Aucun workspace"
       />
     );
   }
@@ -230,9 +294,15 @@ export function HomePage() {
       </header>
 
       <DashboardFilters
-        filters={filters}
+        filters={scopedFilters}
         onChange={(nextFilters) => {
           setProjectOffset(0);
+          if (
+            nextFilters.workspace_id &&
+            nextFilters.workspace_id !== workspace.activeWorkspaceId
+          ) {
+            workspace.selectWorkspace(nextFilters.workspace_id);
+          }
           setFilters(nextFilters);
         }}
         options={dashboard.filter_options}
@@ -253,7 +323,7 @@ export function HomePage() {
       </section>
 
       <DashboardCharts
-        periodLabel={periodLabels[filters.period]}
+        periodLabel={periodLabels[scopedFilters.period]}
         priorities={dashboard.priority_distribution}
         statuses={dashboard.status_distribution}
         trends={dashboard.trends}
@@ -270,7 +340,7 @@ export function HomePage() {
       <section className="grid min-w-0 gap-4 xl:grid-cols-2">
         <ActivityList
           items={dashboard.recent_activities}
-          limit={filters.activity_limit}
+          limit={scopedFilters.activity_limit}
           onLimitChange={(activityLimit) => {
             setFilters((current) => ({
               ...current,

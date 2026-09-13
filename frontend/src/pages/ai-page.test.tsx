@@ -304,6 +304,34 @@ describe("AIPage", () => {
     expect(mockedApply).not.toHaveBeenCalled();
   });
 
+  it("ignores a planning draft without applying it and allows another generation", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<AIPage />);
+    const prompt = await screen.findByLabelText("Brief du projet");
+    await user.type(prompt, "Prepare a cancellable structured project plan.");
+    await user.click(screen.getByRole("button", { name: "Générer le plan" }));
+
+    expect(await screen.findByText(aiPlanFixture.summary)).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Ignorer le brouillon" }),
+    );
+
+    expect(mockedApply).not.toHaveBeenCalled();
+    expect(screen.queryByText(aiPlanFixture.summary)).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Votre brouillon apparaîtra ici"),
+    ).toBeInTheDocument();
+    expect(sessionStorage.getItem("taskminer-ai-apply-draft-v1")).toBe("null");
+
+    await user.clear(prompt);
+    await user.type(prompt, "Prepare a new plan after ignoring the draft.");
+    await user.click(screen.getByRole("button", { name: "Générer le plan" }));
+    await waitFor(() => {
+      expect(mockedGenerate).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText(aiPlanFixture.summary)).toBeInTheDocument();
+  });
+
   it("applies after confirmation and renders a stable success state", async () => {
     const user = userEvent.setup();
     renderWithQuery(
@@ -514,6 +542,48 @@ describe("AIPage", () => {
     );
     expect(
       screen.getByText("Le comparatif apparaîtra ici"),
+    ).toBeInTheDocument();
+  });
+
+  it("ignores a change draft without mutation and allows a new analysis", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<AIPage />);
+    await user.click(screen.getByRole("tab", { name: "Modifier un projet" }));
+    const projectSelect = await screen.findByLabelText("Projet");
+    await waitFor(() => {
+      expect(projectSelect).toBeEnabled();
+    });
+    await user.selectOptions(projectSelect, projectFixture.id);
+    await user.type(
+      screen.getByLabelText("Instruction"),
+      "Décale les tâches API d’une semaine.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    );
+
+    expect(
+      await screen.findByText("3 sur 3 sélectionnées"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Ignorer le brouillon" }),
+    );
+
+    expect(mockedApplyChanges).not.toHaveBeenCalled();
+    expect(screen.queryByText("3 sur 3 sélectionnées")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Le comparatif apparaîtra ici"),
+    ).toBeInTheDocument();
+    expect(sessionStorage.getItem("taskminer-ai-change-draft-v1")).toBe("null");
+
+    await user.click(
+      screen.getByRole("button", { name: "Analyser les modifications" }),
+    );
+    await waitFor(() => {
+      expect(mockedGenerateChanges).toHaveBeenCalledTimes(2);
+    });
+    expect(
+      await screen.findByText("3 sur 3 sélectionnées"),
     ).toBeInTheDocument();
   });
 

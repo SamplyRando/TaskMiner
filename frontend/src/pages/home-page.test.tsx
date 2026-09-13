@@ -6,19 +6,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { getDashboard, getDashboardProjects } from "@/api/dashboard";
 import { getUserPreferences } from "@/api/settings";
+import { listWorkspaces } from "@/api/workspace";
 import { HomePage } from "@/pages/home-page";
+import { useWorkspaceStore } from "@/store/workspace-store";
 import { authenticateStore, resetAuthStore } from "@/test/auth-fixtures";
 import {
   dashboardFixture,
   emptyDashboardFixture,
 } from "@/test/dashboard-fixtures";
 import { renderWithQuery } from "@/test/query-wrapper";
+import { workspaceFixture } from "@/test/resource-fixtures";
 
 vi.mock("@/api/dashboard", () => ({
   getDashboard: vi.fn(),
   getDashboardProjects: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
+vi.mock("@/api/workspace", () => ({ listWorkspaces: vi.fn() }));
 
 vi.mock("@/components/dashboard/dashboard-charts", () => ({
   DashboardCharts: () => <div>Graphiques analytiques</div>,
@@ -27,6 +31,7 @@ vi.mock("@/components/dashboard/dashboard-charts", () => ({
 const mockedGetDashboard = vi.mocked(getDashboard);
 const mockedGetDashboardProjects = vi.mocked(getDashboardProjects);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
+const mockedListWorkspaces = vi.mocked(listWorkspaces);
 
 const renderPage = () =>
   renderWithQuery(
@@ -39,6 +44,8 @@ describe("HomePage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     resetAuthStore();
+    useWorkspaceStore.setState({ activeWorkspaceId: workspaceFixture.id });
+    mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
     mockedGetPreferences.mockResolvedValue({
       accent: "violet",
       dashboard_period: 30,
@@ -83,6 +90,16 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("status", { name: "Chargement du dashboard" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows an empty state instead of aggregating data without a workspace", async () => {
+    useWorkspaceStore.setState({ activeWorkspaceId: null });
+    mockedListWorkspaces.mockResolvedValue([]);
+
+    renderPage();
+
+    expect(await screen.findByText("Aucun workspace")).toBeInTheDocument();
+    expect(mockedGetDashboard).not.toHaveBeenCalled();
   });
 
   it("shows the API error and retries the request", async () => {
@@ -146,7 +163,77 @@ describe("HomePage", () => {
       expect(mockedGetDashboard).toHaveBeenLastCalledWith({
         activity_limit: 8,
         period: "7d",
+        workspace_id: workspaceFixture.id,
       });
+    });
+  });
+
+  it("keeps the dashboard scoped to the canonical active workspace", async () => {
+    const user = userEvent.setup();
+    const invitedWorkspace = {
+      ...workspaceFixture,
+      id: "00000000-0000-4000-8000-000000000012",
+      name: "Workspace invité",
+      owner_id: "00000000-0000-4000-8000-000000000099",
+    };
+    const dashboardWithBothWorkspaces = {
+      ...dashboardFixture,
+      filter_options: {
+        ...dashboardFixture.filter_options,
+        workspaces: [
+          { id: workspaceFixture.id, name: workspaceFixture.name },
+          { id: invitedWorkspace.id, name: invitedWorkspace.name },
+        ],
+      },
+    };
+    mockedListWorkspaces.mockResolvedValue([
+      workspaceFixture,
+      invitedWorkspace,
+    ]);
+    mockedGetDashboard.mockImplementation((params) =>
+      Promise.resolve(
+        params.workspace_id === invitedWorkspace.id
+          ? {
+              ...dashboardWithBothWorkspaces,
+              kpis: {
+                ...dashboardWithBothWorkspaces.kpis,
+                projects: 99,
+              },
+            }
+          : dashboardWithBothWorkspaces,
+      ),
+    );
+
+    renderPage();
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Filtrer par workspace",
+    });
+    expect(selector).toHaveValue(workspaceFixture.id);
+    expect(mockedGetDashboard).toHaveBeenCalledWith(
+      expect.objectContaining({ workspace_id: workspaceFixture.id }),
+    );
+
+    await user.selectOptions(selector, invitedWorkspace.id);
+    await waitFor(() => {
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+        invitedWorkspace.id,
+      );
+      expect(mockedGetDashboard).toHaveBeenCalledWith(
+        expect.objectContaining({ workspace_id: invitedWorkspace.id }),
+      );
+    });
+    expect(await screen.findByText("99")).toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par workspace" }),
+      workspaceFixture.id,
+    );
+    await waitFor(() => {
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+        workspaceFixture.id,
+      );
+      expect(screen.queryByText("99")).not.toBeInTheDocument();
     });
   });
 });

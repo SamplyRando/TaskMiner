@@ -21,6 +21,7 @@ const renderReview = (error: unknown = null) => {
       initialReviewValues={null}
       isPending={false}
       onApply={onApply}
+      onCancel={() => undefined}
       onReviewChange={() => undefined}
       plan={aiChangePlanFixture}
       projectName="TEST AI SPRINT 3"

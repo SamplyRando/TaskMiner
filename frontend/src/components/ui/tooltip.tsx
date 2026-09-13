@@ -1,19 +1,29 @@
-import type { PropsWithChildren, ReactNode } from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import type { ReactElement, ReactNode } from "react";
 
-type TooltipProps = PropsWithChildren<{
+type TooltipProps = {
+  children: ReactElement;
   content: ReactNode;
-}>;
+};
 
 export function Tooltip({ children, content }: TooltipProps) {
   return (
-    <span className="group/tooltip relative inline-flex">
-      {children}
-      <span
-        className="bg-foreground text-background pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden w-max max-w-64 -translate-x-1/2 rounded-md px-2 py-1 text-xs shadow-lg group-focus-within/tooltip:block group-hover/tooltip:block"
-        role="tooltip"
-      >
-        {content}
-      </span>
-    </span>
+    <TooltipPrimitive.Provider delayDuration={250} skipDelayDuration={100}>
+      <TooltipPrimitive.Root>
+        <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Content
+            avoidCollisions
+            className="bg-popover text-popover-foreground z-[100] w-max max-w-64 rounded-md border px-2 py-1 text-xs shadow-lg"
+            collisionPadding={12}
+            side="top"
+            sideOffset={8}
+          >
+            {content}
+            <TooltipPrimitive.Arrow className="fill-popover" />
+          </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+      </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
   );
 }

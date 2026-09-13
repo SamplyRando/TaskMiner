@@ -41,6 +41,7 @@ type AIProjectChangeReviewProps = {
   initialReviewValues: AIProjectChangeReviewValues | null;
   isPending: boolean;
   onApply: (request: AIApplyProjectChangePlanRequest) => Promise<void>;
+  onCancel: () => void;
   onReviewChange: (values: AIProjectChangeReviewValues) => void;
   plan: AIProjectChangePlanResponse;
   projectName: string;
@@ -132,6 +133,7 @@ export function AIProjectChangeReview({
   initialReviewValues,
   isPending,
   onApply,
+  onCancel,
   onReviewChange,
   plan,
   projectName,
@@ -311,17 +313,28 @@ export function AIProjectChangeReview({
                 L’état courant sera revérifié avant toute écriture.
               </p>
             </div>
-            <Button
-              className="w-full sm:w-auto"
-              disabled={
-                isApplying || selectedCount === 0 || !form.formState.isValid
-              }
-              isLoading={isApplying}
-              loadingLabel="Application des modifications en cours"
-              type="submit"
-            >
-              Appliquer les modifications
-            </Button>
+            <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+              <Button
+                className="w-full sm:w-auto"
+                disabled={isApplying}
+                onClick={onCancel}
+                type="button"
+                variant="outline"
+              >
+                Ignorer le brouillon
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                disabled={
+                  isApplying || selectedCount === 0 || !form.formState.isValid
+                }
+                isLoading={isApplying}
+                loadingLabel="Application des modifications en cours"
+                type="submit"
+              >
+                Appliquer les modifications
+              </Button>
+            </div>
           </div>
         </form>
       ) : null}
