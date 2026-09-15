@@ -1,5 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, GitCompareArrows } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  GitCompareArrows,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -144,6 +149,9 @@ export function AIProjectChangeReview({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationRequest, setConfirmationRequest] =
     useState<AIApplyProjectChangePlanRequest | null>(null);
+  const [expandedChangeIds, setExpandedChangeIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const form = useForm<AIProjectChangeReviewValues>({
     defaultValues: initialReviewValues ?? toChangeReviewValues(plan),
     mode: "onChange",
@@ -220,10 +228,7 @@ export function AIProjectChangeReview({
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>Brouillon de modifications</Badge>
-            <span className="text-muted-foreground text-xs">
-              Non enregistré
-            </span>
+            <Badge>Brouillon non enregistré</Badge>
           </div>
           <CardTitle id="ai-change-review-title">{plan.summary}</CardTitle>
           <CardDescription>
@@ -271,12 +276,50 @@ export function AIProjectChangeReview({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex flex-wrap justify-end gap-2">
+                <Button
+                  onClick={() => {
+                    setExpandedChangeIds(
+                      new Set(reviewedChanges.map((change) => change.changeId)),
+                    );
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronsUpDown aria-hidden="true" className="size-4" />
+                  Tout développer
+                </Button>
+                <Button
+                  onClick={() => {
+                    setExpandedChangeIds(new Set());
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronsDownUp aria-hidden="true" className="size-4" />
+                  Tout réduire
+                </Button>
+              </div>
               <ol className="space-y-4">
                 {reviewedChanges.map((change, index) => (
                   <AITaskChangeReviewCard
                     change={change}
+                    expanded={expandedChangeIds.has(change.changeId)}
                     index={index}
                     key={change.changeId}
+                    onToggle={() => {
+                      setExpandedChangeIds((current) => {
+                        const next = new Set(current);
+                        if (next.has(change.changeId)) {
+                          next.delete(change.changeId);
+                        } else {
+                          next.add(change.changeId);
+                        }
+                        return next;
+                      });
+                    }}
                     register={form.register}
                   />
                 ))}

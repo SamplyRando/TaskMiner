@@ -32,11 +32,25 @@ const renderReview = (error: unknown = null) => {
 };
 
 describe("AIProjectChangeReview", () => {
-  it("renders clear before and editable after values", () => {
+  it("keeps changes compact by default and expands editable before/after values", async () => {
+    const user = userEvent.setup();
     renderReview();
 
     expect(screen.getByText("3 sur 3 sélectionnées")).toBeInTheDocument();
     expect(screen.getByText("API authentication")).toBeInTheDocument();
+    expect(screen.getAllByText("Priorité :").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Moyenne").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Haute").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByLabelText(
+        "Nouvelle valeur priorité pour API authentication",
+      ),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Modifier les modifications de API authentication",
+      }),
+    );
     expect(screen.getAllByText("Moyenne").length).toBeGreaterThan(0);
     expect(
       screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),
@@ -44,6 +58,27 @@ describe("AIProjectChangeReview", () => {
     expect(
       screen.getByLabelText("Nouvelle valeur échéance pour API authentication"),
     ).toHaveValue("2026-09-27");
+    await user.click(
+      screen.getByRole("button", {
+        name: "Réduire les modifications de API authentication",
+      }),
+    );
+    expect(
+      screen.queryByLabelText(
+        "Nouvelle valeur priorité pour API authentication",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("expands and collapses every proposed change", async () => {
+    const user = userEvent.setup();
+    renderReview();
+
+    expect(screen.queryAllByText("Avant")).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Tout développer" }));
+    expect(screen.getAllByText("Avant").length).toBeGreaterThan(2);
+    await user.click(screen.getByRole("button", { name: "Tout réduire" }));
+    expect(screen.queryAllByText("Avant")).toHaveLength(0);
   });
 
   it("submits every selected reviewed value only after confirmation", async () => {
@@ -51,6 +86,11 @@ describe("AIProjectChangeReview", () => {
     const onApply = renderReview();
     await user.click(
       screen.getByLabelText("Inclure les modifications de API payments"),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Modifier les modifications de API authentication",
+      }),
     );
     await user.selectOptions(
       screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),

@@ -79,18 +79,34 @@ class AIGeneratedTask(BaseModel):
         max_length=5_000,
         description=(
             "A concise execution brief stating the objective, expected deliverable, "
-            "and observable success criterion when known. Include providers, contacts, "
-            "URLs, prices, or external facts only when explicitly present in supplied "
-            "context; otherwise identify the missing detail as to be determined."
+            "and observable success criterion when appropriate. Prefer a clearly "
+            "identified, context-specific recommendation over a placeholder when an "
+            "operational choice is open. Include providers, contacts, URLs, prices, "
+            "or external facts only when explicitly present in supplied context; "
+            "otherwise identify only the genuinely missing factual decision as to "
+            "confirm, in the user's language."
         ),
     )
     priority: TaskPriority
     status: TaskStatus = TaskStatus.TODO
-    suggested_due_date: date | None = None
+    suggested_due_date: date | None = Field(
+        default=None,
+        description=(
+            "An absolute due date only when justified by the supplied target date "
+            "or authoritative context; otherwise null. Relative timing belongs in "
+            "the task description."
+        ),
+    )
     milestone: str | None = Field(default=None, max_length=255)
     order: int = Field(ge=1)
     depends_on: list[int] = Field(default_factory=list)
-    suggested_assignee_id: UUID | None = None
+    suggested_assignee_id: UUID | None = Field(
+        default=None,
+        description=(
+            "A user_id selected only from available_members when the context "
+            "supports the assignment; otherwise null."
+        ),
+    )
 
 
 class AIWorkspaceMemberContext(BaseModel):

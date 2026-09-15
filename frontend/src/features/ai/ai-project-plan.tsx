@@ -144,7 +144,7 @@ export function AIProjectPlan({
     (warning) => warning.level === "blocking",
   );
   const [expandedTaskOrders, setExpandedTaskOrders] = useState<Set<number>>(
-    () => new Set(plan.tasks[0] ? [plan.tasks[0].order] : []),
+    () => new Set(),
   );
   const selectedTaskCountLabel = String(selectedTaskCount);
   const lastPersistedReview = useRef<string | null>(null);

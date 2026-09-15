@@ -292,6 +292,10 @@ describe("AIPage", () => {
     await user.type(prompt, "Prepare the first structured project plan.");
     await user.click(screen.getByRole("button", { name: "Générer le plan" }));
     await screen.findByText(aiPlanFixture.summary);
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
+    expect(screen.getByLabelText("Titre")).toBeInTheDocument();
 
     await user.clear(prompt);
     await user.type(prompt, "Prepare the revised structured project plan.");
@@ -301,6 +305,7 @@ describe("AIPage", () => {
       expect(mockedGenerate).toHaveBeenCalledTimes(2);
     });
     expect(screen.getAllByText("Brouillon non enregistré")).toHaveLength(1);
+    expect(screen.queryByLabelText("Titre")).not.toBeInTheDocument();
     expect(mockedApply).not.toHaveBeenCalled();
   });
 
@@ -408,6 +413,9 @@ describe("AIPage", () => {
     );
     await user.click(screen.getByRole("button", { name: "Générer le plan" }));
 
+    await user.click(
+      await screen.findByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const firstTitle = (await screen.findAllByLabelText(/Titre/))[0];
     if (!firstTitle) throw new Error("Expected the first generated task title");
     await user.clear(firstTitle);
@@ -461,6 +469,9 @@ describe("AIPage", () => {
       "Prepare a persistent review draft for navigation testing.",
     );
     await user.click(screen.getByRole("button", { name: "Générer le plan" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const firstTitle = (await screen.findAllByLabelText(/Titre/))[0];
     if (!firstTitle) throw new Error("Expected the first generated task title");
     await user.clear(firstTitle);
@@ -476,7 +487,14 @@ describe("AIPage", () => {
     renderWithQuery(<AIPage />);
 
     expect(
-      await screen.findByDisplayValue("Brouillon conservé après navigation"),
+      (await screen.findAllByText("Brouillon conservé après navigation"))
+        .length,
+    ).toBeGreaterThan(0);
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
+    expect(
+      screen.getByDisplayValue("Brouillon conservé après navigation"),
     ).toBeInTheDocument();
     expect(screen.getByText("6 sur 7 sélectionnées")).toBeInTheDocument();
     expect(mockedGenerate).toHaveBeenCalledTimes(1);
@@ -608,6 +626,11 @@ describe("AIPage", () => {
     await user.click(
       await screen.findByLabelText("Inclure les modifications de API payments"),
     );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Modifier les modifications de API authentication",
+      }),
+    );
     await user.selectOptions(
       screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),
       "urgent",
@@ -624,6 +647,11 @@ describe("AIPage", () => {
     expect(
       await screen.findByText("2 sur 3 sélectionnées"),
     ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Modifier les modifications de API authentication",
+      }),
+    );
     expect(
       screen.getByLabelText("Nouvelle valeur priorité pour API authentication"),
     ).toHaveValue("urgent");

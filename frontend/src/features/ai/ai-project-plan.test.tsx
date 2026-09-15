@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -59,14 +59,26 @@ describe("AIProjectPlan review", () => {
     const user = userEvent.setup();
     renderReview();
 
-    expect(screen.getAllByLabelText("Titre")).toHaveLength(1);
+    expect(screen.queryByLabelText("Titre")).toBeNull();
+    expect(screen.getAllByText("Define launch scope").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getByText("Haute")).toBeInTheDocument();
+    expect(screen.getAllByText("À faire")).toHaveLength(2);
+    expect(screen.getAllByText("Planning").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Non assignée")).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "Tout développer" }));
     expect(screen.getAllByLabelText("Titre")).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "Tout réduire" }));
     expect(screen.queryByLabelText("Titre")).toBeNull();
-    await user.click(
-      screen.getByRole("button", { name: "Modifier la tâche 01" }),
-    );
+    const firstEditButton = screen.getByRole("button", {
+      name: "Modifier la tâche 01",
+    });
+    act(() => {
+      firstEditButton.focus();
+    });
+    await user.keyboard("{Enter}");
+    expect(firstEditButton).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByLabelText("Titre")).toHaveValue("Define launch scope");
   });
 
@@ -77,6 +89,9 @@ describe("AIProjectPlan review", () => {
     expect(screen.getByText("Dépend de")).toBeInTheDocument();
     expect(screen.getAllByText("Define launch scope").length).toBeGreaterThan(
       1,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
     );
     await user.clear(screen.getByLabelText("Titre"));
     await user.type(screen.getByLabelText("Titre"), "Cadrer le lancement");
@@ -117,6 +132,9 @@ describe("AIProjectPlan review", () => {
     });
 
     expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThan(0);
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const combobox = screen.getByRole("combobox", {
       name: "Assignation suggérée",
     });
@@ -142,11 +160,11 @@ describe("AIProjectPlan review", () => {
     expect(onApply.mock.calls[0]?.[0].tasks[0]?.assigned_user_id).toBe(graceId);
   });
 
-  it("renders milestones as an AI suggestion timeline with selected task counts", () => {
+  it("renders milestones as a concise timeline with selected task counts", () => {
     renderReview();
 
     expect(screen.getByText("Progression proposée")).toBeInTheDocument();
-    expect(screen.getByText("Suggestion IA")).toBeInTheDocument();
+    expect(screen.queryByText("Suggestion IA")).not.toBeInTheDocument();
     expect(screen.getByText("0 tâche sélectionnée")).toBeInTheDocument();
   });
 
@@ -174,6 +192,9 @@ describe("AIProjectPlan review", () => {
     await user.click(screen.getByLabelText("Inclure la tâche 2"));
     expect(screen.getByText("1 sur 2 sélectionnées")).toBeInTheDocument();
 
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const firstTitle = screen.getAllByLabelText(/Titre/)[0];
     const firstPriority = screen.getAllByLabelText("Priorité")[0];
     const firstDate = screen.getAllByLabelText("Échéance")[0];
@@ -247,6 +268,9 @@ describe("AIProjectPlan review", () => {
     const user = userEvent.setup();
     const { onApply } = renderReview();
     await user.click(screen.getByLabelText("Inclure la tâche 2"));
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const firstTitle = screen.getAllByLabelText(/Titre/)[0];
     if (!firstTitle) throw new Error("Expected first title field");
     await user.clear(firstTitle);
@@ -282,6 +306,9 @@ describe("AIProjectPlan review", () => {
       detail: "Insufficient permissions.",
     });
     renderReview({ error });
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const title = screen.getAllByLabelText(/Titre/)[0];
     if (!title) throw new Error("Expected title field");
     await user.clear(title);
@@ -307,6 +334,9 @@ describe("AIProjectPlan review", () => {
       (request: AIApplyProjectPlanRequest) => Promise<void>
     >(() => Promise.reject(new Error("Network unavailable")));
     renderReview({ onApply });
+    await user.click(
+      screen.getByRole("button", { name: "Modifier la tâche 01" }),
+    );
     const title = screen.getAllByLabelText(/Titre/)[0];
     if (!title) throw new Error("Expected title field");
     await user.clear(title);

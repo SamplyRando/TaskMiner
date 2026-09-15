@@ -310,6 +310,7 @@ export function AIPage() {
           existingProjectName={draft.projectName}
           idempotencyKey={draft.idempotencyKey}
           initialReviewValues={draft.reviewValues}
+          key={draft.idempotencyKey}
           currentUserId={currentUserId}
           isPending={applyPlan.isPending}
           isMembersLoading={assignableMembersQuery.isPending}

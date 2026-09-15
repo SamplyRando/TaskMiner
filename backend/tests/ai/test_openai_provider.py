@@ -150,6 +150,9 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
     assert "Never state or imply" in kwargs["instructions"]
     assert "Never invent people, organizations" in kwargs["instructions"]
     assert "smallest sufficient set" in kwargs["instructions"]
+    assert "Safe recommendation" in kwargs["instructions"]
+    assert "language used by the user's brief" in kwargs["instructions"]
+    assert 'Do not use "To determine"' in kwargs["instructions"]
 
 
 def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() -> None:
@@ -167,6 +170,11 @@ def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() 
         ],
     )
     plan = valid_plan()
+    plan.tasks[
+        0
+    ].description = (
+        "Validate the existing Stripe integration and record the review outcome."
+    )
     plan.tasks[0].suggested_assignee_id = member_id
     provider, parse = provider_with_result(plan)
     request = AIProjectPlanRequest(
@@ -177,6 +185,7 @@ def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() 
     result = asyncio.run(provider.generate_project_plan(request, context))
 
     assert result.value.tasks[0].suggested_assignee_id == member_id
+    assert "Stripe" in (result.value.tasks[0].description or "")
     assert parse.await_args is not None
     sent = json.loads(parse.await_args.kwargs["input"])
     assert sent["available_members"] == [
@@ -192,6 +201,7 @@ def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() 
         "name": "Production billing",
     }
     assert "email" not in parse.await_args.kwargs["input"]
+    assert "provider/tool category" in parse.await_args.kwargs["instructions"]
 
 
 def test_project_plan_accepts_external_details_only_when_supplied() -> None:
@@ -217,6 +227,64 @@ def test_project_plan_accepts_external_details_only_when_supplied() -> None:
     assert "https://docs.example.test/runbook" in (
         result.value.tasks[0].description or ""
     )
+
+
+def test_french_plan_normalizes_legacy_english_unknown_placeholders() -> None:
+    plan = valid_plan()
+    plan.summary = "Plan de lancement ; modalités exactes : To determine."
+    plan.tasks[
+        0
+    ].description = "Sélectionner les utilisateurs pilotes. Canal : To be determined."
+    plan.warnings = ["Format de collecte : to determine."]
+    provider, _ = provider_with_result(plan)
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(
+                workspace_id=uuid4(),
+                prompt=(
+                    "Organise le lancement de mon application auprès de mes dix "
+                    "premiers utilisateurs."
+                ),
+            )
+        )
+    )
+
+    serialized = result.value.model_dump_json()
+    assert "To determine" not in serialized
+    assert "to determine" not in serialized
+    assert "À confirmer" in serialized
+
+
+def test_project_plan_accepts_safe_recommendations_without_invented_facts() -> None:
+    plan = valid_plan()
+    plan.tasks[0].description = (
+        "Constituer une liste de dix profils correspondant à l’usage décrit. "
+        "Recommandation : prioriser les profils selon leur pertinence et leur "
+        "disponibilité, puis confirmer la sélection avant invitation. "
+        "Terminé lorsque dix candidats sont prêts à recevoir l’onboarding."
+    )
+    plan.tasks[0].suggested_due_date = None
+    plan.tasks[0].suggested_assignee_id = None
+    provider, _ = provider_with_result(plan)
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(
+                workspace_id=uuid4(),
+                prompt=(
+                    "Organise le lancement de mon application auprès de mes dix "
+                    "premiers utilisateurs."
+                ),
+            )
+        )
+    )
+
+    first_task = result.value.tasks[0]
+    assert first_task.description is not None
+    assert "Recommandation" in first_task.description
+    assert first_task.suggested_due_date is None
+    assert first_task.suggested_assignee_id is None
 
 
 def test_project_plan_rejects_fabricated_contact_details() -> None:
@@ -393,6 +461,55 @@ def test_project_change_uses_only_safe_context_and_server_owned_identity() -> No
     assert str(task.id) in sent
     assert "Private member name" not in sent
     assert str(task.assigned_user_id) not in sent
+
+
+def test_french_change_plan_normalizes_legacy_english_placeholder() -> None:
+    context = project_context()
+    task = context.tasks[0]
+
+    async def parse_response(**kwargs: object) -> object:
+        response_model = cast(type[BaseModel], kwargs["text_format"])
+        parsed = response_model.model_validate(
+            {
+                "summary": "Une modification est proposée.",
+                "changes": [
+                    {
+                        "task_id": str(task.id),
+                        "after": {
+                            **task.state.model_dump(mode="json"),
+                            "description": "Modalités exactes : To determine.",
+                        },
+                        "reason": "Recommandation à confirmer avant application.",
+                    }
+                ],
+                "warnings": ["Responsable : To be determined."],
+            }
+        )
+        return SimpleNamespace(output_parsed=parsed, output=[])
+
+    parse = AsyncMock(side_effect=parse_response)
+    client = SimpleNamespace(responses=SimpleNamespace(parse=parse))
+    provider = OpenAIProvider(
+        api_key="tests-only-key",
+        model="gpt-5.6-luna",
+        client=cast(AsyncOpenAI, client),
+    )
+
+    result = asyncio.run(
+        provider.generate_project_change_plan(
+            AIProjectChangePlanRequest(
+                workspace_id=uuid4(),
+                project_id=context.id,
+                instruction="Précise la description de la tâche API existante.",
+            ),
+            context,
+        )
+    )
+
+    assert result.value.changes[0].after.description == (
+        "Modalités exactes : À confirmer."
+    )
+    assert result.value.warnings == ["Responsable : À confirmer."]
 
 
 def test_unknown_task_id_in_change_output_fails_safely() -> None:

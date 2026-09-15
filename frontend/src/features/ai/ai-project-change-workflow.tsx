@@ -184,6 +184,7 @@ export function AIProjectChangeWorkflow({
           idempotencyKey={draft.idempotencyKey}
           initialReviewValues={draft.reviewValues}
           isPending={applyPlan.isPending}
+          key={draft.idempotencyKey}
           onApply={handleApply}
           onCancel={handleCancelDraft}
           onReviewChange={handleReviewChange}

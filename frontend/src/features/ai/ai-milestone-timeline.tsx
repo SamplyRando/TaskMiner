@@ -1,6 +1,5 @@
 import { CalendarDays, Flag } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import type { AIPlanReviewValues } from "@/features/ai/schemas";
 import type { AIGeneratedMilestone } from "@/types/ai";
 
@@ -51,17 +50,14 @@ export function AIMilestoneTimeline({
               {String(milestone.order).padStart(2, "0")}
             </span>
             <div className="min-w-0 rounded-xl border p-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Flag
-                    aria-hidden="true"
-                    className="text-primary size-4 shrink-0"
-                  />
-                  <h3 className="truncate text-sm font-semibold">
-                    {milestone.name}
-                  </h3>
-                </div>
-                <Badge variant="outline">Suggestion IA</Badge>
+              <div className="flex min-w-0 items-center gap-2">
+                <Flag
+                  aria-hidden="true"
+                  className="text-primary size-4 shrink-0"
+                />
+                <h3 className="truncate text-sm font-semibold">
+                  {milestone.name}
+                </h3>
               </div>
               {milestone.description ? (
                 <p className="text-muted-foreground mt-2 text-xs leading-5">

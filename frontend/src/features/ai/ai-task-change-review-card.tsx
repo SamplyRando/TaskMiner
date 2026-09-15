@@ -1,7 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import type { UseFormRegister } from "react-hook-form";
 
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import {
 } from "@/features/tasks/task-presentation";
 import type { AIChangeField } from "@/types/ai";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/types/task";
+import { cn } from "@/lib/utils";
 
 const fieldLabels: Record<AIChangeField, string> = {
   title: "Titre",
@@ -25,13 +26,17 @@ type AIChangeReview = AIProjectChangeReviewValues["changes"][number];
 
 type AITaskChangeReviewCardProps = {
   change: AIChangeReview;
+  expanded: boolean;
   index: number;
+  onToggle: () => void;
   register: UseFormRegister<AIProjectChangeReviewValues>;
 };
 
 export function AITaskChangeReviewCard({
   change,
+  expanded,
   index,
+  onToggle,
   register,
 }: AITaskChangeReviewCardProps) {
   const fieldPath = <
@@ -41,12 +46,20 @@ export function AITaskChangeReviewCard({
   ): `changes.${number}.after.${Field}` =>
     `changes.${String(index)}.after.${field}` as `changes.${number}.after.${Field}`;
   const taskLabel = change.taskTitle;
+  const detailsId = `ai-change-${change.changeId}-details`;
 
   const beforeValue = (field: AIChangeField): string => {
     if (field === "status") return taskStatusLabels[change.before.status];
     if (field === "priority") return taskPriorityLabels[change.before.priority];
     if (field === "due_date") return change.before.dueDate || "Aucune";
     return change.before[field] || "Aucune";
+  };
+
+  const afterValue = (field: AIChangeField): string => {
+    if (field === "status") return taskStatusLabels[change.after.status];
+    if (field === "priority") return taskPriorityLabels[change.after.priority];
+    if (field === "due_date") return change.after.dueDate || "Aucune";
+    return change.after[field] || "Aucune";
   };
 
   const renderAfterField = (field: AIChangeField) => {
@@ -108,11 +121,11 @@ export function AITaskChangeReviewCard({
 
   return (
     <li
-      className={`rounded-xl border p-4 transition-opacity ${
+      className={`overflow-hidden rounded-xl border transition-opacity ${
         change.selected ? "bg-background" : "bg-muted/30 opacity-65"
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3 p-4">
         <input
           aria-label={`Inclure les modifications de ${taskLabel}`}
           className="accent-primary mt-1 size-4 shrink-0 cursor-pointer"
@@ -122,18 +135,69 @@ export function AITaskChangeReviewCard({
           )}
         />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-medium">{taskLabel}</h3>
-            <Badge variant="outline">
-              {change.changedFields.length} champ
-              {change.changedFields.length > 1 ? "s" : ""}
-            </Badge>
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm leading-5 font-semibold break-words">
+                {taskLabel}
+              </h3>
+              <ul className="text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-xs">
+                {change.changedFields.map((field) => (
+                  <li className="flex min-w-0 items-center gap-1" key={field}>
+                    <span className="text-foreground/80 font-medium">
+                      {fieldLabels[field]} :
+                    </span>
+                    {field === "description" ? (
+                      <span>modifiée</span>
+                    ) : (
+                      <>
+                        <span className="max-w-40 truncate">
+                          {beforeValue(field)}
+                        </span>
+                        <span className="sr-only"> devient </span>
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="size-3 shrink-0"
+                        />
+                        <span className="max-w-40 truncate">
+                          {afterValue(field)}
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Button
+              aria-controls={detailsId}
+              aria-expanded={expanded}
+              aria-label={`${expanded ? "Réduire" : "Modifier"} les modifications de ${taskLabel}`}
+              onClick={onToggle}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              {expanded ? "Réduire" : "Modifier"}
+              <ChevronDown
+                aria-hidden="true"
+                className={cn(
+                  "size-4 transition-transform motion-reduce:transition-none",
+                  expanded && "rotate-180",
+                )}
+              />
+            </Button>
           </div>
-          <p className="text-muted-foreground mt-1 text-xs leading-5">
+        </div>
+      </div>
+
+      {expanded ? (
+        <div
+          className="bg-muted/15 space-y-4 border-t p-4 sm:p-5"
+          id={detailsId}
+        >
+          <p className="text-muted-foreground text-xs leading-5">
             {change.reason}
           </p>
-
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             {change.changedFields.map((field) => (
               <div className="rounded-lg border p-3" key={field}>
                 <p className="mb-2 text-xs font-semibold tracking-wide uppercase">
@@ -163,7 +227,7 @@ export function AITaskChangeReviewCard({
             ))}
           </div>
         </div>
-      </div>
+      ) : null}
     </li>
   );
 }
