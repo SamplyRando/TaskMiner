@@ -33,6 +33,7 @@ from app.ai.schemas import (
 )
 from app.ai.service import AIProjectNotFoundError
 from app.ai.usage_service import (
+    AIEmailVerificationRequiredError,
     AIMonthlyQuotaExceededError,
     AIRateLimitExceededError,
 )
@@ -97,6 +98,16 @@ def _provider_http_exception(error: AIProviderError) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail="TaskMiner AI is temporarily unavailable. Please try again.",
+    )
+
+
+def _email_verification_http_exception() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": "email_verification_required",
+            "message": "Verify your email address before using TaskMiner AI.",
+        },
     )
 
 
@@ -186,6 +197,8 @@ async def generate_project_change_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except AIEmailVerificationRequiredError as exc:
+        raise _email_verification_http_exception() from exc
     except (AIMonthlyQuotaExceededError, AIRateLimitExceededError) as exc:
         raise _usage_limit_http_exception(exc) from exc
     except AIProviderError as exc:
@@ -258,6 +271,8 @@ async def generate_project_plan(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except AIEmailVerificationRequiredError as exc:
+        raise _email_verification_http_exception() from exc
     except (AIMonthlyQuotaExceededError, AIRateLimitExceededError) as exc:
         raise _usage_limit_http_exception(exc) from exc
     except AIProviderError as exc:

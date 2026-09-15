@@ -66,8 +66,24 @@ class AIGeneratedTask(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=5_000)
+    title: str = Field(
+        min_length=1,
+        max_length=255,
+        description=(
+            "A specific, imperative action naming the concrete work to perform; "
+            "never a vague coordination placeholder."
+        ),
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=5_000,
+        description=(
+            "A concise execution brief stating the objective, expected deliverable, "
+            "and observable success criterion when known. Include providers, contacts, "
+            "URLs, prices, or external facts only when explicitly present in supplied "
+            "context; otherwise identify the missing detail as to be determined."
+        ),
+    )
     priority: TaskPriority
     status: TaskStatus = TaskStatus.TODO
     suggested_due_date: date | None = None
@@ -92,6 +108,9 @@ class AIProjectPlanningContext(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    workspace_name: str | None = Field(default=None, min_length=1, max_length=255)
+    project_name: str | None = Field(default=None, min_length=1, max_length=255)
+    project_description: str | None = Field(default=None, max_length=5_000)
     assignable_members: list[AIWorkspaceMemberContext]
 
 

@@ -173,11 +173,10 @@ html:has(.marketing-shell) {
 .marketing-navbar--open .marketing-nav {
   height: 3.9rem;
   border-color: rgba(255, 255, 255, 0.095);
-  background: rgba(9, 7, 14, 0.72);
+  background: rgba(9, 7, 14, 0.94);
   box-shadow:
     0 18px 50px rgba(0, 0, 0, 0.28),
     inset 0 1px rgba(255, 255, 255, 0.055);
-  backdrop-filter: blur(20px) saturate(145%);
 }
 
 .marketing-nav__brand {
@@ -1599,6 +1598,20 @@ html:has(.marketing-shell) {
 .marketing-section {
   position: relative;
   padding-block: var(--marketing-section-space);
+}
+
+@supports (content-visibility: auto) {
+  .marketing-trust-bar,
+  .marketing-section,
+  .marketing-stats,
+  .marketing-final-cta {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 48rem;
+  }
+
+  .marketing-how {
+    contain-intrinsic-block-size: auto 100rem;
+  }
 }
 
 .marketing-section-heading {

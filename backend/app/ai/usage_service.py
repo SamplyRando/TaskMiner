@@ -52,6 +52,10 @@ class AIRateLimitExceededError(Exception):
         self.retry_after_seconds = retry_after_seconds
 
 
+class AIEmailVerificationRequiredError(Exception):
+    """Raised before metering when an account is not verified."""
+
+
 def utc_month_bounds(now: datetime) -> tuple[datetime, datetime]:
     start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     if now.month == 12:
@@ -94,6 +98,8 @@ class AIUsageService:
         provider: AIProvider,
         generate: Callable[[], Awaitable[AIProviderResult[GenerationT]]],
     ) -> GenerationT:
+        if user.email_verified_at is None:
+            raise AIEmailVerificationRequiredError
         event_id = self._reserve(
             user=user,
             workspace_id=workspace_id,

@@ -15,21 +15,33 @@ const navigationItems = [
 
 export function MarketingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(() => window.scrollY > 12);
+  const isScrolledRef = useRef(isScrolled);
   const activeSection = useActiveMarketingSection();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const firstMenuLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
+    let scheduledFrame = 0;
     const updateScrolledState = () => {
-      setIsScrolled(window.scrollY > 12);
+      scheduledFrame = 0;
+      const nextIsScrolled = window.scrollY > 12;
+      if (nextIsScrolled === isScrolledRef.current) return;
+      isScrolledRef.current = nextIsScrolled;
+      setIsScrolled(nextIsScrolled);
+    };
+    const scheduleScrolledStateUpdate = () => {
+      if (scheduledFrame !== 0) return;
+      scheduledFrame = window.requestAnimationFrame(updateScrolledState);
     };
 
-    updateScrolledState();
-    window.addEventListener("scroll", updateScrolledState, { passive: true });
+    window.addEventListener("scroll", scheduleScrolledStateUpdate, {
+      passive: true,
+    });
     return () => {
-      window.removeEventListener("scroll", updateScrolledState);
+      window.cancelAnimationFrame(scheduledFrame);
+      window.removeEventListener("scroll", scheduleScrolledStateUpdate);
     };
   }, []);
 

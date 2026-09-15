@@ -73,7 +73,20 @@ describe("HomePage", () => {
     renderPage();
 
     expect(await screen.findByText("Bonjour, Ada")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Vue d’ensemble du workspace actif, actualisée toutes les 30 secondes.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Workspaces")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Information sur Workspaces" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Information sur Temps moyen de clôture",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Taux de complétion")).toBeInTheDocument();
     expect(screen.getByText("Graphiques analytiques")).toBeInTheDocument();
     expect(screen.getByText("Dernières activités")).toBeInTheDocument();

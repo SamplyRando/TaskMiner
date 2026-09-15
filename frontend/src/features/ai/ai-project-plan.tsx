@@ -233,10 +233,7 @@ export function AIProjectPlan({
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>Brouillon IA</Badge>
-            <span className="text-muted-foreground text-xs">
-              Brouillon IA — non enregistré
-            </span>
+            <Badge>Brouillon non enregistré</Badge>
           </div>
           <CardTitle id="ai-plan-title">Plan suggéré</CardTitle>
           <CardDescription className="max-w-3xl text-sm leading-6">

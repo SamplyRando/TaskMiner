@@ -167,7 +167,6 @@ export function HomePage() {
         color: "violet" as const,
         icon: BriefcaseBusiness,
         title: "Workspaces",
-        tooltip: "Espaces de travail actifs dans le périmètre sélectionné.",
         value: dashboard.kpis.workspaces,
         variation: dashboard.kpis.variations.workspaces,
       },
@@ -175,7 +174,6 @@ export function HomePage() {
         color: "blue" as const,
         icon: FolderKanban,
         title: "Projets",
-        tooltip: "Projets actifs, hors éléments supprimés.",
         value: dashboard.kpis.projects,
         variation: dashboard.kpis.variations.projects,
       },
@@ -183,7 +181,6 @@ export function HomePage() {
         color: "violet" as const,
         icon: ListTodo,
         title: "Tâches",
-        tooltip: "Toutes les tâches actives correspondant aux filtres.",
         value: dashboard.kpis.tasks,
         variation: dashboard.kpis.variations.tasks,
       },
@@ -191,7 +188,6 @@ export function HomePage() {
         color: "emerald" as const,
         icon: CheckCircle2,
         title: "Tâches terminées",
-        tooltip: "Tâches actuellement au statut terminé.",
         value: dashboard.kpis.completed,
         variation: dashboard.kpis.variations.completed,
       },
@@ -206,7 +202,7 @@ export function HomePage() {
       {
         color: "amber" as const,
         icon: CalendarClock,
-        title: "Dues aujourd’hui",
+        title: "À échéance aujourd’hui",
         tooltip: "Tâches non terminées arrivant à échéance aujourd’hui.",
         value: dashboard.kpis.due_today,
         variation: null,
@@ -214,7 +210,7 @@ export function HomePage() {
       {
         color: "blue" as const,
         icon: CalendarCheck2,
-        title: "Dues cette semaine",
+        title: "À échéance cette semaine",
         tooltip: "Tâches non terminées dues avant la fin de la semaine.",
         value: dashboard.kpis.due_this_week,
         variation: null,
@@ -282,8 +278,8 @@ export function HomePage() {
             Bonjour{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Votre cockpit décisionnel est actualisé automatiquement toutes les
-            30 secondes.
+            Vue d’ensemble du workspace actif, actualisée toutes les 30
+            secondes.
           </p>
         </div>
         {dashboardQuery.isFetching ? (

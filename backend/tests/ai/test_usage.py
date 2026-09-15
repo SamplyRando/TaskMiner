@@ -29,6 +29,7 @@ from app.api.deps import get_ai_provider_dependency
 from app.core.config import settings
 from app.main import app
 from app.models.ai_usage_event import AIUsageEvent
+from app.models.user import User
 from app.models.workspace_member import WorkspaceMemberRole
 from tests.ai.test_endpoint import plan_payload
 from tests.factories import (
@@ -491,6 +492,34 @@ def test_viewer_rejection_does_not_reserve_usage_or_call_provider(
     )
 
     assert response.status_code == 403
+    assert metered_provider.call_count == 0
+    assert database_session.scalar(select(func.count(AIUsageEvent.id))) == 0
+
+
+def test_unverified_account_cannot_reserve_usage_or_call_provider(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    metered_provider: MeteredProvider,
+    database_session: Session,
+) -> None:
+    user = database_session.get(User, workspace.owner.id)
+    assert user is not None
+    user.email_verified_at = None
+    database_session.commit()
+
+    response = client.post(
+        "/api/v1/ai/project-plan",
+        headers=workspace.owner.headers,
+        json=plan_payload(workspace.id),
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {
+        "detail": {
+            "code": "email_verification_required",
+            "message": "Verify your email address before using TaskMiner AI.",
+        }
+    }
     assert metered_provider.call_count == 0
     assert database_session.scalar(select(func.count(AIUsageEvent.id))) == 0
 

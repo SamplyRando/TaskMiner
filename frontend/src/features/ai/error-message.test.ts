@@ -34,6 +34,19 @@ describe("getAIGenerationErrorMessage", () => {
     );
   });
 
+  it("explains that email verification is required", () => {
+    expect(
+      getAIGenerationErrorMessage(
+        new ApiError("private backend message", 403, {
+          detail: {
+            code: "email_verification_required",
+            message: "private backend message",
+          },
+        }),
+      ),
+    ).toBe("Vérifiez votre adresse e-mail avant d’utiliser TaskMiner AI.");
+  });
+
   it("leaves ordinary validation and authorization errors unchanged", () => {
     expect(
       getAIGenerationErrorMessage(new ApiError("Workspace not found.", 404)),

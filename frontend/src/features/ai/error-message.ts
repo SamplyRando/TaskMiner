@@ -1,10 +1,27 @@
 import { ApiError } from "@/api/client";
 import { getPlanLimitCode } from "@/features/subscriptions/errors";
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getAIErrorCode = (error: ApiError): string | null => {
+  if (!isRecord(error.details)) return null;
+  const detail = error.details.detail;
+  return isRecord(detail) && typeof detail.code === "string"
+    ? detail.code
+    : null;
+};
+
 export const getAIGenerationErrorMessage = (
   error: unknown,
 ): string | undefined => {
   if (!(error instanceof ApiError)) return undefined;
+  if (
+    error.status === 403 &&
+    getAIErrorCode(error) === "email_verification_required"
+  ) {
+    return "Vérifiez votre adresse e-mail avant d’utiliser TaskMiner AI.";
+  }
   if (error.status === 429) {
     return error.message === "AI monthly quota exceeded." ||
       getPlanLimitCode(error) === "ai_quota_reached"

@@ -30,13 +30,17 @@ describe("dashboard components", () => {
         color="emerald"
         icon={CheckCircle2}
         title="Tâches terminées"
-        tooltip="Tâches au statut terminé."
         value={12}
       />,
     );
 
     expect(screen.getByText("Tâches terminées")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Information sur Tâches terminées",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders status progress bars with accessible percentages", () => {

@@ -220,7 +220,7 @@ describe("AIPage", () => {
     await user.click(screen.getByRole("button", { name: "Générer le plan" }));
 
     expect(await screen.findByText(aiPlanFixture.summary)).toBeInTheDocument();
-    expect(screen.getByText("Brouillon IA")).toBeInTheDocument();
+    expect(screen.getByText("Brouillon non enregistré")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Tout développer" }));
     expect(screen.getByDisplayValue("Define launch scope")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Run QA validation")).toBeInTheDocument();
@@ -300,7 +300,7 @@ describe("AIPage", () => {
     await waitFor(() => {
       expect(mockedGenerate).toHaveBeenCalledTimes(2);
     });
-    expect(screen.getAllByText("Brouillon IA")).toHaveLength(1);
+    expect(screen.getAllByText("Brouillon non enregistré")).toHaveLength(1);
     expect(mockedApply).not.toHaveBeenCalled();
   });
 
@@ -359,7 +359,9 @@ describe("AIPage", () => {
       await screen.findByText("Plan appliqué avec succès"),
     ).toBeInTheDocument();
     expect(mockedApply).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Brouillon IA")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Brouillon non enregistré"),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Prepare the mobile application/),
     ).toBeInTheDocument();

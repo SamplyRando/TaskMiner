@@ -42,6 +42,7 @@ class AIService:
             user,
             request.workspace_id,
         )
+        project = None
         if request.project_id is not None:
             project = self.project_repository.get_active_by_workspace(
                 request.project_id,
@@ -51,6 +52,9 @@ class AIService:
                 raise AIProjectNotFoundError
 
         planning_context = AIProjectPlanningContext(
+            workspace_name=workspace.name,
+            project_name=project.name if project is not None else None,
+            project_description=(project.description if project is not None else None),
             assignable_members=[
                 AIWorkspaceMemberContext(
                     user_id=member.user_id,
@@ -62,7 +66,7 @@ class AIService:
                     role=member.role,
                 )
                 for member in self.member_repository.list_active_by_workspace(workspace)
-            ]
+            ],
         )
 
         return await self.usage_service.run_generation(

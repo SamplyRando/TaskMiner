@@ -15,9 +15,11 @@ export function useHeroParallax<T extends HTMLElement>() {
     let isListening = false;
     let pointerX = 0;
     let pointerY = 0;
+    let heroBounds: DOMRect | null = null;
 
     const updateVariables = () => {
-      const bounds = hero.getBoundingClientRect();
+      const bounds = heroBounds ?? hero.getBoundingClientRect();
+      heroBounds = bounds;
       const normalizedX = Math.max(
         -1,
         Math.min(1, ((pointerX - bounds.left) / bounds.width - 0.5) * 2),
@@ -63,6 +65,14 @@ export function useHeroParallax<T extends HTMLElement>() {
       hero.style.setProperty("--marketing-preview-rotate-y", "0deg");
     };
 
+    const refreshBounds = () => {
+      heroBounds = hero.getBoundingClientRect();
+    };
+
+    const invalidateBounds = () => {
+      heroBounds = null;
+    };
+
     const handlePointerMove = (event: PointerEvent) => {
       pointerX = event.clientX;
       pointerY = event.clientY;
@@ -73,17 +83,23 @@ export function useHeroParallax<T extends HTMLElement>() {
     const addListeners = () => {
       if (isListening) return;
       isListening = true;
+      hero.addEventListener("pointerenter", refreshBounds, { passive: true });
       hero.addEventListener("pointermove", handlePointerMove, {
         passive: true,
       });
       hero.addEventListener("pointerleave", resetVariables);
+      window.addEventListener("resize", invalidateBounds, { passive: true });
+      window.addEventListener("scroll", invalidateBounds, { passive: true });
     };
 
     const removeListeners = () => {
       if (!isListening) return;
       isListening = false;
+      hero.removeEventListener("pointerenter", refreshBounds);
       hero.removeEventListener("pointermove", handlePointerMove);
       hero.removeEventListener("pointerleave", resetVariables);
+      window.removeEventListener("resize", invalidateBounds);
+      window.removeEventListener("scroll", invalidateBounds);
       resetVariables();
     };
 

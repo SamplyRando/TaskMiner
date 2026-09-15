@@ -10,7 +10,7 @@ type KpiCardProps = {
   color: "blue" | "emerald" | "amber" | "violet" | "rose";
   icon: LucideIcon;
   title: string;
-  tooltip: string;
+  tooltip?: string;
   value: number | string;
   variation?: number | null;
 };
@@ -44,15 +44,17 @@ export const KpiCard = memo(function KpiCard({
             <p className="text-muted-foreground truncate text-sm font-medium">
               {title}
             </p>
-            <Tooltip content={tooltip}>
-              <button
-                aria-label={`Information sur ${title}`}
-                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring shrink-0 rounded-sm focus-visible:ring-2 focus-visible:outline-none"
-                type="button"
-              >
-                <Info aria-hidden="true" className="size-3.5" />
-              </button>
-            </Tooltip>
+            {tooltip ? (
+              <Tooltip content={tooltip}>
+                <button
+                  aria-label={`Information sur ${title}`}
+                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring shrink-0 rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+                  type="button"
+                >
+                  <Info aria-hidden="true" className="size-3.5" />
+                </button>
+              </Tooltip>
+            ) : null}
           </div>
           <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
           <p

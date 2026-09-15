@@ -141,23 +141,30 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
     assert sent == {
         "available_members": [],
         "brief": request.prompt,
+        "current_project": None,
+        "current_workspace": None,
         "target_date": "2026-09-01",
         "planning_mode": "new_project",
     }
     assert str(request.workspace_id) not in kwargs["input"]
     assert "Never state or imply" in kwargs["instructions"]
+    assert "Never invent people, organizations" in kwargs["instructions"]
+    assert "smallest sufficient set" in kwargs["instructions"]
 
 
 def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() -> None:
     member_id = uuid4()
     context = AIProjectPlanningContext(
+        workspace_name="Payments team",
+        project_name="Production billing",
+        project_description="Validate the existing Stripe integration.",
         assignable_members=[
             AIWorkspaceMemberContext(
                 user_id=member_id,
                 display_name="Ada Lovelace",
                 role=WorkspaceMemberRole.MEMBER,
             )
-        ]
+        ],
     )
     plan = valid_plan()
     plan.tasks[0].suggested_assignee_id = member_id
@@ -179,7 +186,99 @@ def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() 
             "user_id": str(member_id),
         }
     ]
+    assert sent["current_workspace"] == {"name": "Payments team"}
+    assert sent["current_project"] == {
+        "description": "Validate the existing Stripe integration.",
+        "name": "Production billing",
+    }
     assert "email" not in parse.await_args.kwargs["input"]
+
+
+def test_project_plan_accepts_external_details_only_when_supplied() -> None:
+    plan = valid_plan()
+    plan.tasks[0].description = (
+        "Verify the supplied resource and record the result. "
+        "Success criterion: https://docs.example.test/runbook is reviewed."
+    )
+    provider, _ = provider_with_result(plan)
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(
+                workspace_id=uuid4(),
+                prompt=(
+                    "Prepare an execution plan using the existing runbook at "
+                    "https://docs.example.test/runbook."
+                ),
+            )
+        )
+    )
+
+    assert "https://docs.example.test/runbook" in (
+        result.value.tasks[0].description or ""
+    )
+
+
+def test_project_plan_rejects_fabricated_contact_details() -> None:
+    plan = valid_plan()
+    plan.tasks[
+        0
+    ].description = (
+        "Contact made-up@example.test and obtain written approval before delivery."
+    )
+    provider, _ = provider_with_result(plan)
+
+    with pytest.raises(AIProviderResponseError):
+        asyncio.run(
+            provider.generate_project_plan(
+                AIProjectPlanRequest(
+                    workspace_id=uuid4(),
+                    prompt="Prepare a concrete launch plan with accountable reviews.",
+                )
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Contact suppliers",
+        "Prepare communication",
+        "Find partners",
+        "Configure a service",
+        "Check integration",
+    ],
+)
+def test_project_plan_rejects_generic_filler_titles(title: str) -> None:
+    plan = valid_plan()
+    plan.tasks[0].title = title
+    provider, _ = provider_with_result(plan)
+
+    with pytest.raises(AIProviderResponseError):
+        asyncio.run(
+            provider.generate_project_plan(
+                AIProjectPlanRequest(
+                    workspace_id=uuid4(),
+                    prompt="Prepare a concrete and execution-ready launch plan.",
+                )
+            )
+        )
+
+
+def test_project_plan_rejects_repeated_tasks() -> None:
+    plan = valid_plan()
+    plan.tasks[1].title = f"  {plan.tasks[0].title.upper()}  "
+    provider, _ = provider_with_result(plan)
+
+    with pytest.raises(AIProviderResponseError):
+        asyncio.run(
+            provider.generate_project_plan(
+                AIProjectPlanRequest(
+                    workspace_id=uuid4(),
+                    prompt="Prepare a concrete and execution-ready launch plan.",
+                )
+            )
+        )
 
 
 def test_project_plan_rejects_an_assignee_outside_supplied_context() -> None:
