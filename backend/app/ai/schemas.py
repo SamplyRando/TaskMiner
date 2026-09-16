@@ -80,11 +80,12 @@ class AIGeneratedTask(BaseModel):
         description=(
             "A concise execution brief stating the objective, expected deliverable, "
             "and observable success criterion when appropriate. Prefer a clearly "
-            "identified, context-specific recommendation over a placeholder when an "
-            "operational choice is open. Include providers, contacts, URLs, prices, "
-            "or external facts only when explicitly present in supplied context; "
-            "otherwise identify only the genuinely missing factual decision as to "
-            "confirm, in the user's language."
+            "identified, context-specific recommendation over a placeholder whenever "
+            "an operational choice is open. Include useful relative timing when no "
+            "absolute schedule is grounded. Include providers, contacts, URLs, "
+            "prices, or external facts only when explicitly present in supplied "
+            "context; otherwise identify only the genuinely missing factual decision "
+            "as to confirm, in the user's language."
         ),
     )
     priority: TaskPriority
@@ -149,7 +150,14 @@ class AIProjectPlanResponse(BaseModel):
     summary: str = Field(min_length=1, max_length=2_000)
     tasks: list[AIGeneratedTask]
     milestones: list[AIGeneratedMilestone]
-    warnings: list[str]
+    warnings: list[str] = Field(
+        description=(
+            "Only unresolved factual inputs that block or materially affect execution, "
+            "conflicts, and real risks. Do not warn merely because an operational "
+            "recommendation can still be adapted, and do not repeat equivalent "
+            "schedule warnings."
+        )
+    )
 
 
 class AIApprovedTask(TaskCreate):

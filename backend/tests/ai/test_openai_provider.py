@@ -85,6 +85,40 @@ def valid_plan() -> AIProjectPlanResponse:
     )
 
 
+def recommendation_first_plan(
+    *,
+    summary: str,
+    task_specs: list[tuple[str, str]],
+    warnings: list[str],
+) -> AIProjectPlanResponse:
+    return AIProjectPlanResponse(
+        summary=summary,
+        tasks=[
+            AIGeneratedTask(
+                title=title,
+                description=description,
+                priority=TaskPriority.HIGH if order == 1 else TaskPriority.MEDIUM,
+                status=TaskStatus.TODO,
+                suggested_due_date=None,
+                milestone="Exécution",
+                order=order,
+                depends_on=[] if order == 1 else [order - 1],
+                suggested_assignee_id=None,
+            )
+            for order, (title, description) in enumerate(task_specs, start=1)
+        ],
+        milestones=[
+            AIGeneratedMilestone(
+                name="Exécution",
+                description="Le déroulement recommandé a été réalisé et vérifié.",
+                suggested_due_date=None,
+                order=1,
+            )
+        ],
+        warnings=warnings,
+    )
+
+
 def project_context() -> AIProjectContext:
     return AIProjectContext(
         id=uuid4(),
@@ -153,6 +187,18 @@ def test_project_plan_uses_responses_structured_output_without_storage() -> None
     assert "Safe recommendation" in kwargs["instructions"]
     assert "language used by the user's brief" in kwargs["instructions"]
     assert 'Do not use "To determine"' in kwargs["instructions"]
+    assert "An operational choice is not a missing fact" in kwargs["instructions"]
+    assert (
+        "you MUST provide a context-specific recommended approach"
+        in kwargs["instructions"]
+    )
+    assert "relative execution windows" in kwargs["instructions"]
+    assert "Do not add a warning merely because" in kwargs["instructions"]
+    warnings_schema = AIProjectPlanResponse.model_json_schema()["properties"][
+        "warnings"
+    ]
+    assert "unresolved factual inputs" in warnings_schema["description"]
+    assert "Do not warn merely" in warnings_schema["description"]
 
 
 def test_project_plan_sends_minimal_member_context_and_accepts_known_assignee() -> None:
@@ -285,6 +331,139 @@ def test_project_plan_accepts_safe_recommendations_without_invented_facts() -> N
     assert "Recommandation" in first_task.description
     assert first_task.suggested_due_date is None
     assert first_task.suggested_assignee_id is None
+
+
+def test_taskminer_first_users_launch_is_recommendation_first() -> None:
+    prompt = (
+        "Organise le lancement de mon application SaaS TaskMiner auprès de mes "
+        "10 premiers utilisateurs"
+    )
+    plan = recommendation_first_plan(
+        summary=(
+            "Plan recommandé pour sélectionner, accompagner et écouter les dix "
+            "premiers utilisateurs de TaskMiner."
+        ),
+        task_specs=[
+            (
+                "Sélectionner dix utilisateurs pilotes",
+                "Constituer une liste de dix profils pertinents. Recommandation : "
+                "prioriser leur adéquation avec l’usage visé et leur disponibilité. "
+                "Terminé lorsque dix profils sont prêts à être contactés.",
+            ),
+            (
+                "Préparer l’onboarding TaskMiner",
+                "Dans les deux premiers jours, préparer un parcours court couvrant "
+                "l’accès, la première action utile et le canal d’aide recommandé. "
+                "Terminé lorsqu’un utilisateur peut suivre le parcours sans aide.",
+            ),
+            (
+                "Préparer les accès et invitations",
+                "Après validation de la liste, vérifier les accès puis préparer un "
+                "message individuel précisant l’objectif du test et les prochaines "
+                "étapes. Terminé lorsque les dix invitations sont prêtes.",
+            ),
+            (
+                "Envoyer les invitations",
+                "Le jour suivant la préparation, contacter chaque pilote via son "
+                "canal de recrutement. Recommandation : centraliser les réponses "
+                "pour suivre les confirmations. Terminé lorsque chaque envoi est "
+                "tracé.",
+            ),
+            (
+                "Accompagner la première utilisation",
+                "Pendant les trois à cinq jours suivant l’invitation, répondre aux "
+                "blocages et noter les étapes incomprises. Terminé lorsque chaque "
+                "pilote actif a pu réaliser le parcours principal.",
+            ),
+            (
+                "Recueillir les retours",
+                "À l’issue de la période d’essai, recommander un questionnaire court "
+                "complété par un échange bref avec les volontaires. Terminé lorsque "
+                "les retours exploitables sont regroupés.",
+            ),
+            (
+                "Prioriser les améliorations",
+                "Après la collecte, classer les retours par fréquence, impact et "
+                "caractère bloquant. Recommandation : retenir d’abord les problèmes "
+                "qui empêchent l’usage principal. Terminé avec une liste ordonnée.",
+            ),
+        ],
+        warnings=[
+            "À confirmer : l’identité des dix utilisateurs cibles n’a pas été fournie."
+        ],
+    )
+    provider, parse = provider_with_result(plan)
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(workspace_id=uuid4(), prompt=prompt)
+        )
+    )
+
+    serialized = result.value.model_dump_json()
+    descriptions = " ".join(task.description or "" for task in result.value.tasks)
+    assert parse.await_args is not None
+    assert json.loads(parse.await_args.kwargs["input"])["brief"] == prompt
+    assert "TaskMiner" in serialized
+    assert serialized.casefold().count("à confirmer") == 1
+    assert "to determine" not in serialized.casefold()
+    assert descriptions.count("Recommandation") >= 2
+    assert "deux premiers jours" in descriptions
+    assert "trois à cinq jours" in descriptions
+    assert "Après la collecte" in descriptions
+    assert all(task.suggested_due_date is None for task in result.value.tasks)
+    assert all(task.suggested_assignee_id is None for task in result.value.tasks)
+    assert all(
+        milestone.suggested_due_date is None for milestone in result.value.milestones
+    )
+    assert result.value.warnings == [
+        "À confirmer : l’identité des dix utilisateurs cibles n’a pas été fournie."
+    ]
+
+
+def test_unrelated_project_brief_uses_the_same_recommendation_hierarchy() -> None:
+    prompt = "Organise la migration de notre base documentaire vers un nouvel outil."
+    plan = recommendation_first_plan(
+        summary="Plan recommandé pour migrer les documents avec un contrôle progressif.",
+        task_specs=[
+            (
+                "Inventorier les documents à migrer",
+                "Pendant la première étape, classer les documents par usage, "
+                "sensibilité et propriétaire. Terminé avec un inventaire vérifiable.",
+            ),
+            (
+                "Tester un lot pilote",
+                "Recommandation : migrer d’abord un petit lot représentatif, puis "
+                "contrôler l’accès, la lisibilité et la recherche avant de poursuivre.",
+            ),
+            (
+                "Migrer et contrôler le solde",
+                "Après validation du lot pilote, migrer les documents restants par "
+                "lots et consigner les écarts. Terminé lorsque chaque lot est vérifié.",
+            ),
+        ],
+        warnings=[
+            "À confirmer : l’outil de destination et les accès autorisés ne sont pas "
+            "précisés."
+        ],
+    )
+    provider, _ = provider_with_result(plan)
+
+    result = asyncio.run(
+        provider.generate_project_plan(
+            AIProjectPlanRequest(workspace_id=uuid4(), prompt=prompt)
+        )
+    )
+
+    serialized = result.value.model_dump_json()
+    assert serialized.casefold().count("à confirmer") == 1
+    assert "Recommandation" in serialized
+    assert "première étape" in serialized
+    assert "Après validation" in serialized
+    assert "http" not in serialized.casefold()
+    assert "@" not in serialized
+    assert all(task.suggested_due_date is None for task in result.value.tasks)
+    assert all(task.suggested_assignee_id is None for task in result.value.tasks)
 
 
 def test_project_plan_rejects_fabricated_contact_details() -> None:

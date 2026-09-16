@@ -45,4 +45,42 @@ describe("buildAIPlanWarnings", () => {
 
     expect(warnings.some((warning) => warning.level === "blocking")).toBe(true);
   });
+
+  it("consolidates equivalent missing-schedule warnings", () => {
+    const warnings = buildAIPlanWarnings(
+      [
+        "Aucune date cible n’a été fournie ; les échéances absolues restent vides.",
+        "2 tâches n’ont pas encore de date suggérée.",
+      ],
+      [
+        task(1, { assignedUserId: "member-1", dueDate: "" }),
+        task(2, { assignedUserId: "member-1", dueDate: "" }),
+      ],
+    );
+
+    const scheduleWarnings = warnings.filter(
+      (warning) =>
+        warning.message.includes("date cible") ||
+        warning.message.includes("date suggérée"),
+    );
+    expect(scheduleWarnings).toHaveLength(1);
+    expect(scheduleWarnings[0]?.level).toBe("info");
+    expect(
+      warnings.some((warning) => warning.id === "tasks-without-date"),
+    ).toBe(false);
+  });
+
+  it("presents optional recommendations as information, not missing input", () => {
+    const warnings = buildAIPlanWarnings(
+      ["Recommandation proposée — à adapter si nécessaire."],
+      [task(1, { assignedUserId: "member-1" })],
+    );
+
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        level: "info",
+        message: "Recommandation proposée — à adapter si nécessaire.",
+      }),
+    ]);
+  });
 });
