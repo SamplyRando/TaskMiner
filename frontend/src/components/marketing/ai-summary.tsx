@@ -1,4 +1,4 @@
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 const summaryLines = [
   ["Project", "organized"],
@@ -16,10 +16,7 @@ export function AiSummary({ isComplete, visibleLineCount }: AiSummaryProps) {
   return (
     <section className="marketing-ai-summary">
       <header>
-        <span>
-          <Sparkles />
-          AI Summary
-        </span>
+        <span>Plan summary</span>
         {isComplete ? (
           <strong className="marketing-ai-summary__done">
             <Check />

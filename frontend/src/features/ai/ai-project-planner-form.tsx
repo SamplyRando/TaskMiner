@@ -243,10 +243,6 @@ export function AIProjectPlannerForm({
                     type="button"
                     variant="outline"
                   >
-                    <Sparkles
-                      aria-hidden="true"
-                      className="size-3.5 shrink-0"
-                    />
                     {example}
                   </Button>
                 ))}

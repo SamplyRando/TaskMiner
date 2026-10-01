@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { AuditLog } from "@/types/audit";
 
-const ITEM_HEIGHT = 260;
+const ITEM_HEIGHT = 240;
 const VIEWPORT_HEIGHT = 680;
 const OVERSCAN = 4;
 

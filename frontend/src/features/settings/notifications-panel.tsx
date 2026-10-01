@@ -66,14 +66,15 @@ export function NotificationsPanel({
         {notificationOptions.map((option, index) => (
           <div key={option.key}>
             {index > 0 ? <Separator /> : null}
-            <div className="flex items-center justify-between gap-5 py-4">
-              <div>
+            <div className="flex items-center justify-between gap-4 py-4">
+              <div className="min-w-0">
                 <p className="text-sm font-medium">{option.label}</p>
                 <p className="text-muted-foreground text-sm">
                   {option.description}
                 </p>
               </div>
               <Switch
+                className="shrink-0"
                 aria-label={`Notifications ${option.label}`}
                 checked={preferences[option.key]}
                 disabled={update.isPending}

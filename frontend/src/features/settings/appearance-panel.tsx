@@ -95,8 +95,8 @@ export function AppearancePanel({
             ))}
           </div>
         </fieldset>
-        <div className="flex items-center justify-between gap-5 rounded-lg border p-4">
-          <div>
+        <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+          <div className="min-w-0">
             <p className="text-sm font-medium">Réduire les animations</p>
             <p className="text-muted-foreground text-sm">
               Limite les transitions en complément du réglage système.
@@ -105,6 +105,7 @@ export function AppearancePanel({
           <Switch
             aria-label="Réduire les animations"
             checked={preferences.motion === "reduced"}
+            className="shrink-0"
             disabled={update.isPending}
             onCheckedChange={(checked) =>
               void save({ motion: checked ? "reduced" : "full" })

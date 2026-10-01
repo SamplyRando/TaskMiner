@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -79,9 +78,6 @@ export function PromptAnimation({
       key={cycle}
       role="textbox"
     >
-      <span className="marketing-ai-prompt__icon">
-        <Sparkles aria-hidden="true" />
-      </span>
       <span aria-hidden="true" className="marketing-ai-prompt__text">
         {displayedText}
         <span className="marketing-ai-prompt__cursor" />

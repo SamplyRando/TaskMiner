@@ -14,10 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
-import {
-  FloatingPreviewWidgets,
-  KanbanGlimpse,
-} from "@/components/marketing/preview-widgets";
+import { KanbanGlimpse } from "@/components/marketing/preview-widgets";
 
 const previewNavigation = [
   { icon: LayoutDashboard, label: "Overview", active: true },
@@ -275,10 +272,9 @@ export function ProductPreview() {
           </div>
         </div>
       </div>
-      <FloatingPreviewWidgets />
       <figcaption className="sr-only">
         TaskMiner dashboard preview showing project metrics, a compact task
-        board, team activity, analytics, AI assistance, and upcoming work.
+        board, team activity, and analytics.
       </figcaption>
     </figure>
   );

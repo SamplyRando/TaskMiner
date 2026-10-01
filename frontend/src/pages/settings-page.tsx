@@ -77,7 +77,7 @@ export function SettingsPage() {
           />
         );
       case "danger":
-        return <DangerZone />;
+        return <DangerZone onSuccess={showSuccess} />;
     }
   })();
 
@@ -90,8 +90,8 @@ export function SettingsPage() {
           Gérez votre profil, votre sécurité et votre expérience TaskMiner.
         </p>
       </header>
-      <div className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+        <aside className="max-w-full min-w-0 lg:sticky lg:top-24 lg:self-start">
           <SettingsNav
             active={activeSection}
             onChange={(section) => {

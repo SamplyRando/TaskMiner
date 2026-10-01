@@ -5,27 +5,27 @@ import { SectionHeading } from "@/components/marketing/section-heading";
 const steps = [
   {
     description:
-      "Add the outcome, context, and people behind the work so the project starts with a shared source of truth.",
-    eyebrow: "Set the context",
+      "Describe the outcome, constraints, and useful context. TaskMiner keeps the brief attached to the workspace where the work belongs.",
+    eyebrow: "Provide the brief",
     illustration: "workspace",
     number: "01",
-    title: "Create a workspace and project",
+    title: "Explain what needs to happen",
   },
   {
     description:
-      "Invite teammates, assign roles and tasks, and keep decisions attached to the work through comments and files.",
-    eyebrow: "Coordinate delivery",
-    illustration: "team",
-    number: "02",
-    title: "Organize work with your team",
-  },
-  {
-    description:
-      "Use AI-assisted planning to suggest tasks, priorities, milestones, and next actions that your team can review.",
-    eyebrow: "Start with structure",
+      "Inspect the suggested tasks, priorities, dependencies, milestones, and assignments. Edit or discard the draft before it changes anything.",
+    eyebrow: "Keep human control",
     illustration: "ai",
+    number: "02",
+    title: "Review the proposed plan",
+  },
+  {
+    description:
+      "Apply only the approved work, then assign it, discuss it, and track progress from the same project workspace.",
+    eyebrow: "Move into delivery",
+    illustration: "team",
     number: "03",
-    title: "Turn context into a plan",
+    title: "Apply and coordinate the work",
   },
 ] as const;
 
@@ -120,12 +120,12 @@ export function HowItWorks() {
     >
       <div className="marketing-section-shell">
         <SectionHeading
-          description="Capture the project, coordinate the team, and use AI-assisted planning to create a structured starting point."
+          description="TaskMiner turns context into a draft your team can verify before it becomes real project work."
           eyebrow="How it works"
           reveal
         >
-          <span id="marketing-how-title">Structure in minutes.</span>
-          <span>Momentum from day one.</span>
+          <span id="marketing-how-title">From brief to workspace.</span>
+          <span>Nothing applies without review.</span>
         </SectionHeading>
 
         <ol className="marketing-steps">

@@ -1,6 +1,7 @@
 import { ChevronDown, LogOut, Menu, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { WorkspaceSelector } from "@/components/workspace-selector";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +11,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/auth-store";
+import type { Workspace } from "@/types/workspace";
 
 type TopbarProps = {
+  activeWorkspaceId: string | null;
+  isWorkspacePending: boolean;
   onMenuClick: () => void;
+  onWorkspaceChange: (workspaceId: string) => void;
+  workspaces: Workspace[];
 };
 
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar({
+  activeWorkspaceId,
+  isWorkspacePending,
+  onMenuClick,
+  onWorkspaceChange,
+  workspaces,
+}: TopbarProps) {
   const currentUser = useAuthStore((state) => state.currentUser);
   const logout = useAuthStore((state) => state.logout);
   const displayName = currentUser?.full_name ?? "Compte TaskMiner";
@@ -29,7 +41,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     : "TM";
 
   return (
-    <header className="bg-background/90 sticky top-0 z-20 flex h-16 items-center justify-between border-b px-4 shadow-xs backdrop-blur-xl sm:px-6">
+    <header className="bg-background/95 sticky top-0 z-20 flex h-16 min-w-0 items-center gap-3 border-b px-4 shadow-xs backdrop-blur-xl sm:px-6">
       <Button
         aria-label="Ouvrir le menu"
         className="lg:hidden"
@@ -40,7 +52,15 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       >
         <Menu aria-hidden="true" className="size-5" />
       </Button>
-      <div className="ml-auto">
+      <WorkspaceSelector
+        compact
+        disabled={isWorkspacePending}
+        id="topbar-active-workspace"
+        onValueChange={onWorkspaceChange}
+        value={activeWorkspaceId}
+        workspaces={workspaces}
+      />
+      <div className="ml-auto shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

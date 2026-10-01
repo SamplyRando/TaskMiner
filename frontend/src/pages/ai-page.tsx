@@ -1,4 +1,4 @@
-import { BrainCircuit, Sparkles } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { EntityPageHeader } from "@/components/entity-page-header";
@@ -211,12 +211,12 @@ export function AIPage() {
     <div className="mx-auto w-full max-w-[96rem] space-y-8">
       <EntityPageHeader
         actions={
-          <div className="border-primary/20 bg-primary/5 text-primary flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm">
-            <Sparkles aria-hidden="true" className="size-3.5" />
+          <p className="text-muted-foreground text-xs">
+            Fournisseur :{" "}
             {capabilitiesQuery.data?.provider_label ?? "TaskMiner AI"}
-          </div>
+          </p>
         }
-        description="Planifiez un nouveau projet ou préparez des modifications sûres sur un projet existant."
+        description="Décrivez le résultat attendu, révisez le brouillon, puis appliquez uniquement ce que vous validez."
         title="TaskMiner AI"
       />
 

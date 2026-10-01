@@ -57,12 +57,11 @@ export function FeaturesSection() {
       id="features"
     >
       <div className="marketing-section-shell">
-        <SectionHeading
-          eyebrow="AI project management, without the clutter"
-          reveal
-        >
-          <span id="marketing-features-title">Everything your team needs.</span>
-          <span>Nothing you don&apos;t.</span>
+        <SectionHeading eyebrow="Plan, review, deliver" reveal>
+          <span id="marketing-features-title">
+            A plan your team can inspect.
+          </span>
+          <span>A workspace where it gets done.</span>
         </SectionHeading>
 
         <div className="marketing-feature-grid">
@@ -85,10 +84,6 @@ export function FeaturesSection() {
               </div>
               <h3>{title}</h3>
               <p>{description}</p>
-              <div
-                aria-hidden="true"
-                className="marketing-feature-card__beam"
-              />
             </article>
           ))}
         </div>

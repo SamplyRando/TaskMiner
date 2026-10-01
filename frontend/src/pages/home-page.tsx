@@ -306,7 +306,7 @@ export function HomePage() {
 
       <section
         aria-label="Indicateurs clés"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
+        className="bg-border grid gap-px overflow-hidden rounded-lg border shadow-xs sm:grid-cols-2 xl:grid-cols-5"
       >
         {kpis.map((kpi) => (
           <KpiCard {...kpi} key={kpi.title} />

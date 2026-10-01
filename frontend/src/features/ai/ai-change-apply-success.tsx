@@ -1,4 +1,4 @@
-import { CheckCircle2, FolderKanban, ListChecks, Sparkles } from "lucide-react";
+import { CheckCircle2, FolderKanban, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ export function AIChangeApplySuccess({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onNewInstruction} type="button" variant="outline">
-            <Sparkles aria-hidden="true" className="size-4" />
             Nouvelle instruction
           </Button>
           <Button

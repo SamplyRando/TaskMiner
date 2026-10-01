@@ -24,7 +24,7 @@ export function SettingsSectionCard({
 }: SettingsSectionCardProps) {
   return (
     <Card className={destructive ? "border-destructive/50" : undefined}>
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center gap-2">
           {icon}
           <CardTitle className={destructive ? "text-destructive" : undefined}>
@@ -33,7 +33,7 @@ export function SettingsSectionCard({
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">{children}</CardContent>
     </Card>
   );
 }

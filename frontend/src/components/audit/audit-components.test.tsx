@@ -83,6 +83,9 @@ describe("audit components", () => {
     expect(
       screen.getByRole("list", { name: "Entrées du journal d’audit" }),
     ).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")[0]).toHaveStyle({
+      height: "240px",
+    });
     expect(screen.getAllByRole("listitem").length).toBeLessThan(100);
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(1);
   });

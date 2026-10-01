@@ -86,6 +86,7 @@ describe("WorkspacePage", () => {
       0,
     );
     expect(await screen.findByText("Plan Free")).toBeInTheDocument();
+    expect(screen.getByText("Abonnement actif : Free")).toBeInTheDocument();
     await user.type(
       screen.getByRole("textbox", { name: "Rechercher un workspace" }),
       "introuvable",
@@ -136,6 +137,7 @@ describe("WorkspacePage", () => {
       invitedWorkspace.id,
     );
     expect(await screen.findByText("Plan Pro")).toBeInTheDocument();
+    expect(screen.getByText("Abonnement actif : Pro")).toBeInTheDocument();
     expect(screen.getByText("12 / 50")).toBeInTheDocument();
     expect(
       screen.getByText("Facturation gérée par le propriétaire"),
@@ -232,6 +234,7 @@ describe("WorkspacePage", () => {
         workspaceFixture.id,
         expect.anything(),
       );
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBeNull();
     });
   });
 

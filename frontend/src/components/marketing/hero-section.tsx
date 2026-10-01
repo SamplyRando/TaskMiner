@@ -2,17 +2,10 @@ import { ArrowRight, Check, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ProductPreview } from "@/components/marketing/product-preview";
-import { useHeroParallax } from "@/components/marketing/use-hero-parallax";
 
 export function HeroSection() {
-  const heroRef = useHeroParallax<HTMLElement>();
-
   return (
-    <section
-      aria-labelledby="marketing-hero-title"
-      className="marketing-hero"
-      ref={heroRef}
-    >
+    <section aria-labelledby="marketing-hero-title" className="marketing-hero">
       <div aria-hidden="true" className="marketing-hero__orb" />
       <div aria-hidden="true" className="marketing-hero__ambient">
         <span />
@@ -22,22 +15,20 @@ export function HeroSection() {
       <div className="marketing-hero__container">
         <div className="marketing-hero__copy marketing-reveal">
           <div className="marketing-hero__eyebrow">
-            <span>
-              <span className="marketing-hero__eyebrow-dot" />
-              AI-assisted project workspace
-            </span>
+            <span>Brief · structured draft · human review</span>
           </div>
 
           <h1 id="marketing-hero-title">
-            <span>Stop managing work.</span>
+            <span>Turn a project brief</span>
             <span className="marketing-hero__title-accent">
-              Start executing it.
+              into reviewed work.
             </span>
           </h1>
 
           <p className="marketing-hero__description">
-            Turn project context into clear tasks, priorities, and next actions
-            in one shared workspace for planning, collaboration, and delivery.
+            TaskMiner proposes tasks, priorities, dependencies, and milestones.
+            Edit the draft, choose what to keep, then apply it to the workspace
+            where your team delivers.
           </p>
 
           <div className="marketing-hero__actions">
@@ -57,7 +48,7 @@ export function HeroSection() {
                 className="size-3.5"
                 fill="currentColor"
               />
-              Watch demo
+              See the workflow
             </a>
           </div>
 
@@ -69,7 +60,7 @@ export function HeroSection() {
                 strokeWidth={2.5}
               />
             </span>
-            No credit card required
+            Free plan · no credit card required
           </p>
         </div>
 

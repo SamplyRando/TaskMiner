@@ -386,12 +386,6 @@ html:has(.marketing-shell) {
 }
 
 .marketing-hero {
-  --marketing-parallax-x: 0px;
-  --marketing-parallax-y: 0px;
-  --marketing-preview-shift-x: 0px;
-  --marketing-preview-shift-y: 0px;
-  --marketing-preview-rotate-x: 0deg;
-  --marketing-preview-rotate-y: 0deg;
   position: relative;
   display: flex;
   min-height: 100svh;
@@ -407,7 +401,6 @@ html:has(.marketing-shell) {
   width: min(82rem, 96vw);
   height: 48rem;
   transform: translateX(-50%);
-  translate: var(--marketing-parallax-x) var(--marketing-parallax-y);
   border-radius: 50%;
   opacity: 0.48;
   background: radial-gradient(
@@ -418,8 +411,6 @@ html:has(.marketing-shell) {
   );
   filter: blur(18px);
   pointer-events: none;
-  animation: marketing-orb-drift 16s ease-in-out infinite alternate;
-  transition: translate 700ms var(--ease-out-premium);
 }
 
 .marketing-hero__ambient {
@@ -494,32 +485,11 @@ html:has(.marketing-shell) {
 .marketing-hero__eyebrow > span {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.46rem 0.78rem;
-  border: 1px solid var(--marketing-border-strong);
-  border-radius: 999px;
-  color: #d5cfe1;
-  background: linear-gradient(
-    180deg,
-    rgba(151, 111, 245, 0.1),
-    rgba(90, 55, 176, 0.045)
-  );
-  box-shadow:
-    0 8px 28px rgba(27, 14, 60, 0.18),
-    inset 0 1px rgba(255, 255, 255, 0.07);
+  color: #b9b3c4;
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.045em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.marketing-hero__eyebrow-dot {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 50%;
-  background: #a78bfa;
-  box-shadow: 0 0 12px rgba(167, 139, 250, 0.72);
-  animation: marketing-pulse 2.8s ease-in-out infinite;
 }
 
 .marketing-hero h1 {
@@ -598,17 +568,9 @@ html:has(.marketing-shell) {
   position: relative;
   min-width: 0;
   perspective: 1700px;
-  transform: translate3d(
-      var(--marketing-preview-shift-x),
-      var(--marketing-preview-shift-y),
-      0
-    )
-    rotateX(var(--marketing-preview-rotate-x))
-    rotateY(var(--marketing-preview-rotate-y));
   transform-style: preserve-3d;
   animation: marketing-preview-reveal var(--motion-slow) var(--ease-out-premium)
     80ms both;
-  transition: transform 650ms var(--ease-out-premium);
 }
 
 .marketing-preview__glow {
@@ -625,7 +587,6 @@ html:has(.marketing-shell) {
     ),
     radial-gradient(circle at 22% 72%, rgba(83, 55, 174, 0.26), transparent 52%);
   filter: blur(76px);
-  animation: marketing-preview-glow 10s ease-in-out infinite alternate;
 }
 
 .marketing-preview__window {
@@ -1435,161 +1396,6 @@ html:has(.marketing-shell) {
   filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.92));
 }
 
-.marketing-floating-widgets {
-  position: absolute;
-  z-index: 6;
-  inset: 0;
-  pointer-events: none;
-}
-
-.marketing-floating-card {
-  position: absolute;
-  display: grid;
-  min-width: 12rem;
-  padding: 0.72rem;
-  align-items: center;
-  gap: 0.62rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  border: 1px solid rgba(229, 222, 255, 0.15);
-  border-radius: 0.78rem;
-  background:
-    linear-gradient(145deg, rgba(28, 23, 40, 0.93), rgba(13, 11, 19, 0.9)),
-    rgba(11, 9, 16, 0.9);
-  box-shadow:
-    0 20px 52px rgba(0, 0, 0, 0.42),
-    0 7px 18px rgba(0, 0, 0, 0.22),
-    inset 0 1px rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px) saturate(135%);
-}
-
-.marketing-floating-card--ai {
-  top: 18%;
-  right: -3.8rem;
-  animation: marketing-float 7s ease-in-out infinite;
-}
-
-.marketing-floating-card--calendar {
-  bottom: 9%;
-  left: -3.4rem;
-  min-width: 13.25rem;
-  animation: marketing-float 8s 900ms ease-in-out infinite reverse;
-}
-
-.marketing-floating-card--notice {
-  right: -1.4rem;
-  bottom: -1.1rem;
-  min-width: 11.5rem;
-  animation: marketing-float 6.5s 1.4s ease-in-out infinite;
-}
-
-.marketing-floating-card__icon,
-.marketing-floating-card__date {
-  display: inline-flex;
-  width: 2.25rem;
-  height: 2.25rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.62rem;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.marketing-floating-card__icon svg {
-  width: 0.92rem;
-  height: 0.92rem;
-}
-
-.marketing-floating-card__icon--purple {
-  color: #d3c5ff;
-  background: linear-gradient(
-    145deg,
-    rgba(143, 96, 244, 0.3),
-    rgba(91, 54, 175, 0.16)
-  );
-  box-shadow:
-    0 7px 18px rgba(93, 47, 194, 0.2),
-    inset 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.marketing-floating-card__icon--green {
-  color: #9aebc2;
-  background: linear-gradient(
-    145deg,
-    rgba(61, 172, 118, 0.25),
-    rgba(32, 100, 73, 0.14)
-  );
-}
-
-.marketing-floating-card__eyebrow,
-.marketing-floating-card strong,
-.marketing-floating-card p {
-  display: block;
-  white-space: nowrap;
-}
-
-.marketing-floating-card__eyebrow {
-  margin-bottom: 0.18rem;
-  color: #7f788b;
-  font-size: 0.46rem;
-  font-weight: 620;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.marketing-floating-card strong {
-  color: #e9e5ee;
-  font-size: 0.62rem;
-  font-weight: 620;
-  letter-spacing: -0.015em;
-}
-
-.marketing-floating-card p {
-  margin-top: 0.2rem;
-  color: #756f7e;
-  font-size: 0.47rem;
-}
-
-.marketing-floating-card p svg {
-  display: inline;
-  width: 0.48rem;
-  height: 0.48rem;
-  margin-right: 0.12rem;
-  vertical-align: -0.08rem;
-}
-
-.marketing-floating-card__sparkle,
-.marketing-floating-card__muted-icon {
-  width: 0.8rem;
-  height: 0.8rem;
-  align-self: start;
-  color: #7d6ba6;
-}
-
-.marketing-floating-card__date {
-  flex-direction: column;
-  border-color: rgba(203, 184, 255, 0.16);
-  background: linear-gradient(
-    145deg,
-    rgba(139, 92, 246, 0.18),
-    rgba(255, 255, 255, 0.025)
-  );
-}
-
-.marketing-floating-card__date small {
-  color: #927ce0;
-  font-size: 0.37rem;
-  font-weight: 720;
-  letter-spacing: 0.08em;
-}
-
-.marketing-floating-card__date strong {
-  margin-top: 0.02rem;
-  color: #eee9f6;
-  font-size: 0.78rem;
-  line-height: 1;
-}
-
 .marketing-section-shell {
   width: min(100% - 3rem, 78rem);
   margin-inline: auto;
@@ -1795,49 +1601,22 @@ html:has(.marketing-shell) {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 1.15rem;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.038),
-      rgba(255, 255, 255, 0.012)
-    ),
-    rgba(12, 10, 18, 0.74);
+  background: rgba(12, 10, 18, 0.86);
   box-shadow:
-    0 18px 46px rgba(0, 0, 0, 0.12),
+    0 12px 32px rgba(0, 0, 0, 0.12),
     inset 0 1px rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
   transition:
     transform var(--motion-fast) var(--ease-spring-soft),
     border-color var(--motion-fast) ease,
     box-shadow var(--motion-fast) ease;
 }
 
-.marketing-feature-card::before {
-  position: absolute;
-  z-index: -1;
-  top: -5rem;
-  left: -4rem;
-  width: 12rem;
-  height: 12rem;
-  border-radius: 50%;
-  content: "";
-  opacity: 0;
-  background: rgba(126, 82, 226, 0.16);
-  filter: blur(40px);
-  transition: opacity 350ms ease;
-}
-
 .marketing-feature-card:hover {
-  border-color: rgba(180, 153, 250, 0.25);
+  border-color: rgba(180, 153, 250, 0.18);
   box-shadow:
-    0 26px 70px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(139, 92, 246, 0.035),
-    inset 0 1px rgba(255, 255, 255, 0.07);
-  transform: translateY(-3px);
-}
-
-.marketing-feature-card:hover::before {
-  opacity: 1;
+    0 16px 38px rgba(0, 0, 0, 0.18),
+    inset 0 1px rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
 }
 
 .marketing-feature-card__topline {
@@ -1855,38 +1634,21 @@ html:has(.marketing-shell) {
 
 .marketing-feature-card__icon {
   display: inline-flex;
-  width: 2.85rem;
-  height: 2.85rem;
+  width: auto;
+  height: auto;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(191, 169, 255, 0.2);
-  border-radius: 0.8rem;
   color: #c5b5f9;
-  background: linear-gradient(
-    145deg,
-    rgba(139, 92, 246, 0.18),
-    rgba(139, 92, 246, 0.055)
-  );
-  box-shadow:
-    0 10px 28px rgba(69, 31, 145, 0.14),
-    inset 0 1px rgba(255, 255, 255, 0.1);
-  transition:
-    color 280ms ease,
-    transform 350ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 300ms ease;
+  transition: color 280ms ease;
 }
 
 .marketing-feature-card__icon svg {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .marketing-feature-card:hover .marketing-feature-card__icon {
   color: #eee8ff;
-  box-shadow:
-    0 14px 34px rgba(83, 39, 174, 0.24),
-    inset 0 1px rgba(255, 255, 255, 0.14);
-  transform: translateY(-2px) rotate(-4deg) scale(1.05);
 }
 
 .marketing-feature-card h3 {
@@ -1903,21 +1665,6 @@ html:has(.marketing-shell) {
   font-size: 0.9rem;
   line-height: 1.65;
   text-wrap: pretty;
-}
-
-.marketing-feature-card__beam {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  opacity: 0;
-  background: linear-gradient(90deg, transparent, #9d7af1, transparent);
-  transition: opacity 300ms ease;
-}
-
-.marketing-feature-card:hover .marketing-feature-card__beam {
-  opacity: 0.7;
 }
 
 .marketing-how {
@@ -2559,12 +2306,6 @@ html:has(.marketing-shell) {
   text-transform: uppercase;
 }
 
-.marketing-ai-demo__eyebrow svg {
-  width: 0.9rem;
-  height: 0.9rem;
-  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.42));
-}
-
 .marketing-ai-demo__copy h2 {
   max-width: 10ch;
   color: #f7f4fb;
@@ -2592,7 +2333,7 @@ html:has(.marketing-shell) {
   padding: 1rem 1rem 1rem 1.1rem;
   align-items: center;
   gap: 0.75rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   border: 1px solid rgba(202, 187, 255, 0.14);
   border-radius: 0.95rem;
   background:
@@ -2638,24 +2379,6 @@ html:has(.marketing-shell) {
   content: "";
   opacity: 0.6;
   background: linear-gradient(90deg, transparent, #8461db, transparent);
-}
-
-.marketing-ai-prompt__icon {
-  display: inline-flex;
-  width: 2.1rem;
-  height: 2.1rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(197, 177, 255, 0.16);
-  border-radius: 0.62rem;
-  color: #cbbaf8;
-  background: rgba(139, 92, 246, 0.1);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07);
-}
-
-.marketing-ai-prompt__icon svg {
-  width: 0.95rem;
-  height: 0.95rem;
 }
 
 .marketing-ai-prompt__text {
@@ -2725,22 +2448,6 @@ html:has(.marketing-shell) {
   translate: 0 0;
 }
 
-.marketing-ai-demo__card::before {
-  position: absolute;
-  z-index: 0;
-  top: -12rem;
-  left: 50%;
-  width: 28rem;
-  height: 25rem;
-  border-radius: 50%;
-  content: "";
-  opacity: 0.3;
-  background: rgba(116, 70, 218, 0.32);
-  filter: blur(80px);
-  transform: translateX(-50%);
-  animation: marketing-ai-halo 8s ease-in-out infinite alternate;
-}
-
 .marketing-ai-demo__header {
   position: relative;
   z-index: 3;
@@ -2774,16 +2481,12 @@ html:has(.marketing-shell) {
   justify-content: center;
   border: 1px solid rgba(219, 205, 255, 0.22);
   border-radius: 0.65rem;
-  color: #e1d7ff;
-  background: linear-gradient(145deg, #8f67e9, #572daf);
-  box-shadow:
-    0 9px 24px rgba(77, 32, 170, 0.28),
-    inset 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.marketing-ai-demo__brand svg {
-  width: 0.95rem;
-  height: 0.95rem;
+  color: #e8e1f8;
+  background: #241b37;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.2);
+  font-size: 0.62rem;
+  font-weight: 760;
+  letter-spacing: -0.02em;
 }
 
 .marketing-ai-demo__header strong {
@@ -3913,11 +3616,6 @@ html:has(.marketing-shell) {
   }
 }
 
-.marketing-floating-widgets {
-  animation: marketing-floating-widgets-reveal var(--motion-medium)
-    var(--ease-out-premium) 300ms both;
-}
-
 .marketing-motion-ready .marketing-motion-reveal {
   opacity: 0;
   transition:
@@ -3947,14 +3645,6 @@ html:has(.marketing-shell) {
   translate: 0 0;
 }
 
-@keyframes marketing-floating-widgets-reveal {
-  from {
-    opacity: 0;
-    translate: 0 0.65rem;
-    scale: 0.985;
-  }
-}
-
 @keyframes marketing-ai-core-breathe {
   0%,
   100% {
@@ -3979,52 +3669,6 @@ html:has(.marketing-shell) {
 
   to {
     background-position: 85% 50%;
-  }
-}
-
-@keyframes marketing-orb-drift {
-  from {
-    transform: translateX(-53%) scale(0.96);
-  }
-
-  to {
-    transform: translateX(-47%) scale(1.06);
-  }
-}
-
-@keyframes marketing-preview-glow {
-  from {
-    opacity: 0.42;
-    transform: scale(0.96) translate3d(-1%, 1%, 0);
-  }
-
-  to {
-    opacity: 0.58;
-    transform: scale(1.04) translate3d(1%, -1%, 0);
-  }
-}
-
-@keyframes marketing-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  50% {
-    transform: translate3d(0, -7px, 0);
-  }
-}
-
-@keyframes marketing-pulse {
-  0%,
-  100% {
-    opacity: 0.72;
-    box-shadow: 0 0 8px rgba(167, 139, 250, 0.48);
-  }
-
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 16px rgba(167, 139, 250, 0.86);
   }
 }
 
@@ -4127,18 +3771,6 @@ html:has(.marketing-shell) {
   100% {
     opacity: 0;
     transform: translateX(100%);
-  }
-}
-
-@keyframes marketing-ai-halo {
-  from {
-    opacity: 0.22;
-    transform: translateX(-52%) scale(0.94);
-  }
-
-  to {
-    opacity: 0.38;
-    transform: translateX(-48%) scale(1.07);
   }
 }
 
@@ -4412,14 +4044,6 @@ html:has(.marketing-shell) {
     transform: translateY(-4px);
   }
 
-  .marketing-floating-card--ai {
-    right: -1rem;
-  }
-
-  .marketing-floating-card--calendar {
-    left: -1rem;
-  }
-
   .marketing-feature-card {
     min-height: 16rem;
   }
@@ -4586,10 +4210,6 @@ html:has(.marketing-shell) {
     grid-template-columns: 1fr;
   }
 
-  .marketing-floating-widgets {
-    display: none;
-  }
-
   .marketing-panel--activity {
     display: none;
   }
@@ -4694,18 +4314,43 @@ html:has(.marketing-shell) {
 }
 
 @media (max-width: 520px) {
+  .marketing-hero {
+    padding: 6.75rem 1rem 4rem;
+  }
+
+  .marketing-hero__container {
+    gap: 3rem;
+  }
+
+  .marketing-hero__eyebrow {
+    margin-bottom: 1.25rem;
+  }
+
   .marketing-hero__eyebrow > span {
     font-size: 0.64rem;
   }
 
   .marketing-hero h1 {
+    font-size: clamp(2.45rem, 11.2vw, 3.25rem);
+    line-height: 0.95;
     letter-spacing: -0.055em;
+  }
+
+  .marketing-hero__description {
+    margin-top: 1.35rem;
+    line-height: 1.55;
   }
 
   .marketing-hero__actions {
     display: grid;
     width: 100%;
+    gap: 0.65rem;
+    margin-top: 1.75rem;
     grid-template-columns: 1fr;
+  }
+
+  .marketing-hero__trust {
+    margin-top: 1rem;
   }
 
   .marketing-product__notification,

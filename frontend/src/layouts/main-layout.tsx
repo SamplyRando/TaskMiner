@@ -4,6 +4,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AppearanceSync } from "@/components/providers/appearance-sync";
 import { SkipLink } from "@/components/skip-link";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { Sidebar } from "@/layouts/sidebar";
 import { Topbar } from "@/layouts/topbar";
 
@@ -22,6 +23,7 @@ const pageTitles: Record<string, string> = {
 export function MainLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const workspace = useActiveWorkspace();
   useDocumentTitle(pageTitles[location.pathname] ?? "TaskMiner");
 
   return (
@@ -36,9 +38,13 @@ export function MainLayout() {
       />
       <div className="lg:pl-72">
         <Topbar
+          activeWorkspaceId={workspace.activeWorkspaceId}
+          isWorkspacePending={workspace.isPending}
           onMenuClick={() => {
             setIsSidebarOpen(true);
           }}
+          onWorkspaceChange={workspace.selectWorkspace}
+          workspaces={workspace.workspaces}
         />
         <main className="min-w-0 p-4 sm:p-6 lg:p-8" id="main-content">
           <div className="mx-auto max-w-[100rem] min-w-0">

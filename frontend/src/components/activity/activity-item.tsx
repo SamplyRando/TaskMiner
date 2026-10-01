@@ -62,7 +62,7 @@ export const ActivityItem = memo(function ActivityItem({
       aria-posinset={position}
       aria-setsize={total}
       className={cn(
-        "relative flex gap-4 pb-6 last:pb-0",
+        "relative flex gap-3 pb-4 last:pb-0",
         isNew && "activity-arrival",
       )}
       style={style}
@@ -76,16 +76,18 @@ export const ActivityItem = memo(function ActivityItem({
       <div className="bg-primary/10 text-primary relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full">
         <Icon aria-hidden="true" className="size-4" />
       </div>
-      <article className="bg-card min-w-0 flex-1 rounded-xl border p-4 shadow-sm">
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+      <article className="bg-card min-w-0 flex-1 rounded-xl border p-3 shadow-sm">
+        <div className="flex flex-col justify-between gap-1.5 sm:flex-row sm:items-start sm:gap-2">
           <div className="min-w-0">
-            <h2 className="font-semibold">{activity.message}</h2>
+            <h2 className="text-sm leading-5 font-semibold">
+              {activity.message}
+            </h2>
           </div>
           <Badge className="w-fit shrink-0" variant="outline">
             {activityResourceLabels[activity.resource]}
           </Badge>
         </div>
-        <div className="text-muted-foreground mt-3 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
+        <div className="text-muted-foreground mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
           <span>{actor}</span>
           <span aria-hidden="true" className="hidden sm:inline">
             ·

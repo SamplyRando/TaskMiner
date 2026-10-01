@@ -1,30 +1,41 @@
 import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { Workspace } from "@/types/workspace";
 
 type WorkspaceSelectorProps = {
+  compact?: boolean;
   disabled?: boolean;
+  id?: string;
   onValueChange: (workspaceId: string) => void;
   value: string | null;
   workspaces: Workspace[];
 };
 
 export function WorkspaceSelector({
+  compact = false,
   disabled = false,
+  id = "active-workspace",
   onValueChange,
   value,
   workspaces,
 }: WorkspaceSelectorProps) {
   return (
-    <div className="min-w-0 sm:w-72">
+    <div
+      className={cn("min-w-0", compact ? "w-full max-w-64" : "w-full sm:w-72")}
+    >
       <label
-        className="text-muted-foreground mb-1.5 block text-sm font-medium"
-        htmlFor="active-workspace"
+        className={cn(
+          "text-muted-foreground text-sm font-medium",
+          compact ? "sr-only" : "mb-1.5 block",
+        )}
+        htmlFor={id}
       >
         Workspace actif
       </label>
       <Select
+        className={compact ? "bg-muted/30 h-9 truncate" : undefined}
         disabled={disabled || workspaces.length === 0}
-        id="active-workspace"
+        id={id}
         onChange={(event) => {
           onValueChange(event.target.value);
         }}

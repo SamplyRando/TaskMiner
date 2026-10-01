@@ -291,6 +291,7 @@ describe("AiDemoSection viewport lifecycle", () => {
     expect(getRenderedTasks(container)).toHaveLength(5);
     expect(screen.getAllByText(/Urgent|High|Medium/)).toHaveLength(5);
     expect(screen.getAllByRole("term", { hidden: true })).toHaveLength(4);
+    expect(screen.getByText("Plan summary")).toBeInTheDocument();
     expect(screen.getByText("Ready to start.")).toBeInTheDocument();
   });
 });

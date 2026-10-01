@@ -1,4 +1,4 @@
-import { BrainCircuit, Check, LoaderCircle } from "lucide-react";
+import { Check, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,15 +43,11 @@ export function AIGenerationStatus({ mode }: AIGenerationStatusProps) {
     <Card
       aria-busy="true"
       aria-labelledby={`ai-${mode}-generation-title`}
-      className="border-primary/25 from-primary/10 via-card to-card overflow-hidden bg-linear-to-br"
+      className="border-primary/20 overflow-hidden"
       role="status"
     >
-      <CardContent className="grid min-h-52 items-center gap-6 p-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-8">
-        <div className="bg-primary/10 text-primary relative mx-auto flex size-20 items-center justify-center rounded-2xl sm:mx-0">
-          <div className="border-primary/20 absolute inset-2 animate-pulse rounded-xl border motion-reduce:animate-none" />
-          <BrainCircuit aria-hidden="true" className="size-9" />
-        </div>
-        <div className="min-w-0">
+      <CardContent className="min-h-52 p-6 sm:p-8">
+        <div className="max-w-3xl min-w-0">
           <div className="flex items-center gap-2">
             <LoaderCircle
               aria-hidden="true"

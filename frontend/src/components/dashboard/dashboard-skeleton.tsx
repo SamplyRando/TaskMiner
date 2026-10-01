@@ -12,17 +12,17 @@ export function DashboardSkeleton() {
         <Skeleton className="h-9 w-56" />
         <Skeleton className="h-5 w-full max-w-lg" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="bg-border grid gap-px overflow-hidden rounded-lg border shadow-xs sm:grid-cols-2 xl:grid-cols-5">
         {Array.from({ length: 10 }, (_, index) => (
-          <Card key={index}>
-            <CardContent className="flex items-center justify-between p-5">
+          <div className="bg-card" key={index}>
+            <div className="flex min-h-36 items-center justify-between p-5">
               <div className="space-y-3">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-8 w-16" />
               </div>
-              <Skeleton className="size-11 rounded-xl" />
-            </CardContent>
-          </Card>
+              <Skeleton className="size-5 rounded-sm" />
+            </div>
+          </div>
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-2">

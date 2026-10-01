@@ -25,7 +25,7 @@ const renderInRouter = (component: ReactNode) =>
 
 describe("dashboard components", () => {
   it("renders a KPI card", () => {
-    render(
+    const { container } = render(
       <KpiCard
         color="emerald"
         icon={CheckCircle2}
@@ -41,6 +41,8 @@ describe("dashboard components", () => {
         name: "Information sur Tâches terminées",
       }),
     ).not.toBeInTheDocument();
+    expect(container.querySelector("article")).toBeInTheDocument();
+    expect(container.querySelector(".rounded-lg.border")).toBeNull();
   });
 
   it("renders status progress bars with accessible percentages", () => {

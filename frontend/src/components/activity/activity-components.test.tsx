@@ -64,6 +64,9 @@ describe("activity components", () => {
     expect(
       screen.getByRole("list", { name: "Historique des activités" }),
     ).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")[0]).toHaveStyle({
+      height: "152px",
+    });
     expect(screen.getAllByRole("listitem").length).toBeLessThan(100);
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(1);
   });

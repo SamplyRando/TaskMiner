@@ -37,10 +37,10 @@ export const AuditItem = memo(function AuditItem({
     <li
       aria-posinset={position}
       aria-setsize={total}
-      className={cn("pb-4", isNew && "audit-arrival")}
+      className={cn("pb-3", isNew && "audit-arrival")}
       style={style}
     >
-      <article className="bg-card h-[calc(100%-1rem)] min-w-0 rounded-xl border p-4 shadow-sm">
+      <article className="bg-card h-[calc(100%-0.75rem)] min-w-0 rounded-xl border p-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={action.className} variant="outline">
             {action.label}
@@ -60,8 +60,10 @@ export const AuditItem = memo(function AuditItem({
             {auditLog.success ? "Succès" : "Échec"}
           </Badge>
         </div>
-        <h2 className="mt-3 line-clamp-2 font-semibold">{auditLog.message}</h2>
-        <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <h2 className="mt-2 line-clamp-2 text-sm leading-5 font-semibold">
+          {auditLog.message}
+        </h2>
+        <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span>{actor}</span>
           <span aria-hidden="true">·</span>
           <span>{auditLog.workspace_name}</span>
@@ -73,7 +75,7 @@ export const AuditItem = memo(function AuditItem({
             {formatRelativeDate(auditLog.created_at)}
           </time>
         </div>
-        <div className="bg-muted/40 mt-3 flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+        <div className="bg-muted/40 mt-2 flex min-w-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-sm">
           <span className="text-muted-foreground shrink-0">Évolution</span>
           <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
           <span className="truncate">
@@ -84,7 +86,7 @@ export const AuditItem = memo(function AuditItem({
             )}
           </span>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="mt-2 flex items-center justify-between gap-3">
           <code className="text-muted-foreground truncate text-xs">
             {auditLog.resource_id}
           </code>

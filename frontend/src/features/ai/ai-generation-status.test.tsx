@@ -14,10 +14,12 @@ describe("AIGenerationStatus", () => {
     vi.spyOn(window, "matchMedia").mockImplementation(
       () => ({ matches: false }) as MediaQueryList,
     );
-    render(<AIGenerationStatus mode="plan" />);
+    const { container } = render(<AIGenerationStatus mode="plan" />);
 
     expect(screen.getAllByText("Analyse du brief")).toHaveLength(2);
     expect(screen.queryByText(/\d+%/)).toBeNull();
+    expect(container.querySelector(".bg-linear-to-br")).toBeNull();
+    expect(container.querySelector(".animate-pulse")).toBeNull();
     act(() => {
       vi.advanceTimersByTime(1_800);
     });

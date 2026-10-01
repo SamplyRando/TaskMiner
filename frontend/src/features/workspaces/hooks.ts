@@ -8,6 +8,7 @@ import {
   updateWorkspace,
 } from "@/api/workspace";
 import { subscriptionKeys } from "@/features/subscriptions/hooks";
+import { useWorkspaceStore } from "@/store/workspace-store";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
 
 export const workspaceKeys = {
@@ -91,19 +92,14 @@ export const useDeleteWorkspace = () => {
 
   return useMutation({
     mutationFn: deleteWorkspace,
-    onMutate: async (workspaceId) => {
-      await queryClient.cancelQueries({ queryKey: workspaceKeys.list() });
-      const previous = queryClient.getQueryData<Workspace[]>(
-        workspaceKeys.list(),
-      );
-      queryClient.setQueryData<Workspace[]>(workspaceKeys.list(), (current) =>
-        current?.filter((workspace) => workspace.id !== workspaceId),
-      );
-      return { previous };
-    },
-    onError: (_error, _workspaceId, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(workspaceKeys.list(), context.previous);
+    onSuccess: (_data, workspaceId) => {
+      const remainingWorkspaces = (
+        queryClient.getQueryData<Workspace[]>(workspaceKeys.list()) ?? []
+      ).filter((workspace) => workspace.id !== workspaceId);
+      queryClient.setQueryData(workspaceKeys.list(), remainingWorkspaces);
+      const workspaceState = useWorkspaceStore.getState();
+      if (workspaceState.activeWorkspaceId === workspaceId) {
+        workspaceState.setActiveWorkspaceId(remainingWorkspaces[0]?.id ?? null);
       }
     },
     onSettled: async () => {

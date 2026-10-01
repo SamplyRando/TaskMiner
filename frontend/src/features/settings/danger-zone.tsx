@@ -31,6 +31,10 @@ import { useAuthStore } from "@/store/auth-store";
 
 type DangerAction = "account" | "leave" | "workspace";
 
+type DangerZoneProps = {
+  onSuccess: (message: string) => void;
+};
+
 const actionCopy: Record<
   DangerAction,
   { title: string; description: string; button: string }
@@ -55,7 +59,7 @@ const actionCopy: Record<
   },
 };
 
-export function DangerZone() {
+export function DangerZone({ onSuccess }: DangerZoneProps) {
   const [action, setAction] = useState<DangerAction | null>(null);
   const workspace = useActiveWorkspace();
   const permissions = useWorkspacePermissions(workspace.activeWorkspaceId);
@@ -90,7 +94,10 @@ export function DangerZone() {
     deleteAccount.reset();
     leaveWorkspace.reset();
     deleteWorkspace.reset();
-    reset();
+    reset({
+      confirmation: "",
+      currentPassword: next === "workspace" ? "confirmed-client-side" : "",
+    });
     setAction(next);
   };
   const close = () => {
@@ -120,7 +127,16 @@ export function DangerZone() {
           workspaceId: activeWorkspaceId,
         });
       } else {
+        const deletedWorkspaceName = workspace.activeWorkspace?.name;
+        const nextWorkspace = workspace.workspaces.find(
+          (item) => item.id !== activeWorkspaceId,
+        );
         await deleteWorkspace.mutateAsync(activeWorkspaceId);
+        onSuccess(
+          nextWorkspace
+            ? `Workspace « ${deletedWorkspaceName ?? "actif"} » supprimé. « ${nextWorkspace.name} » est maintenant actif.`
+            : `Workspace « ${deletedWorkspaceName ?? "actif"} » supprimé. Créez un workspace pour continuer.`,
+        );
       }
       close();
     } catch {
@@ -218,11 +234,7 @@ export function DangerZone() {
                     ) : null}
                   </label>
                 ) : (
-                  <input
-                    type="hidden"
-                    defaultValue="confirmed-client-side"
-                    {...register("currentPassword")}
-                  />
+                  <input type="hidden" {...register("currentPassword")} />
                 )}
                 <FormError
                   error={mutationError}
@@ -273,11 +285,12 @@ function DangerRow({
 }: DangerRowProps) {
   return (
     <div className="flex flex-col justify-between gap-4 py-4 sm:flex-row sm:items-center">
-      <div>
+      <div className="min-w-0">
         <p className="font-medium">{title}</p>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <Button
+        className="w-full sm:w-auto"
         disabled={disabled}
         onClick={onClick}
         type="button"

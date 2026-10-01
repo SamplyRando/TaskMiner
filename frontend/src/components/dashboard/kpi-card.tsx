@@ -2,7 +2,6 @@ import { ArrowDownRight, ArrowUpRight, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { memo } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -16,11 +15,11 @@ type KpiCardProps = {
 };
 
 const colorClasses: Record<KpiCardProps["color"], string> = {
-  amber: "bg-amber-100 text-amber-700",
-  blue: "bg-blue-100 text-blue-700",
-  emerald: "bg-emerald-100 text-emerald-700",
-  rose: "bg-rose-100 text-rose-700",
-  violet: "bg-violet-100 text-violet-700",
+  amber: "text-amber-600 dark:text-amber-400",
+  blue: "text-blue-600 dark:text-blue-400",
+  emerald: "text-emerald-600 dark:text-emerald-400",
+  rose: "text-rose-600 dark:text-rose-400",
+  violet: "text-violet-600 dark:text-violet-400",
 };
 
 export const KpiCard = memo(function KpiCard({
@@ -37,8 +36,8 @@ export const KpiCard = memo(function KpiCard({
       : `${variation >= 0 ? "+" : ""}${variation.toLocaleString("fr-FR")} % vs période précédente`;
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
+    <article className="bg-card min-w-0">
+      <div className="flex min-h-36 items-center justify-between gap-4 p-5">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-muted-foreground truncate text-sm font-medium">
@@ -77,10 +76,10 @@ export const KpiCard = memo(function KpiCard({
             {variationLabel}
           </p>
         </div>
-        <div className={cn("shrink-0 rounded-xl p-3", colorClasses[color])}>
+        <div className={cn("shrink-0 p-1", colorClasses[color])}>
           <Icon aria-hidden="true" className="size-5" />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 });

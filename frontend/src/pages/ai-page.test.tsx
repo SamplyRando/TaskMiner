@@ -116,7 +116,7 @@ describe("AIPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "TaskMiner AI" }),
     ).toBeInTheDocument();
-    expect(await screen.findByText("OpenAI")).toBeInTheDocument();
+    expect(await screen.findByText("Fournisseur : OpenAI")).toBeInTheDocument();
     expect(await screen.findByText("27 / 100 requêtes")).toBeInTheDocument();
     expect(
       await screen.findByText("Votre brouillon apparaîtra ici"),

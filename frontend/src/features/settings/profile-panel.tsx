@@ -66,16 +66,16 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
       description="Gérez votre identité visible dans TaskMiner. Votre e-mail reste immuable."
       title="Profil public"
     >
-      <div className="grid gap-8 xl:grid-cols-[14rem_1fr]">
-        <div className="flex flex-col items-center gap-3 text-center">
+      <div className="grid gap-6 sm:gap-8 xl:grid-cols-[14rem_1fr]">
+        <div className="flex flex-col items-center gap-2 text-center sm:gap-3">
           {profile.avatar_url ? (
             <img
               alt={`Avatar de ${profile.full_name}`}
-              className="size-28 rounded-full border object-cover shadow-sm"
+              className="size-20 rounded-full border object-cover shadow-sm sm:size-28"
               src={profile.avatar_url}
             />
           ) : (
-            <div className="bg-primary text-primary-foreground flex size-28 items-center justify-center rounded-full text-3xl font-bold shadow-sm">
+            <div className="bg-primary text-primary-foreground flex size-20 items-center justify-center rounded-full text-2xl font-bold shadow-sm sm:size-28 sm:text-3xl">
               {initials}
             </div>
           )}
@@ -84,13 +84,12 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
             {profile.primary_role ?? "Utilisateur"}
           </Badge>
           <p className="text-muted-foreground text-xs">
-            L’upload direct sera activé lorsque le stockage d’avatars sera
-            disponible. Une URL sécurisée peut déjà être utilisée.
+            Utilisez une image hébergée via une URL HTTPS.
           </p>
         </div>
 
-        <form className="space-y-5" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form className="space-y-4 sm:space-y-5" onSubmit={submit}>
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             <label className="space-y-2 text-sm font-medium">
               Nom complet
               <Input autoComplete="name" {...register("fullName")} />
@@ -123,7 +122,7 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
               </span>
             ) : null}
           </label>
-          <dl className="bg-muted/50 grid gap-3 rounded-lg p-4 text-sm sm:grid-cols-2">
+          <dl className="bg-muted/50 grid gap-3 rounded-lg p-3 text-sm sm:grid-cols-2 sm:p-4">
             <div>
               <dt className="text-muted-foreground">Compte créé</dt>
               <dd className="font-medium">

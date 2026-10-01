@@ -241,22 +241,26 @@ export function WorkspacePage() {
         workspaces={workspace.workspaces}
       />
 
-      <div className="relative max-w-md">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          aria-label="Rechercher un workspace"
-          className="pl-9"
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPagination((current) => ({ ...current, pageIndex: 0 }));
-          }}
-          placeholder="Rechercher un workspace…"
-          value={search}
-        />
-      </div>
+      {activeWorkspace ? (
+        <section
+          aria-label="Contexte du workspace actif"
+          className="bg-muted/25 flex min-w-0 flex-col gap-2 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="min-w-0">
+            <p className="truncate font-medium">{activeWorkspace.name}</p>
+            <p className="text-muted-foreground text-sm">
+              Les projets, permissions et quotas affichés suivent ce workspace.
+            </p>
+          </div>
+          <p className="shrink-0 text-sm font-semibold">
+            {subscriptionQuery.isPending
+              ? "Chargement du plan…"
+              : subscriptionQuery.data
+                ? `Abonnement actif : ${subscriptionQuery.data.plan === "pro" ? "Pro" : "Free"}`
+                : "Plan indisponible"}
+          </p>
+        </section>
+      ) : null}
 
       {activeWorkspace ? (
         <WorkspacePlanCard
@@ -282,6 +286,23 @@ export function WorkspacePage() {
           workspaceName={activeWorkspace.name}
         />
       ) : null}
+
+      <div className="relative max-w-md">
+        <Search
+          aria-hidden="true"
+          className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+        />
+        <Input
+          aria-label="Rechercher un workspace"
+          className="pl-9"
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPagination((current) => ({ ...current, pageIndex: 0 }));
+          }}
+          placeholder="Rechercher un workspace…"
+          value={search}
+        />
+      </div>
 
       {workspace.isError ? (
         <ErrorState

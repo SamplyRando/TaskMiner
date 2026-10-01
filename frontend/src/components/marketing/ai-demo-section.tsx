@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { Pause, Play, RotateCcw } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -150,14 +150,15 @@ export function AiDemoSection() {
           tabIndex={-1}
         >
           <span className="marketing-ai-demo__eyebrow">
-            <Sparkles aria-hidden="true" />
-            Intelligence, in motion
+            Brief to structured draft
           </span>
-          <h2 id="marketing-ai-demo-title">Watch TaskMiner think.</h2>
+          <h2 id="marketing-ai-demo-title">
+            See the plan before it changes your workspace.
+          </h2>
           <p>
-            Describe the outcome and context. TaskMiner turns it into a
-            reviewable starting plan with tasks, priorities, milestones, and
-            next actions.
+            Describe the outcome and context. TaskMiner prepares a reviewable
+            plan with tasks, priorities, milestones, and next actions. You
+            decide what gets applied.
           </p>
           <div
             className="marketing-motion-reveal marketing-motion-reveal--up"
@@ -183,12 +184,12 @@ export function AiDemoSection() {
         >
           <div className="marketing-ai-demo__header">
             <div>
-              <span className="marketing-ai-demo__brand">
-                <Sparkles aria-hidden="true" />
+              <span aria-hidden="true" className="marketing-ai-demo__brand">
+                TM
               </span>
               <span>
                 <strong>TaskMiner AI</strong>
-                <small>Project intelligence</small>
+                <small>Reviewable project plan</small>
               </span>
             </div>
             <div className="marketing-ai-demo__controls">
@@ -228,7 +229,7 @@ export function AiDemoSection() {
               <>
                 <div className="marketing-ai-demo__sweep" />
                 <div className="marketing-ai-demo__thinking">
-                  <span>Thinking</span>
+                  <span>Structuring the plan</span>
                   <span className="marketing-ai-demo__thinking-dots">
                     <i />
                     <i />

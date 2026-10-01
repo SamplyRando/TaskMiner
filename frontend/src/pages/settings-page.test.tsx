@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/api/client";
 import {
   changePassword,
   deleteAccount,
@@ -17,6 +18,7 @@ import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import { deleteWorkspace, listWorkspaces } from "@/api/workspace";
 import { SettingsPage } from "@/pages/settings-page";
 import { useAuthStore } from "@/store/auth-store";
+import { useWorkspaceStore } from "@/store/workspace-store";
 import {
   settingsPreferencesFixture,
   settingsProfileFixture,
@@ -107,6 +109,7 @@ describe("SettingsPage", () => {
       isHydrated: true,
       tokenType: "bearer",
     });
+    useWorkspaceStore.setState({ activeWorkspaceId: workspaceFixture.id });
   });
 
   it("renders profile data, initials, role and accessible navigation", async () => {
@@ -114,11 +117,11 @@ describe("SettingsPage", () => {
 
     expect(await screen.findByDisplayValue("Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByDisplayValue("ada@example.com")).toBeDisabled();
-    expect(screen.getByText("AL")).toBeInTheDocument();
+    expect(screen.getByText("AL")).toHaveClass("size-20", "sm:size-28");
     expect(screen.getByText("owner")).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", { name: "Sections des paramètres" }),
-    ).toHaveClass("overflow-x-auto");
+    ).toHaveClass("max-w-full", "overflow-x-auto");
   });
 
   it("updates the profile and synchronizes the auth store", async () => {
@@ -259,5 +262,84 @@ describe("SettingsPage", () => {
       await screen.findByText("Saisissez DELETE ou SUPPRIMER."),
     ).toBeInTheDocument();
     expect(mockedDeleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("confirms workspace deletion and selects the remaining workspace", async () => {
+    const user = userEvent.setup();
+    const remainingWorkspace = {
+      ...workspaceFixture,
+      id: "00000000-0000-4000-8000-000000000099",
+      name: "Workspace restant",
+      owner_id: "00000000-0000-4000-8000-000000000098",
+    };
+    mockedListWorkspaces
+      .mockResolvedValueOnce([workspaceFixture, remainingWorkspace])
+      .mockResolvedValue([remainingWorkspace]);
+    renderPage("/app/settings?section=danger");
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Supprimer" })).toBeEnabled();
+    });
+    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+    await user.type(
+      screen.getByRole("textbox", {
+        name: /Saisissez SUPPRIMER ou DELETE pour confirmer/,
+      }),
+      "SUPPRIMER",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Supprimer le workspace" }),
+    );
+
+    await waitFor(() => {
+      expect(mockedDeleteWorkspace).toHaveBeenCalledWith(
+        workspaceFixture.id,
+        expect.anything(),
+      );
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+        remainingWorkspace.id,
+      );
+    });
+    expect(
+      await screen.findByText(
+        "Workspace « Workspace Alpha » supprimé. « Workspace restant » est maintenant actif.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the active workspace selected when deletion is rejected", async () => {
+    const user = userEvent.setup();
+    mockedDeleteWorkspace.mockRejectedValue(
+      new ApiError("Backend billing error", 409, {
+        detail: {
+          code: "workspace_subscription_attached",
+          message: "Backend billing error",
+        },
+      }),
+    );
+    renderPage("/app/settings?section=danger");
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Supprimer" })).toBeEnabled();
+    });
+    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+    await user.type(
+      screen.getByRole("textbox", {
+        name: /Saisissez SUPPRIMER ou DELETE pour confirmer/,
+      }),
+      "SUPPRIMER",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Supprimer le workspace" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Ce workspace possède encore un abonnement actif. Annulez d’abord l’abonnement et attendez sa date de fin avant de supprimer le workspace.",
+      ),
+    ).toBeInTheDocument();
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(
+      workspaceFixture.id,
+    );
   });
 });

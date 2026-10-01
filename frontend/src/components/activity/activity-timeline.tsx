@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActivityItem as ActivityRecord } from "@/types/activity";
 
-const ITEM_HEIGHT = 168;
+const ITEM_HEIGHT = 152;
 const VIEWPORT_HEIGHT = 640;
 const OVERSCAN = 4;
 
