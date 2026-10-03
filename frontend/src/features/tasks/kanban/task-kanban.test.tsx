@@ -36,7 +36,11 @@ const renderKanban = (
       canManageTasks
       currentUserId={userId}
       isLoading={false}
+      onAssign={vi.fn()}
+      onDelete={vi.fn()}
+      onEdit={vi.fn()}
       onOpenAttachments={vi.fn()}
+      onOpenComments={vi.fn()}
       onStatusChange={vi.fn().mockResolvedValue(undefined)}
       projects={[projectFixture]}
       statusFilter=""
@@ -101,9 +105,9 @@ describe("TaskKanban", () => {
         "Vous ne disposez pas de la permission de modifier cette tâche.",
       ),
     ).toHaveLength(3);
-    expect(screen.getByText(taskFixture.title).closest("article")).toHaveClass(
-      "cursor-not-allowed",
-    );
+    expect(
+      screen.getByRole("button", { name: `Déplacer ${taskFixture.title}` }),
+    ).toBeDisabled();
     expect(
       resolveTaskMove(tasks, taskFixture.id, { status: "done" }, false),
     ).toBeNull();
@@ -128,6 +132,49 @@ describe("TaskKanban", () => {
     );
 
     expect(onOpenAttachments).toHaveBeenCalledWith(taskFixture);
+  });
+
+  it("keeps a dedicated keyboard-accessible drag handle", () => {
+    renderKanban();
+
+    expect(
+      screen.getByRole("button", { name: `Déplacer ${taskFixture.title}` }),
+    ).toBeEnabled();
+  });
+
+  it.each([
+    ["Modifier", "onEdit"],
+    ["Assigner", "onAssign"],
+    ["Supprimer", "onDelete"],
+    ["Commentaires de", "onOpenComments"],
+  ] as const)(
+    "runs the %s card action without moving the task",
+    async (label, key) => {
+      const user = userEvent.setup();
+      const callback = vi.fn();
+      const onStatusChange = vi.fn().mockResolvedValue(undefined);
+      renderKanban({ [key]: callback, onStatusChange });
+
+      await user.click(
+        screen.getByRole("button", {
+          name: new RegExp(`${label} ${taskFixture.title}`),
+        }),
+      );
+
+      expect(callback).toHaveBeenCalledWith(taskFixture);
+      expect(onStatusChange).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps read-only comments and attachments available to viewers", () => {
+    renderKanban({ canManageTasks: false });
+
+    expect(
+      screen.getAllByRole("button", { name: /Commentaires de/ }),
+    ).toHaveLength(3);
+    expect(screen.queryByRole("button", { name: /Modifier/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Assigner/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Supprimer/ })).toBeNull();
   });
 
   it("supports a one-column mobile navigation", async () => {

@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 import pytest
@@ -30,7 +31,9 @@ from app.core.config import settings
 from app.main import app
 from app.models.ai_usage_event import AIUsageEvent
 from app.models.user import User
+from app.models.workspace_subscription import WorkspaceSubscription
 from app.models.workspace_member import WorkspaceMemberRole
+from app.subscriptions.plans import PlanCode
 from tests.ai.test_endpoint import plan_payload
 from tests.factories import (
     CreatedWorkspace,
@@ -148,6 +151,7 @@ def test_success_records_tokens_cost_latency_without_sensitive_content(
     assert event is not None
     assert event.workspace_id == workspace.id
     assert event.user_id == workspace.owner.id
+    assert event.free_quota_owner_id == workspace.owner.id
     assert event.operation_type == "project_plan"
     assert event.provider == "openai"
     assert event.model == "gpt-5.6-luna"
@@ -336,11 +340,12 @@ def test_project_change_analysis_uses_the_same_metering_controls(
     assert metered_provider.call_count == 1
 
 
-def test_quota_is_independent_per_workspace(
+def test_pro_workspace_quota_remains_independent_from_free_owner_quota(
     client: TestClient,
     workspace: CreatedWorkspace,
     workspace_factory: WorkspaceFactory,
     metered_provider: MeteredProvider,
+    database_session: Session,
 ) -> None:
     settings.ai_monthly_request_limit = 1
     other_workspace = workspace_factory.create(workspace.owner)
@@ -352,6 +357,81 @@ def test_quota_is_independent_per_workspace(
             json=plan_payload(workspace_id),
         )
         for workspace_id in (workspace.id, other_workspace.id)
+    ]
+
+    assert [response.status_code for response in responses] == [200, 200]
+    assert metered_provider.call_count == 2
+    events = {
+        event.workspace_id: event
+        for event in database_session.scalars(select(AIUsageEvent)).all()
+    }
+    assert events[workspace.id].free_quota_owner_id is None
+    assert events[other_workspace.id].free_quota_owner_id == workspace.owner.id
+
+
+def test_free_quota_survives_workspace_deletion_and_replacement(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    metered_provider: MeteredProvider,
+) -> None:
+    settings.ai_monthly_request_limit = 1
+
+    consumed = client.post(
+        "/api/v1/ai/project-plan",
+        headers=workspace.owner.headers,
+        json=plan_payload(workspace.id),
+    )
+    deleted = client.delete(
+        f"/api/v1/workspaces/{workspace.id}",
+        headers=workspace.owner.headers,
+    )
+    replacement = client.post(
+        "/api/v1/workspaces",
+        headers=workspace.owner.headers,
+        json={"name": "Replacement workspace"},
+    )
+    replacement_id = replacement.json()["id"]
+    rejected = client.post(
+        "/api/v1/ai/project-plan",
+        headers=workspace.owner.headers,
+        json=plan_payload(replacement_id),
+    )
+    usage = client.get(
+        f"/api/v1/workspaces/{replacement_id}/ai/usage",
+        headers=workspace.owner.headers,
+    )
+
+    assert consumed.status_code == 200
+    assert deleted.status_code == 204
+    assert replacement.status_code == 201
+    assert rejected.status_code == 429
+    assert rejected.json()["detail"]["code"] == "ai_quota_reached"
+    assert usage.status_code == 200
+    assert usage.json()["requests_used"] == 1
+    assert usage.json()["requests_remaining"] == 0
+    assert metered_provider.call_count == 1
+
+
+def test_free_quota_is_isolated_between_unrelated_owners(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    other_user: RegisteredUser,
+    workspace_factory: WorkspaceFactory,
+    metered_provider: MeteredProvider,
+) -> None:
+    settings.ai_monthly_request_limit = 1
+    other_workspace = workspace_factory.create(other_user, ensure_capacity=False)
+
+    responses = [
+        client.post(
+            "/api/v1/ai/project-plan",
+            headers=owner.headers,
+            json=plan_payload(workspace_id),
+        )
+        for owner, workspace_id in (
+            (workspace.owner, workspace.id),
+            (other_user, other_workspace.id),
+        )
     ]
 
     assert [response.status_code for response in responses] == [200, 200]
@@ -369,6 +449,7 @@ def test_previous_calendar_month_does_not_consume_current_quota(
         AIUsageEvent(
             workspace_id=workspace.id,
             user_id=workspace.owner.id,
+            free_quota_owner_id=workspace.owner.id,
             operation_type="project_plan",
             provider="openai",
             model="old-model",
@@ -542,6 +623,44 @@ def test_concurrent_requests_cannot_exceed_last_workspace_unit(
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         statuses = list(executor.map(lambda _: generate(), range(2)))
+
+    assert sorted(statuses) == [200, 429]
+    assert metered_provider.call_count == 1
+    assert database_session.scalar(select(func.count(AIUsageEvent.id))) == 1
+
+
+def test_concurrent_free_workspaces_share_one_owner_reservation_lock(
+    client: TestClient,
+    workspace: CreatedWorkspace,
+    workspace_factory: WorkspaceFactory,
+    metered_provider: MeteredProvider,
+    database_session: Session,
+) -> None:
+    settings.ai_monthly_request_limit = 1
+    settings.ai_rate_limit_requests = 10
+    other_workspace = workspace_factory.create(workspace.owner)
+    subscriptions = list(
+        database_session.scalars(
+            select(WorkspaceSubscription).where(
+                WorkspaceSubscription.workspace_id.in_(
+                    [workspace.id, other_workspace.id]
+                )
+            )
+        ).all()
+    )
+    for subscription in subscriptions:
+        subscription.plan_code = PlanCode.FREE
+    database_session.commit()
+
+    def generate(workspace_id: UUID) -> int:
+        return client.post(
+            "/api/v1/ai/project-plan",
+            headers=workspace.owner.headers,
+            json=plan_payload(workspace_id),
+        ).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        statuses = list(executor.map(generate, [workspace.id, other_workspace.id]))
 
     assert sorted(statuses) == [200, 429]
     assert metered_provider.call_count == 1

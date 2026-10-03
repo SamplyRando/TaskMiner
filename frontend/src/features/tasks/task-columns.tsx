@@ -1,23 +1,31 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Paperclip, Pencil, Trash2, UserRoundCog } from "lucide-react";
+import {
+  MessageSquareText,
+  Paperclip,
+  Pencil,
+  Trash2,
+  UserRoundCog,
+} from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  taskPriorityLabels,
-  taskStatusLabels,
-} from "@/features/tasks/task-presentation";
+  InlineTaskPriority,
+  InlineTaskStatus,
+  InlineTaskTitle,
+} from "@/features/tasks/task-inline-fields";
 import { formatDateTime } from "@/lib/format";
 import type { Project } from "@/types/project";
-import type { Task } from "@/types/task";
+import type { Task, TaskUpdate } from "@/types/task";
 
 type TaskColumnActions = {
   canManage: boolean;
   onAssign: (task: Task) => void;
   onAttachments: (task: Task) => void;
+  onComments: (task: Task) => void;
   onDelete: (task: Task) => void;
   onEdit: (task: Task) => void;
+  onInlineUpdate: (task: Task, data: TaskUpdate) => Promise<void>;
   projects: Project[];
 };
 
@@ -25,8 +33,10 @@ export function getTaskColumns({
   canManage,
   onAssign,
   onAttachments,
+  onComments,
   onDelete,
   onEdit,
+  onInlineUpdate,
   projects,
 }: TaskColumnActions): ColumnDef<Task>[] {
   const projectNames = new Map(
@@ -40,14 +50,11 @@ export function getTaskColumns({
         <DataTableColumnHeader column={column} title="Titre" />
       ),
       cell: ({ row }) => (
-        <div className="max-w-xs">
-          <p className="font-medium">{row.original.title}</p>
-          {row.original.description ? (
-            <p className="text-muted-foreground line-clamp-1 text-sm">
-              {row.original.description}
-            </p>
-          ) : null}
-        </div>
+        <InlineTaskTitle
+          canManage={canManage}
+          onUpdate={onInlineUpdate}
+          task={row.original}
+        />
       ),
     },
     {
@@ -62,11 +69,11 @@ export function getTaskColumns({
       enableSorting: false,
       header: "Statut",
       cell: ({ row }) => (
-        <Badge
-          variant={row.original.status === "done" ? "default" : "secondary"}
-        >
-          {taskStatusLabels[row.original.status]}
-        </Badge>
+        <InlineTaskStatus
+          canManage={canManage}
+          onUpdate={onInlineUpdate}
+          task={row.original}
+        />
       ),
     },
     {
@@ -74,13 +81,11 @@ export function getTaskColumns({
       enableSorting: false,
       header: "Priorité",
       cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.priority === "urgent" ? "destructive" : "outline"
-          }
-        >
-          {taskPriorityLabels[row.original.priority]}
-        </Badge>
+        <InlineTaskPriority
+          canManage={canManage}
+          onUpdate={onInlineUpdate}
+          task={row.original}
+        />
       ),
     },
     {
@@ -102,6 +107,18 @@ export function getTaskColumns({
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
+          <Button
+            aria-label={`Commentaires de ${row.original.title}`}
+            onClick={() => {
+              onComments(row.original);
+            }}
+            size="icon"
+            title="Commentaires"
+            type="button"
+            variant="ghost"
+          >
+            <MessageSquareText aria-hidden="true" className="size-4" />
+          </Button>
           <Button
             aria-label={`Pièces jointes de ${row.original.title}`}
             onClick={() => {

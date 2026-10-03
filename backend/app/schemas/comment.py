@@ -29,6 +29,7 @@ class CommentRead(BaseModel):
     id: UUID
     task_id: UUID
     author_id: UUID
+    author_name: str
     content: str
     created_at: datetime
     updated_at: datetime

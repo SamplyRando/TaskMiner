@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/api/client";
 import { listTaskAttachments } from "@/api/attachments";
+import { listTaskComments } from "@/api/comments";
 import { listProjects } from "@/api/projects";
 import { getUserPreferences } from "@/api/settings";
 import {
@@ -12,6 +13,7 @@ import {
   listAllTasks,
   listTasks,
   unassignTask,
+  updateTask,
 } from "@/api/tasks";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
 import {
@@ -43,6 +45,12 @@ vi.mock("@/api/attachments", () => ({
   listTaskAttachments: vi.fn(),
   uploadTaskAttachment: vi.fn(),
 }));
+vi.mock("@/api/comments", () => ({
+  createTaskComment: vi.fn(),
+  deleteTaskComment: vi.fn(),
+  listTaskComments: vi.fn(),
+  updateTaskComment: vi.fn(),
+}));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 
 vi.mock("@/api/tasks", () => ({
@@ -69,11 +77,13 @@ vi.mock("@/api/workspace-permissions", () => ({
 
 const mockedAssignTask = vi.mocked(assignTask);
 const mockedListTaskAttachments = vi.mocked(listTaskAttachments);
+const mockedListTaskComments = vi.mocked(listTaskComments);
 const mockedCreateTask = vi.mocked(createTask);
 const mockedListAllTasks = vi.mocked(listAllTasks);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListTasks = vi.mocked(listTasks);
 const mockedUnassignTask = vi.mocked(unassignTask);
+const mockedUpdateTask = vi.mocked(updateTask);
 const mockedListAssignableMembers = vi.mocked(listAssignableWorkspaceMembers);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
 const mockedPermissions = vi.mocked(getWorkspacePermissions);
@@ -84,6 +94,7 @@ describe("TasksPage", () => {
     vi.clearAllMocks();
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListTaskAttachments.mockResolvedValue([]);
+    mockedListTaskComments.mockResolvedValue([]);
     localStorage.clear();
     useTaskViewStore.setState({ mode: "list" });
     useWorkspaceStore.setState({ activeWorkspaceId: null });
@@ -275,6 +286,56 @@ describe("TasksPage", () => {
     expect(mockedListTaskAttachments).toHaveBeenCalledWith(taskFixture.id);
   });
 
+  it("opens task comments from the task list", async () => {
+    const user = userEvent.setup();
+    mockedListTaskComments.mockResolvedValue([
+      {
+        author_id: userId,
+        author_name: "Ada Lovelace",
+        content: "Commentaire visible",
+        created_at: "2026-10-03T10:00:00Z",
+        id: "comment-1",
+        task_id: taskFixture.id,
+        updated_at: "2026-10-03T10:00:00Z",
+      },
+    ]);
+    renderWithQuery(<TasksPage />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: `Commentaires de ${taskFixture.title}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Commentaires" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Commentaire visible")).toBeInTheDocument();
+    expect(mockedListTaskComments).toHaveBeenCalledWith(taskFixture.id);
+  });
+
+  it("updates a task status inline through the existing mutation", async () => {
+    const user = userEvent.setup();
+    mockedUpdateTask.mockResolvedValue({
+      ...taskFixture,
+      status: "in_progress",
+    });
+    renderWithQuery(<TasksPage />);
+
+    await user.selectOptions(
+      await screen.findByRole("combobox", {
+        name: `Statut de ${taskFixture.title}`,
+      }),
+      "in_progress",
+    );
+
+    await waitFor(() => {
+      expect(mockedUpdateTask).toHaveBeenCalledWith(taskFixture.id, {
+        status: "in_progress",
+      });
+    });
+  });
+
   it("assigns a task to the authenticated user", async () => {
     const user = userEvent.setup();
     mockedAssignTask.mockResolvedValue({
@@ -371,6 +432,36 @@ describe("TasksPage", () => {
       });
     });
     expect(useTaskViewStore.getState().mode).toBe("kanban");
+  });
+
+  it("opens the existing edit, assignment and delete dialogs from Kanban", async () => {
+    const user = userEvent.setup();
+    useTaskViewStore.setState({ mode: "kanban" });
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByRole("region", { name: /À faire, 1 tâche/ });
+    await user.click(
+      screen.getByRole("button", { name: `Modifier ${taskFixture.title}` }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Modifier la tâche" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+
+    await user.click(
+      screen.getByRole("button", { name: `Assigner ${taskFixture.title}` }),
+    );
+    expect(
+      await screen.findByRole("dialog", { name: "Assigner la tâche" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+
+    await user.click(
+      screen.getByRole("button", { name: `Supprimer ${taskFixture.title}` }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Supprimer la tâche ?" }),
+    ).toBeInTheDocument();
   });
 
   it("reloads Kanban projects and tasks when the workspace changes", async () => {

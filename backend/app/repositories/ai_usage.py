@@ -4,9 +4,11 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import case, func, select
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import Session
 
 from app.models.ai_usage_event import AIUsageEvent
+from app.models.user import User
 from app.models.workspace import Workspace
 
 
@@ -34,6 +36,10 @@ class AIUsageRepository:
         )
         self.session.execute(statement).scalar_one()
 
+    def lock_free_quota_owner(self, owner_id: UUID) -> None:
+        statement = select(User.id).where(User.id == owner_id).with_for_update()
+        self.session.execute(statement).scalar_one()
+
     def count_workspace_requests(
         self,
         workspace_id: UUID,
@@ -42,6 +48,19 @@ class AIUsageRepository:
     ) -> int:
         statement = select(func.count(AIUsageEvent.id)).where(
             AIUsageEvent.workspace_id == workspace_id,
+            AIUsageEvent.created_at >= start,
+            AIUsageEvent.created_at < end,
+        )
+        return int(self.session.scalar(statement) or 0)
+
+    def count_free_owner_requests(
+        self,
+        owner_id: UUID,
+        start: datetime,
+        end: datetime,
+    ) -> int:
+        statement = select(func.count(AIUsageEvent.id)).where(
+            AIUsageEvent.free_quota_owner_id == owner_id,
             AIUsageEvent.created_at >= start,
             AIUsageEvent.created_at < end,
         )
@@ -78,6 +97,7 @@ class AIUsageRepository:
         *,
         workspace_id: UUID,
         user_id: UUID,
+        free_quota_owner_id: UUID | None,
         operation_type: str,
         provider: str,
         model: str,
@@ -86,6 +106,7 @@ class AIUsageRepository:
         event = AIUsageEvent(
             workspace_id=workspace_id,
             user_id=user_id,
+            free_quota_owner_id=free_quota_owner_id,
             operation_type=operation_type,
             provider=provider,
             model=model,
@@ -136,6 +157,31 @@ class AIUsageRepository:
         start: datetime,
         end: datetime,
     ) -> AIUsageAggregate:
+        return self._aggregate_where(
+            AIUsageEvent.workspace_id == workspace_id,
+            start=start,
+            end=end,
+        )
+
+    def aggregate_free_owner(
+        self,
+        owner_id: UUID,
+        start: datetime,
+        end: datetime,
+    ) -> AIUsageAggregate:
+        return self._aggregate_where(
+            AIUsageEvent.free_quota_owner_id == owner_id,
+            start=start,
+            end=end,
+        )
+
+    def _aggregate_where(
+        self,
+        scope: ColumnElement[bool],
+        *,
+        start: datetime,
+        end: datetime,
+    ) -> AIUsageAggregate:
         statement = select(
             func.count(AIUsageEvent.id),
             func.sum(case((AIUsageEvent.status == "success", 1), else_=0)),
@@ -146,7 +192,7 @@ class AIUsageRepository:
             func.coalesce(func.sum(AIUsageEvent.estimated_cost_usd), 0),
             func.avg(AIUsageEvent.latency_ms),
         ).where(
-            AIUsageEvent.workspace_id == workspace_id,
+            scope,
             AIUsageEvent.created_at >= start,
             AIUsageEvent.created_at < end,
         )

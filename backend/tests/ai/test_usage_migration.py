@@ -53,6 +53,7 @@ def test_ai_usage_migration_upgrades_and_downgrades() -> None:
             "id",
             "workspace_id",
             "user_id",
+            "free_quota_owner_id",
             "operation_type",
             "provider",
             "model",

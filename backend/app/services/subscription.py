@@ -201,16 +201,24 @@ class SubscriptionService:
         user: User,
         workspace_id: UUID,
     ) -> WorkspaceSubscriptionRead:
-        self.permission_service.require_workspace_view(user, workspace_id)
+        workspace = self.permission_service.require_workspace_view(user, workspace_id)
         subscription, plan, status = self.get_effective_subscription(workspace_id)
         _, limits = self.get_plan_limits(workspace_id)
         period_start, period_end = utc_month_bounds(
             self.clock().astimezone(timezone.utc)
         )
-        ai_usage = self.ai_usage_repository.aggregate(
-            workspace_id,
-            period_start,
-            period_end,
+        ai_usage = (
+            self.ai_usage_repository.aggregate_free_owner(
+                workspace.owner_id,
+                period_start,
+                period_end,
+            )
+            if plan == PlanCode.FREE
+            else self.ai_usage_repository.aggregate(
+                workspace_id,
+                period_start,
+                period_end,
+            )
         )
         scheduled_cancellation_at = None
         if (

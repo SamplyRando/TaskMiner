@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import { TaskAttachmentsDialog } from "@/features/attachments/task-attachments-dialog";
+import { TaskCommentsDialog } from "@/features/comments/task-comments-dialog";
 import { useProjects } from "@/features/projects/hooks";
 import { useUserPreferences } from "@/features/settings/hooks";
 import {
@@ -38,6 +39,7 @@ import type {
   TaskPriority,
   TaskSort,
   TaskStatus,
+  TaskUpdate,
 } from "@/types/task";
 
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
@@ -87,6 +89,7 @@ export function TasksPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -163,6 +166,10 @@ export function TasksPage() {
           setSelectedTask(task);
           setAttachmentsOpen(true);
         },
+        onComments: (task) => {
+          setSelectedTask(task);
+          setCommentsOpen(true);
+        },
         onDelete: (task) => {
           deleteTask.reset();
           setSelectedTask(task);
@@ -172,6 +179,9 @@ export function TasksPage() {
           updateTask.reset();
           setSelectedTask(task);
           setFormOpen(true);
+        },
+        onInlineUpdate: async (task: Task, data: TaskUpdate) => {
+          await updateTask.mutateAsync({ data, taskId: task.id });
         },
         projects,
       }),
@@ -405,9 +415,28 @@ export function TasksPage() {
             kanbanQuery.isPending ||
             permissionsQuery.isPending
           }
+          onAssign={(task) => {
+            assignTask.reset();
+            setSelectedTask(task);
+            setAssignmentOpen(true);
+          }}
+          onDelete={(task) => {
+            deleteTask.reset();
+            setSelectedTask(task);
+            setDeleteOpen(true);
+          }}
+          onEdit={(task) => {
+            updateTask.reset();
+            setSelectedTask(task);
+            setFormOpen(true);
+          }}
           onOpenAttachments={(task) => {
             setSelectedTask(task);
             setAttachmentsOpen(true);
+          }}
+          onOpenComments={(task) => {
+            setSelectedTask(task);
+            setCommentsOpen(true);
           }}
           onStatusChange={async (task, nextStatus) => {
             await updateTask.mutateAsync({
@@ -492,6 +521,14 @@ export function TasksPage() {
         canManage={canManageTasks}
         onOpenChange={setAttachmentsOpen}
         open={attachmentsOpen}
+        task={selectedTask}
+      />
+
+      <TaskCommentsDialog
+        canManage={canManageTasks}
+        currentUserId={currentUserId}
+        onOpenChange={setCommentsOpen}
+        open={commentsOpen}
         task={selectedTask}
       />
 

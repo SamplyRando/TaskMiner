@@ -56,6 +56,11 @@ class AIUsageEvent(Base):
         ),
         Index("ix_ai_usage_events_workspace_created", "workspace_id", "created_at"),
         Index("ix_ai_usage_events_user_created", "user_id", "created_at"),
+        Index(
+            "ix_ai_usage_events_free_owner_created",
+            "free_quota_owner_id",
+            "created_at",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -75,6 +80,11 @@ class AIUsageEvent(Base):
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    free_quota_owner_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
     operation_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     provider: Mapped[str] = mapped_column(String(32), nullable=False)

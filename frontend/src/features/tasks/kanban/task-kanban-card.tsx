@@ -1,6 +1,15 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, GripVertical, Paperclip, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  GripVertical,
+  MessageSquareText,
+  Paperclip,
+  Pencil,
+  Trash2,
+  UserRound,
+  UserRoundCog,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +25,11 @@ type TaskKanbanCardProps = {
   canDrag: boolean;
   currentUserId: string;
   isOverlay?: boolean;
+  onAssign: (task: Task) => void;
+  onDelete: (task: Task) => void;
+  onEdit: (task: Task) => void;
   onOpenAttachments: (task: Task) => void;
+  onOpenComments: (task: Task) => void;
   project: Project | undefined;
   task: Task;
 };
@@ -47,7 +60,11 @@ export function TaskKanbanCard({
   canDrag,
   currentUserId,
   isOverlay = false,
+  onAssign,
+  onDelete,
+  onEdit,
   onOpenAttachments,
+  onOpenComments,
   project,
   task,
 }: TaskKanbanCardProps) {
@@ -55,6 +72,7 @@ export function TaskKanbanCard({
     attributes,
     isDragging,
     listeners,
+    setActivatorNodeRef,
     setNodeRef,
     transform,
     transition,
@@ -70,14 +88,10 @@ export function TaskKanbanCard({
   return (
     <article
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
       aria-describedby={!canDrag ? `task-permission-${task.id}` : undefined}
       className={cn(
         "bg-card border-border group rounded-xl border p-3.5 shadow-sm transition-[box-shadow,opacity,transform]",
-        canDrag
-          ? "cursor-grab touch-none hover:shadow-md active:cursor-grabbing"
-          : "cursor-not-allowed opacity-75",
+        canDrag ? "hover:shadow-md" : "opacity-75",
         isDragging && "opacity-30",
         isOverlay && "w-80 rotate-2 shadow-xl",
       )}
@@ -96,13 +110,32 @@ export function TaskKanbanCard({
             {project?.name ?? "Projet indisponible"}
           </p>
         </div>
-        <GripVertical
-          aria-hidden="true"
-          className={cn(
-            "text-muted-foreground size-4 shrink-0",
-            canDrag ? "opacity-50 group-hover:opacity-100" : "opacity-30",
-          )}
-        />
+        {isOverlay ? (
+          <GripVertical
+            aria-hidden="true"
+            className="text-muted-foreground size-4 shrink-0"
+          />
+        ) : (
+          <button
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-describedby={
+              !canDrag ? `task-permission-${task.id}` : undefined
+            }
+            aria-label={`Déplacer ${task.title}`}
+            className={cn(
+              "text-muted-foreground shrink-0 rounded-sm p-1 focus-visible:ring-2 focus-visible:outline-none",
+              canDrag
+                ? "cursor-grab touch-none opacity-50 group-hover:opacity-100 active:cursor-grabbing"
+                : "cursor-not-allowed opacity-30",
+            )}
+            disabled={!canDrag}
+            type="button"
+          >
+            <GripVertical aria-hidden="true" className="size-4" />
+          </button>
+        )}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -125,26 +158,85 @@ export function TaskKanbanCard({
       </div>
 
       {!isOverlay ? (
-        <div className="mt-3 flex justify-end border-t pt-2">
+        <div
+          className="mt-3 flex flex-wrap justify-end gap-1 border-t pt-2"
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+          }}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          <Button
+            aria-label={`Commentaires de ${task.title}`}
+            onClick={() => {
+              onOpenComments(task);
+            }}
+            size="icon"
+            title="Commentaires"
+            type="button"
+            variant="ghost"
+          >
+            <MessageSquareText aria-hidden="true" className="size-4" />
+          </Button>
           <Button
             aria-label={`Pièces jointes de ${task.title}`}
-            onClick={(event) => {
-              event.stopPropagation();
+            onClick={() => {
               onOpenAttachments(task);
             }}
-            onKeyDown={(event) => {
-              event.stopPropagation();
-            }}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-            }}
-            size="sm"
+            size="icon"
+            title="Pièces jointes"
             type="button"
             variant="ghost"
           >
             <Paperclip aria-hidden="true" className="size-4" />
-            Pièces jointes
           </Button>
+          {canDrag ? (
+            <>
+              <Button
+                aria-label={`Assigner ${task.title}`}
+                onClick={() => {
+                  onAssign(task);
+                }}
+                size="icon"
+                title="Assigner"
+                type="button"
+                variant="ghost"
+              >
+                <UserRoundCog aria-hidden="true" className="size-4" />
+              </Button>
+              <Button
+                aria-label={`Modifier ${task.title}`}
+                onClick={() => {
+                  onEdit(task);
+                }}
+                size="icon"
+                title="Modifier"
+                type="button"
+                variant="ghost"
+              >
+                <Pencil aria-hidden="true" className="size-4" />
+              </Button>
+              <Button
+                aria-label={`Supprimer ${task.title}`}
+                onClick={() => {
+                  onDelete(task);
+                }}
+                size="icon"
+                title="Supprimer"
+                type="button"
+                variant="ghost"
+              >
+                <Trash2
+                  aria-hidden="true"
+                  className="text-destructive size-4"
+                />
+              </Button>
+            </>
+          ) : null}
         </div>
       ) : null}
 

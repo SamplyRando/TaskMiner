@@ -94,6 +94,7 @@ class AIUsageService:
         *,
         user: User,
         workspace_id: UUID,
+        workspace_owner_id: UUID,
         operation_type: AIUsageOperation,
         provider: AIProvider,
         generate: Callable[[], Awaitable[AIProviderResult[GenerationT]]],
@@ -103,6 +104,7 @@ class AIUsageService:
         event_id = self._reserve(
             user=user,
             workspace_id=workspace_id,
+            workspace_owner_id=workspace_owner_id,
             operation_type=operation_type,
             provider=provider,
         )
@@ -183,16 +185,22 @@ class AIUsageService:
         user: User,
         workspace_id: UUID,
     ) -> AIWorkspaceUsageResponse:
-        self.permission_service.require_ai_usage_view(user, workspace_id)
+        workspace = self.permission_service.require_ai_usage_view(user, workspace_id)
         period_start, period_end = utc_month_bounds(
             self.clock().astimezone(timezone.utc)
         )
-        aggregate = self.repository.aggregate(
-            workspace_id,
-            period_start,
-            period_end,
+        plan, request_limit = self.subscription_service.get_ai_request_limit(
+            workspace_id
         )
-        _, request_limit = self.subscription_service.get_ai_request_limit(workspace_id)
+        aggregate = (
+            self.repository.aggregate_free_owner(
+                workspace.owner_id,
+                period_start,
+                period_end,
+            )
+            if plan == PlanCode.FREE
+            else self.repository.aggregate(workspace_id, period_start, period_end)
+        )
         return AIWorkspaceUsageResponse(
             period_start=period_start,
             period_end=period_end,
@@ -217,6 +225,7 @@ class AIUsageService:
         *,
         user: User,
         workspace_id: UUID,
+        workspace_owner_id: UUID,
         operation_type: AIUsageOperation,
         provider: AIProvider,
     ) -> UUID:
@@ -228,11 +237,21 @@ class AIUsageService:
             plan, request_limit = self.subscription_service.get_ai_request_limit(
                 workspace_id
             )
-            usage_count = self.repository.count_workspace_requests(
-                workspace_id,
-                period_start,
-                period_end,
-            )
+            free_quota_owner_id = None
+            if plan == PlanCode.FREE:
+                free_quota_owner_id = workspace_owner_id
+                self.repository.lock_free_quota_owner(workspace_owner_id)
+                usage_count = self.repository.count_free_owner_requests(
+                    workspace_owner_id,
+                    period_start,
+                    period_end,
+                )
+            else:
+                usage_count = self.repository.count_workspace_requests(
+                    workspace_id,
+                    period_start,
+                    period_end,
+                )
             if usage_count >= request_limit:
                 raise AIMonthlyQuotaExceededError(plan, request_limit)
 
@@ -264,6 +283,7 @@ class AIUsageService:
             event = self.repository.create_started(
                 workspace_id=workspace_id,
                 user_id=user.id,
+                free_quota_owner_id=free_quota_owner_id,
                 operation_type=operation_type,
                 provider=provider.provider_name,
                 model=provider.model_name,

@@ -309,6 +309,7 @@ def test_plan_derived_ai_quotas_reject_before_provider_call(
             AIUsageEvent(
                 workspace_id=workspace.id,
                 user_id=workspace.owner.id,
+                free_quota_owner_id=workspace.owner.id,
                 operation_type="project_plan",
                 provider="openai",
                 model="test-model",

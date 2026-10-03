@@ -48,3 +48,9 @@ class Comment(SoftDeleteMixin, TimestampMixin, Base):
 
     task: Mapped[Task] = relationship(back_populates="comments")
     author: Mapped[User] = relationship(back_populates="comments")
+
+    @property
+    def author_name(self) -> str:
+        """Expose the author's display name without leaking account details."""
+
+        return self.author.full_name

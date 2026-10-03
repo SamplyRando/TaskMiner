@@ -72,6 +72,7 @@ class AIService:
         return await self.usage_service.run_generation(
             user=user,
             workspace_id=workspace.id,
+            workspace_owner_id=workspace.owner_id,
             operation_type="project_plan",
             provider=self.provider,
             generate=lambda: self.provider.generate_project_plan(

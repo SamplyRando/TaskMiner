@@ -25,6 +25,7 @@ def test_create_comment_records_authenticated_author(
     assert data["content"] == "First task comment"
     assert data["task_id"] == str(task.id)
     assert data["author_id"] == str(task.project.owner.id)
+    assert data["author_name"] == task.project.owner.full_name
     assert "deleted_at" not in data
 
     stored_comment = database_session.scalar(

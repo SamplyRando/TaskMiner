@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.comment import Comment
 from app.models.project import Project
@@ -28,7 +28,7 @@ class CommentRepository:
     ) -> Comment:
         comment = Comment(
             task_id=task.id,
-            author_id=author.id,
+            author=author,
             content=data.content,
         )
         self.session.add(comment)
@@ -45,6 +45,7 @@ class CommentRepository:
     def list_by_task(self, task: Task) -> list[Comment]:
         statement = (
             select(Comment)
+            .options(selectinload(Comment.author))
             .where(
                 Comment.task_id == task.id,
                 Comment.deleted_at.is_(None),
@@ -60,6 +61,7 @@ class CommentRepository:
     ) -> Comment | None:
         statement = (
             select(Comment)
+            .options(selectinload(Comment.author))
             .join(Task, Comment.task_id == Task.id)
             .join(Project, Task.project_id == Project.id)
             .join(Workspace, Project.workspace_id == Workspace.id)
@@ -81,6 +83,7 @@ class CommentRepository:
     ) -> Comment | None:
         statement = (
             select(Comment)
+            .options(selectinload(Comment.author))
             .join(Task, Comment.task_id == Task.id)
             .join(Project, Task.project_id == Project.id)
             .join(Workspace, Project.workspace_id == Workspace.id)
