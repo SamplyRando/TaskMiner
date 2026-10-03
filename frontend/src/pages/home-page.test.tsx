@@ -93,6 +93,14 @@ describe("HomePage", () => {
     expect(screen.getByText("Projets récents")).toBeInTheDocument();
     expect(screen.getByText("Tâches récentes")).toBeInTheDocument();
     expect(screen.getByText("Mes tâches")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tâches créées sur la période sélectionnée (30 jours)."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Vos tâches actives assignées, triées par urgence puis par échéance.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows a skeleton while the dashboard is loading", () => {
@@ -179,6 +187,9 @@ describe("HomePage", () => {
         workspace_id: workspaceFixture.id,
       });
     });
+    expect(
+      screen.getByText("Tâches créées sur la période sélectionnée (7 jours)."),
+    ).toBeInTheDocument();
   });
 
   it("keeps the dashboard scoped to the canonical active workspace", async () => {

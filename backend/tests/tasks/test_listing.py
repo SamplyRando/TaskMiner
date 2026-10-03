@@ -87,6 +87,49 @@ def test_task_search_is_case_insensitive_across_fields(
     assert data["total"] == 2
 
 
+def test_task_search_is_accent_insensitive_for_titles_and_descriptions(
+    client: TestClient,
+    user: RegisteredUser,
+    other_user: RegisteredUser,
+    project_factory: ProjectFactory,
+    task_factory: TaskFactory,
+) -> None:
+    project = project_factory.create(user)
+    title_match = task_factory.create(
+        project,
+        title="Préparer le café de lancement",
+    )
+    description_match = task_factory.create(
+        project,
+        title="Review profile",
+        description="Prepare the final resume before publication",
+    )
+    foreign_project = project_factory.create(other_user)
+    task_factory.create(foreign_project, title="Café confidentiel")
+
+    title_response = client.get(
+        "/api/v1/tasks",
+        headers=user.headers,
+        params={"search": "AFE"},
+    )
+    description_response = client.get(
+        "/api/v1/tasks",
+        headers=user.headers,
+        params={"search": "résumé"},
+    )
+
+    assert title_response.status_code == 200
+    assert [item["id"] for item in title_response.json()["items"]] == [
+        str(title_match.id)
+    ]
+    assert title_response.json()["total"] == 1
+    assert description_response.status_code == 200
+    assert [item["id"] for item in description_response.json()["items"]] == [
+        str(description_match.id)
+    ]
+    assert description_response.json()["total"] == 1
+
+
 def test_task_filters_status_priority_and_project(
     client: TestClient,
     user: RegisteredUser,

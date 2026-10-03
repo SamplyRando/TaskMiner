@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.database.database import SessionLocal
 from app.models.task import Task
@@ -162,6 +163,8 @@ def test_dashboard_is_isolated_by_owner(
     assert [project["name"] for project in data["recent_projects"]] == [
         "Visible project"
     ]
+    assert data["recent_tasks"] == []
+    assert data["my_tasks"] == []
 
 
 def test_dashboard_requires_authentication(client: TestClient) -> None:
@@ -209,6 +212,92 @@ def test_dashboard_filters_tasks_and_validates_period(
         params={"period": "365d"},
     )
     assert invalid.status_code == 422
+
+
+def test_dashboard_my_tasks_are_active_and_ignore_the_user_filter(
+    client: TestClient,
+    user: RegisteredUser,
+    other_user: RegisteredUser,
+    project_factory: ProjectFactory,
+    task_factory: TaskFactory,
+    database_session: Session,
+) -> None:
+    project = project_factory.create(user)
+    active = task_factory.create(project, title="My active task", priority="high")
+    completed = task_factory.create(
+        project,
+        title="My completed task",
+        status="done",
+        priority="urgent",
+    )
+    filtered_task = task_factory.create(project, title="Another user's task")
+    for task_id, assignee_id in (
+        (active.id, user.id),
+        (completed.id, user.id),
+        (filtered_task.id, other_user.id),
+    ):
+        task_model = database_session.get(Task, task_id)
+        assert task_model is not None
+        task_model.assigned_user_id = assignee_id
+    database_session.commit()
+
+    response = client.get(
+        "/api/v1/dashboard",
+        headers=user.headers,
+        params={"user_id": str(other_user.id)},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["id"] for item in data["recent_tasks"]] == [str(filtered_task.id)]
+    assert [item["id"] for item in data["my_tasks"]] == [str(active.id)]
+
+
+def test_dashboard_recent_tasks_follow_period_and_include_completed(
+    client: TestClient,
+    user: RegisteredUser,
+    project_factory: ProjectFactory,
+    task_factory: TaskFactory,
+    database_session: Session,
+) -> None:
+    project = project_factory.create(user)
+    newest_done = task_factory.create(
+        project,
+        title="Recent completed",
+        status="done",
+    )
+    boundary = task_factory.create(project, title="At period boundary")
+    outside = task_factory.create(project, title="Before period boundary")
+    today_start = datetime.now(timezone.utc).replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    period_start = today_start - timedelta(days=6)
+    timestamps = {
+        newest_done.id: datetime.now(timezone.utc),
+        boundary.id: period_start,
+        outside.id: period_start - timedelta(microseconds=1),
+    }
+    for task_id, created_at in timestamps.items():
+        task_model = database_session.get(Task, task_id)
+        assert task_model is not None
+        task_model.created_at = created_at
+    database_session.commit()
+
+    response = client.get(
+        "/api/v1/dashboard",
+        headers=user.headers,
+        params={"period": "7d"},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["recent_tasks"]] == [
+        str(newest_done.id),
+        str(boundary.id),
+    ]
+    assert response.json()["recent_tasks"][0]["status"] == "done"
 
 
 def test_dashboard_calculates_due_metrics(

@@ -131,8 +131,8 @@ class TaskRepository:
             pattern = f"%{params.search}%"
             filters.append(
                 or_(
-                    Task.title.ilike(pattern),
-                    Task.description.ilike(pattern),
+                    func.unaccent(Task.title).ilike(func.unaccent(pattern)),
+                    func.unaccent(Task.description).ilike(func.unaccent(pattern)),
                 )
             )
         if params.status is not None:
@@ -192,8 +192,8 @@ class TaskRepository:
             pattern = f"%{params.search}%"
             filters.append(
                 or_(
-                    Task.title.ilike(pattern),
-                    Task.description.ilike(pattern),
+                    func.unaccent(Task.title).ilike(func.unaccent(pattern)),
+                    func.unaccent(Task.description).ilike(func.unaccent(pattern)),
                 )
             )
         if params.status is not None:

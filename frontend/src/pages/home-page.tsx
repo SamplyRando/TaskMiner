@@ -374,7 +374,7 @@ export function HomePage() {
       </section>
 
       <RecentTasks
-        description="Les dix dernières tâches créées dans vos projets."
+        description={`Tâches créées sur la période sélectionnée (${periodLabels[scopedFilters.period]}).`}
         emptyDescription="Créez une tâche depuis un projet pour la retrouver ici."
         emptyTitle="Aucune tâche récente"
         items={dashboard.recent_tasks}
@@ -383,7 +383,7 @@ export function HomePage() {
 
       {currentUser ? (
         <RecentTasks
-          description="Vos tâches assignées, triées par urgence puis par échéance."
+          description="Vos tâches actives assignées, triées par urgence puis par échéance."
           emptyDescription="Aucune tâche active ne vous est assignée."
           emptyTitle="Vous êtes à jour"
           items={dashboard.my_tasks}

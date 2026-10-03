@@ -209,12 +209,17 @@ class DashboardRepository:
                 period_start,
             ),
             recent_projects=self._list_recent_projects(owner, filters),
-            recent_tasks=self._list_recent_tasks(owner, filters),
+            recent_tasks=self._list_recent_tasks(
+                owner,
+                filters,
+                created_since=period_start,
+            ),
             my_tasks=self._list_recent_tasks(
                 owner,
                 filters,
                 assigned_user_id=owner.id,
                 apply_user_filter=False,
+                exclude_completed=True,
             ),
             activities=self._list_recent_activities(owner, filters),
             period_counts={
@@ -557,12 +562,18 @@ class DashboardRepository:
         *,
         assigned_user_id: UUID | None = None,
         apply_user_filter: bool = True,
+        created_since: datetime | None = None,
+        exclude_completed: bool = False,
     ) -> list[RecentTaskRecord]:
         task_filters = list(
             self._task_filters(owner, filters, apply_user_filter=apply_user_filter)
         )
         if assigned_user_id is not None:
             task_filters.append(Task.assigned_user_id == assigned_user_id)
+        if created_since is not None:
+            task_filters.append(Task.created_at >= created_since)
+        if exclude_completed:
+            task_filters.append(Task.status != TaskStatus.DONE)
 
         urgency = case(
             (Task.priority == TaskPriority.URGENT, 0),
