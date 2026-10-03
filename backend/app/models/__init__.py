@@ -8,6 +8,11 @@ from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.billing_checkout_consent import BillingCheckoutConsent
 from app.models.comment import Comment
+from app.models.notification import (
+    Notification,
+    NotificationEntityType,
+    NotificationType,
+)
 from app.models.project import Project
 from app.models.request_rate_limit_bucket import RequestRateLimitBucket
 from app.models.stripe_webhook_event import StripeWebhookEvent
@@ -32,6 +37,9 @@ __all__ = [
     "Attachment",
     "BillingCheckoutConsent",
     "Comment",
+    "Notification",
+    "NotificationEntityType",
+    "NotificationType",
     "Project",
     "RequestRateLimitBucket",
     "StripeWebhookEvent",

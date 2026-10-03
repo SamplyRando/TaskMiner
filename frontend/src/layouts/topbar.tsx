@@ -1,6 +1,7 @@
 import { ChevronDown, LogOut, Menu, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { NotificationCenter } from "@/features/notifications/notification-center";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import {
   DropdownMenu,
@@ -60,7 +61,8 @@ export function Topbar({
         value={activeWorkspaceId}
         workspaces={workspaces}
       />
-      <div className="ml-auto shrink-0">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <NotificationCenter onWorkspaceChange={onWorkspaceChange} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

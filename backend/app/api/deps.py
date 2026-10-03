@@ -37,6 +37,7 @@ from app.repositories.billing import BillingRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.dashboard import DashboardRepository
+from app.repositories.notification import NotificationRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.request_rate_limit import RequestRateLimitRepository
 from app.repositories.subscription import WorkspaceSubscriptionRepository
@@ -55,6 +56,7 @@ from app.services.activity import ActivityService
 from app.services.audit import AuditService
 from app.services.comment import CommentService
 from app.services.dashboard import DashboardService
+from app.services.notification import NotificationService
 from app.services.permission import PermissionService
 from app.services.project import ProjectService
 from app.services.request_rate_limit import (
@@ -166,6 +168,16 @@ def get_dashboard_service(session: SessionDep) -> DashboardService:
 DashboardServiceDep = Annotated[
     DashboardService,
     Depends(get_dashboard_service),
+]
+
+
+def get_notification_service(session: SessionDep) -> NotificationService:
+    return NotificationService(NotificationRepository(session))
+
+
+NotificationServiceDep = Annotated[
+    NotificationService,
+    Depends(get_notification_service),
 ]
 
 

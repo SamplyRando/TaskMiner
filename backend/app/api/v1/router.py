@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     billing,
     comments,
     dashboard,
+    notifications,
     projects,
     task_assignment,
     tasks,
@@ -35,6 +36,11 @@ api_router.include_router(
     tags=["dashboard"],
 )
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(
+    notifications.router,
+    prefix="/notifications",
+    tags=["notifications"],
+)
 api_router.include_router(
     workspaces.router,
     prefix="/workspaces",

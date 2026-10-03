@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Topbar } from "@/layouts/topbar";
@@ -9,6 +10,13 @@ import {
   resetAuthStore,
 } from "@/test/auth-fixtures";
 import { workspaceFixture } from "@/test/resource-fixtures";
+
+vi.mock("@/features/notifications/notification-center", () => ({
+  NotificationCenter: () => <button aria-label="Notifications" type="button" />,
+}));
+
+const renderTopbar = (topbar: React.ReactElement) =>
+  render(<MemoryRouter>{topbar}</MemoryRouter>);
 
 const defaultProps = {
   activeWorkspaceId: workspaceFixture.id,
@@ -25,12 +33,15 @@ describe("Topbar", () => {
   });
 
   it("shows the authenticated user and exposes the user menu", () => {
-    render(<Topbar {...defaultProps} />);
+    renderTopbar(<Topbar {...defaultProps} />);
 
     expect(screen.getByText(fakeUser.full_name ?? "")).toBeInTheDocument();
     expect(screen.getByText(fakeUser.email)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Ouvrir le menu utilisateur" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Notifications" }),
     ).toBeInTheDocument();
   });
 
@@ -42,7 +53,7 @@ describe("Topbar", () => {
       id: "00000000-0000-4000-8000-000000000099",
       name: "Workspace invité",
     };
-    render(
+    renderTopbar(
       <Topbar
         {...defaultProps}
         onWorkspaceChange={onWorkspaceChange}
