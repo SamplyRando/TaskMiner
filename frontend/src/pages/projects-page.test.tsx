@@ -2,7 +2,13 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createProject, listProjects } from "@/api/projects";
+import {
+  addProjectStatus,
+  createProject,
+  duplicateProject,
+  importProjectTemplate,
+  listProjects,
+} from "@/api/projects";
 import { getUserPreferences } from "@/api/settings";
 import { getWorkspaceSubscription } from "@/api/subscription";
 import { getWorkspacePermissions } from "@/api/workspace-permissions";
@@ -18,10 +24,17 @@ import {
 import { useWorkspaceStore } from "@/store/workspace-store";
 
 vi.mock("@/api/projects", () => ({
+  addProjectStatus: vi.fn(),
   createProject: vi.fn(),
   deleteProject: vi.fn(),
+  deleteProjectStatus: vi.fn(),
+  duplicateProject: vi.fn(),
+  exportProjectTemplate: vi.fn(),
+  importProjectTemplate: vi.fn(),
   listProjects: vi.fn(),
+  reorderProjectStatuses: vi.fn(),
   updateProject: vi.fn(),
+  updateProjectStatus: vi.fn(),
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
@@ -31,6 +44,9 @@ vi.mock("@/api/workspace-permissions", () => ({
 }));
 
 const mockedCreateProject = vi.mocked(createProject);
+const mockedAddProjectStatus = vi.mocked(addProjectStatus);
+const mockedDuplicateProject = vi.mocked(duplicateProject);
+const mockedImportProjectTemplate = vi.mocked(importProjectTemplate);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
@@ -263,5 +279,73 @@ describe("ProjectsPage", () => {
     expect(
       screen.getByRole("button", { name: "Nouveau projet" }),
     ).toBeDisabled();
+  });
+
+  it("opens workflow management and adds a project status", async () => {
+    const user = userEvent.setup();
+    mockedAddProjectStatus.mockResolvedValue({
+      is_completed: false,
+      key: "status_review",
+      label: "Validation",
+      position: 3,
+    });
+    renderWithQuery(<ProjectsPage />);
+
+    await screen.findByText(projectFixture.name);
+    await user.click(
+      screen.getByRole("button", {
+        name: `Configurer le workflow de ${projectFixture.name}`,
+      }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Nouveau statut" }),
+      "Validation",
+    );
+    await user.click(screen.getByRole("button", { name: "Ajouter" }));
+
+    await waitFor(() => {
+      expect(mockedAddProjectStatus).toHaveBeenCalledWith(projectFixture.id, {
+        label: "Validation",
+      });
+    });
+  });
+
+  it("duplicates and imports projects through the existing project actions", async () => {
+    const user = userEvent.setup();
+    mockedDuplicateProject.mockResolvedValue({
+      ...projectFixture,
+      id: "00000000-0000-4000-8000-000000000099",
+      name: "Projet Alpha (copie)",
+    });
+    mockedImportProjectTemplate.mockResolvedValue(projectFixture);
+    renderWithQuery(<ProjectsPage />);
+
+    await screen.findByText(projectFixture.name);
+    await user.click(
+      screen.getByRole("button", { name: `Dupliquer ${projectFixture.name}` }),
+    );
+    await waitFor(() => {
+      expect(mockedDuplicateProject).toHaveBeenCalledWith(
+        projectFixture.id,
+        expect.anything(),
+      );
+    });
+
+    const fileInput =
+      document.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+    if (fileInput === null) {
+      throw new Error("Template file input is missing");
+    }
+    const file = new File(["{}"], "template.json", {
+      type: "application/json",
+    });
+    await user.upload(fileInput, file);
+    await waitFor(() => {
+      expect(mockedImportProjectTemplate).toHaveBeenCalledWith(
+        workspaceFixture.id,
+        file,
+      );
+    });
   });
 });

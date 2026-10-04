@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskStatus } from "@/types/task";
+import type { LegacyTaskStatus, TaskPriority, TaskStatus } from "@/types/task";
 
 export type ActivityEvent =
   | "workspace_created"
@@ -77,7 +77,7 @@ export type DashboardKpis = {
 };
 
 export type DashboardStatusItem = {
-  status: TaskStatus;
+  status: LegacyTaskStatus;
   count: number;
   percentage: number;
 };
@@ -134,6 +134,8 @@ export type DashboardRecentTask = {
   project_id: string;
   project_name: string;
   status: TaskStatus;
+  status_label?: string;
+  status_is_completed?: boolean;
   priority: TaskPriority;
   assigned_user_id: string | null;
   assigned_user: string | null;

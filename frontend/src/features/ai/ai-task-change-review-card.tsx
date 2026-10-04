@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import type { AIProjectChangeReviewValues } from "@/features/ai/schemas";
 import {
   taskPriorityLabels,
-  taskStatusLabels,
+  getTaskStatusLabel,
 } from "@/features/tasks/task-presentation";
 import type { AIChangeField } from "@/types/ai";
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/types/task";
+import type { ProjectTaskStatus } from "@/types/project";
+import { TASK_PRIORITIES } from "@/types/task";
 import { cn } from "@/lib/utils";
 
 const fieldLabels: Record<AIChangeField, string> = {
@@ -30,6 +31,7 @@ type AITaskChangeReviewCardProps = {
   index: number;
   onToggle: () => void;
   register: UseFormRegister<AIProjectChangeReviewValues>;
+  statuses: ProjectTaskStatus[];
 };
 
 export function AITaskChangeReviewCard({
@@ -38,6 +40,7 @@ export function AITaskChangeReviewCard({
   index,
   onToggle,
   register,
+  statuses,
 }: AITaskChangeReviewCardProps) {
   const fieldPath = <
     Field extends "title" | "description" | "status" | "priority" | "dueDate",
@@ -49,14 +52,14 @@ export function AITaskChangeReviewCard({
   const detailsId = `ai-change-${change.changeId}-details`;
 
   const beforeValue = (field: AIChangeField): string => {
-    if (field === "status") return taskStatusLabels[change.before.status];
+    if (field === "status") return getTaskStatusLabel(change.before.status);
     if (field === "priority") return taskPriorityLabels[change.before.priority];
     if (field === "due_date") return change.before.dueDate || "Aucune";
     return change.before[field] || "Aucune";
   };
 
   const afterValue = (field: AIChangeField): string => {
-    if (field === "status") return taskStatusLabels[change.after.status];
+    if (field === "status") return getTaskStatusLabel(change.after.status);
     if (field === "priority") return taskPriorityLabels[change.after.priority];
     if (field === "due_date") return change.after.dueDate || "Aucune";
     return change.after[field] || "Aucune";
@@ -73,9 +76,9 @@ export function AITaskChangeReviewCard({
           id={id}
           {...register(fieldPath("status"))}
         >
-          {TASK_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {taskStatusLabels[status]}
+          {statuses.map((status) => (
+            <option key={status.key} value={status.key}>
+              {status.label}
             </option>
           ))}
         </Select>

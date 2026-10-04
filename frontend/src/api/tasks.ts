@@ -73,6 +73,11 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   await apiClient.delete(`/tasks/${taskId}`);
 };
 
+export const duplicateTask = async (taskId: string): Promise<Task> => {
+  const response = await apiClient.post<Task>(`/tasks/${taskId}/duplicate`);
+  return response.data;
+};
+
 export const assignTask = async (
   taskId: string,
   assignedUserId: string,

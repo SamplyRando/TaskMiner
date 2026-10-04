@@ -7,12 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.models.task import TaskPriority, TaskStatus
 
 
+STATUS_PATTERN = r"^[a-z][a-z0-9_-]{0,63}$"
+
+
 class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5_000)
-    status: TaskStatus = TaskStatus.TODO
+    status: str = Field(default=TaskStatus.TODO.value, pattern=STATUS_PATTERN)
     priority: TaskPriority = TaskPriority.MEDIUM
     due_date: datetime | None = None
 
@@ -22,7 +25,7 @@ class TaskUpdate(BaseModel):
 
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5_000)
-    status: TaskStatus | None = None
+    status: str | None = Field(default=None, pattern=STATUS_PATTERN)
     priority: TaskPriority | None = None
     due_date: datetime | None = None
 
@@ -41,7 +44,7 @@ class TaskListParams(BaseModel):
     skip: int = Field(default=0, ge=0)
     limit: int = Field(default=20, ge=1, le=100)
     search: str | None = Field(default=None, min_length=1, max_length=255)
-    status: TaskStatus | None = None
+    status: str | None = Field(default=None, pattern=STATUS_PATTERN)
     priority: TaskPriority | None = None
     project_id: UUID | None = None
     workspace_id: UUID | None = None
@@ -61,7 +64,9 @@ class TaskRead(BaseModel):
     id: UUID
     title: str
     description: str | None
-    status: TaskStatus
+    status: str
+    status_label: str
+    status_is_completed: bool
     priority: TaskPriority
     due_date: datetime | None
     project_id: UUID

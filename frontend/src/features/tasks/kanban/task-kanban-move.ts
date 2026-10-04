@@ -1,4 +1,5 @@
-import { taskStatusLabels } from "@/features/tasks/task-presentation";
+import { getTaskStatusLabel } from "@/features/tasks/task-presentation";
+import type { ProjectTaskStatus } from "@/types/project";
 import { TASK_STATUSES, type Task, type TaskStatus } from "@/types/task";
 
 type StatusChange = (task: Task, status: TaskStatus) => Promise<void>;
@@ -13,14 +14,12 @@ export type TaskMoveNotice = {
   message: string;
 };
 
-const isTaskStatus = (value: unknown): value is TaskStatus =>
-  typeof value === "string" && TASK_STATUSES.some((status) => status === value);
-
 export function resolveTaskMove(
   tasks: Task[],
   activeId: string,
   overData: unknown,
   canManageTasks: boolean,
+  validStatuses: readonly string[] = TASK_STATUSES,
 ): TaskMove | null {
   const task = tasks.find((candidate) => candidate.id === activeId);
   const targetStatus =
@@ -31,7 +30,8 @@ export function resolveTaskMove(
   if (
     !task ||
     !canManageTasks ||
-    !isTaskStatus(targetStatus) ||
+    typeof targetStatus !== "string" ||
+    !validStatuses.includes(targetStatus) ||
     targetStatus === task.status
   ) {
     return null;
@@ -43,12 +43,13 @@ export function resolveTaskMove(
 export async function performTaskMove(
   move: TaskMove,
   onStatusChange: StatusChange,
+  statuses?: ProjectTaskStatus[],
 ): Promise<TaskMoveNotice> {
   try {
     await onStatusChange(move.task, move.status);
     return {
       kind: "success",
-      message: `« ${move.task.title} » a été déplacée vers ${taskStatusLabels[move.status]}.`,
+      message: `« ${move.task.title} » a été déplacée vers ${getTaskStatusLabel(move.status, statuses)}.`,
     };
   } catch {
     return {

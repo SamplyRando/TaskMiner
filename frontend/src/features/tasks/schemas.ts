@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/types/task";
+import { TASK_PRIORITIES } from "@/types/task";
 
 export const taskFormSchema = z.object({
   description: z
@@ -9,7 +9,9 @@ export const taskFormSchema = z.object({
   dueDate: z.string(),
   priority: z.enum(TASK_PRIORITIES),
   projectId: z.uuid("Sélectionnez un projet valide."),
-  status: z.enum(TASK_STATUSES),
+  status: z
+    .string()
+    .regex(/^[a-z][a-z0-9_-]{0,63}$/, "Sélectionnez un statut valide."),
   title: z
     .string()
     .trim()

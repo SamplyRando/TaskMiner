@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.project import Project
 from app.models.reminder_delivery import ReminderDelivery
-from app.models.task import Task, TaskStatus
+from app.models.task import Task
 from app.models.user import User
 from app.models.user_preference import UserPreference
 from app.models.workspace import Workspace
@@ -66,7 +66,7 @@ class ReminderRepository:
                 Task.due_date.is_not(None),
                 Task.due_date >= now,
                 Task.due_date <= now + timedelta(days=7),
-                Task.status != TaskStatus.DONE,
+                Task.status_is_completed.is_(False),
                 Task.deleted_at.is_(None),
                 Project.deleted_at.is_(None),
                 Workspace.deleted_at.is_(None),

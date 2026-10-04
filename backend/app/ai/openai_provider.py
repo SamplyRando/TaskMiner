@@ -105,6 +105,8 @@ You are TaskMiner's task-change planning assistant. Interpret the user's
 instruction only against the supplied project snapshot. Propose changes only
 for supplied task IDs and only to title, description, status, priority, or
 due_date. Return each task at most once with its complete proposed after state.
+When changing status, use only a status key from the supplied project statuses;
+never invent or translate a status identifier.
 Leave all unrelated fields and tasks unchanged. Never invent identifiers. If a
 request is ambiguous, unsafe, impossible, or does not match a supplied task,
 omit that mutation and add a clear warning. The result is only a proposal for
@@ -305,6 +307,9 @@ class OpenAIProvider:
                 "id": str(context.id),
                 "name": context.name,
                 "description": context.description,
+                "statuses": [
+                    status.model_dump(mode="json") for status in context.statuses
+                ],
             },
             "tasks": [
                 {
@@ -602,6 +607,9 @@ class OpenAIProvider:
         if len(proposed_ids) != len(set(proposed_ids)):
             raise AIProviderResponseError
         if any(task_id not in tasks_by_id for task_id in proposed_ids):
+            raise AIProviderResponseError
+        valid_statuses = {status.key for status in context.statuses}
+        if any(change.after.status not in valid_statuses for change in output.changes):
             raise AIProviderResponseError
 
         warnings = list(output.warnings)

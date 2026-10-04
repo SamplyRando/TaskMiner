@@ -48,6 +48,7 @@ from app.api.deps import (
 )
 from app.services.permission import PermissionDeniedError
 from app.services.subscription import PlanLimitExceededError
+from app.services.task import TaskStatusInvalidError
 from app.services.workspace import WorkspaceNotFoundError
 
 
@@ -169,6 +170,11 @@ def apply_project_change_plan(
             status_code=status.HTTP_409_CONFLICT,
             detail="Idempotency key already used with another payload.",
         ) from exc
+    except TaskStatusInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Status does not belong to this project.",
+        ) from exc
 
 
 @router.post(
@@ -245,6 +251,11 @@ def apply_project_plan(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=exc.as_detail(),
+        ) from exc
+    except TaskStatusInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Status does not belong to this project.",
         ) from exc
 
 

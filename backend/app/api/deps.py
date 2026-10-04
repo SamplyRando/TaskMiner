@@ -275,6 +275,7 @@ def get_project_service(
         workspace_repository,
         PermissionService(member_repository, workspace_repository),
         subscription_service,
+        TaskRepository(session),
     )
 
 
@@ -599,6 +600,7 @@ def get_ai_apply_service(
             workspace_repository,
             permission_service,
             subscription_service,
+            task_repository,
         ),
         TaskService(task_repository, project_repository, permission_service),
         TaskAssignmentService(

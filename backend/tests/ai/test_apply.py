@@ -171,7 +171,7 @@ def test_apply_creates_new_project_and_only_approved_tasks(
     assert tasks[0].title == "Edited approved task"
     assert tasks[0].description == "Reviewed description 1"
     assert tasks[0].priority.value == "high"
-    assert tasks[0].status.value == "in_progress"
+    assert tasks[0].status == "in_progress"
     assert tasks[0].due_date == datetime(2026, 9, 1, 9, tzinfo=timezone.utc)
 
 

@@ -11,6 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.core.events import ActivityEventType, ActivityResourceType
 from app.models.activity import Activity
 from app.models.project import Project
+from app.models.project_task_status import ProjectTaskStatus
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.user import User
 from app.models.workspace import Workspace
@@ -55,7 +56,9 @@ class RecentTaskRecord:
     workspace_name: str
     project_id: UUID
     project_name: str
-    status: TaskStatus
+    status: str
+    status_label: str
+    status_is_completed: bool
     priority: TaskPriority
     assigned_user_id: UUID | None
     assigned_user: str | None
@@ -292,7 +295,7 @@ class DashboardRepository:
         )
         completed_count = (
             select(func.count(Task.id))
-            .where(*task_filters, Task.status == TaskStatus.DONE)
+            .where(*task_filters, Task.status_is_completed.is_(True))
             .correlate(Project)
             .scalar_subquery()
         )
@@ -374,26 +377,31 @@ class DashboardRepository:
         today_start: datetime,
         week_end: datetime,
     ) -> TaskMetricsRecord:
+        status_bucket = case(
+            (ProjectTaskStatus.is_completed.is_(True), TaskStatus.DONE.value),
+            (ProjectTaskStatus.position == 0, TaskStatus.TODO.value),
+            else_=TaskStatus.IN_PROGRESS.value,
+        )
         statement = (
             select(
-                Task.status,
+                status_bucket.label("status"),
                 func.count(Task.id).label("task_count"),
                 func.count(Task.id)
                 .filter(
-                    Task.status != TaskStatus.DONE,
+                    ProjectTaskStatus.is_completed.is_(False),
                     Task.due_date < now,
                 )
                 .label("overdue"),
                 func.count(Task.id)
                 .filter(
-                    Task.status != TaskStatus.DONE,
+                    ProjectTaskStatus.is_completed.is_(False),
                     Task.due_date >= today_start,
                     Task.due_date < today_start + timedelta(days=1),
                 )
                 .label("due_today"),
                 func.count(Task.id)
                 .filter(
-                    Task.status != TaskStatus.DONE,
+                    ProjectTaskStatus.is_completed.is_(False),
                     Task.due_date >= today_start,
                     Task.due_date < week_end,
                 )
@@ -401,17 +409,22 @@ class DashboardRepository:
                 func.avg(
                     func.extract("epoch", Task.updated_at - Task.created_at) / 3600
                 )
-                .filter(Task.status == TaskStatus.DONE)
+                .filter(ProjectTaskStatus.is_completed.is_(True))
                 .label("average_completion_hours"),
             )
             .join(Project, Task.project_id == Project.id)
+            .join(
+                ProjectTaskStatus,
+                (ProjectTaskStatus.project_id == Task.project_id)
+                & (ProjectTaskStatus.key == Task.status),
+            )
             .join(Workspace, Project.workspace_id == Workspace.id)
             .where(*self._task_filters(owner, filters))
-            .group_by(Task.status)
+            .group_by(status_bucket)
         )
         rows = self.session.execute(statement).all()
         return TaskMetricsRecord(
-            status_counts={row.status: int(row.task_count) for row in rows},
+            status_counts={TaskStatus(row.status): int(row.task_count) for row in rows},
             overdue=sum(int(row.overdue) for row in rows),
             due_today=sum(int(row.due_today) for row in rows),
             due_this_week=sum(int(row.due_this_week) for row in rows),
@@ -422,7 +435,7 @@ class DashboardRepository:
                         int(row.task_count),
                     )
                     for row in rows
-                    if row.status == TaskStatus.DONE
+                    if row.status == TaskStatus.DONE.value
                 ]
             ),
         )
@@ -474,7 +487,7 @@ class DashboardRepository:
                 .label("tasks"),
                 func.count(Task.id)
                 .filter(
-                    Task.status == TaskStatus.DONE,
+                    Task.status_is_completed.is_(True),
                     Task.updated_at >= start,
                     Task.updated_at < end,
                 )
@@ -483,7 +496,7 @@ class DashboardRepository:
                     func.extract("epoch", Task.updated_at - Task.created_at) / 3600
                 )
                 .filter(
-                    Task.status == TaskStatus.DONE,
+                    Task.status_is_completed.is_(True),
                     Task.updated_at >= start,
                     Task.updated_at < end,
                 )
@@ -523,7 +536,7 @@ class DashboardRepository:
         )
         completed_count = (
             select(func.count(Task.id))
-            .where(*task_filters, Task.status == TaskStatus.DONE)
+            .where(*task_filters, Task.status_is_completed.is_(True))
             .correlate(Project)
             .scalar_subquery()
         )
@@ -573,7 +586,7 @@ class DashboardRepository:
         if created_since is not None:
             task_filters.append(Task.created_at >= created_since)
         if exclude_completed:
-            task_filters.append(Task.status != TaskStatus.DONE)
+            task_filters.append(Task.status_is_completed.is_(False))
 
         urgency = case(
             (Task.priority == TaskPriority.URGENT, 0),
@@ -595,6 +608,8 @@ class DashboardRepository:
                 Task.project_id,
                 Project.name.label("project_name"),
                 Task.status,
+                ProjectTaskStatus.label.label("status_label"),
+                ProjectTaskStatus.is_completed.label("status_is_completed"),
                 Task.priority,
                 Task.assigned_user_id,
                 User.full_name.label("assigned_full_name"),
@@ -603,6 +618,11 @@ class DashboardRepository:
                 Task.created_at,
             )
             .join(Project, Task.project_id == Project.id)
+            .join(
+                ProjectTaskStatus,
+                (ProjectTaskStatus.project_id == Task.project_id)
+                & (ProjectTaskStatus.key == Task.status),
+            )
             .join(Workspace, Project.workspace_id == Workspace.id)
             .outerjoin(User, Task.assigned_user_id == User.id)
             .where(*task_filters)
@@ -618,6 +638,8 @@ class DashboardRepository:
                 project_id=row.project_id,
                 project_name=row.project_name,
                 status=row.status,
+                status_label=row.status_label,
+                status_is_completed=row.status_is_completed,
                 priority=row.priority,
                 assigned_user_id=row.assigned_user_id,
                 assigned_user=row.assigned_full_name or row.assigned_email,
@@ -679,7 +701,7 @@ class DashboardRepository:
             select(
                 func.count(Task.id).filter(Task.created_at >= start).label("created"),
                 func.count(Task.id)
-                .filter(Task.status == TaskStatus.DONE, Task.updated_at >= start)
+                .filter(Task.status_is_completed.is_(True), Task.updated_at >= start)
                 .label("completed"),
             )
             .join(Project, Task.project_id == Project.id)
@@ -701,7 +723,7 @@ class DashboardRepository:
         trend_date = cast(timestamp, Date).label("trend_date")
         conditions = [*self._task_filters(owner, filters), timestamp >= start]
         if completed_only:
-            conditions.append(Task.status == TaskStatus.DONE)
+            conditions.append(Task.status_is_completed.is_(True))
         statement = (
             select(trend_date, func.count(Task.id))
             .join(Project, Task.project_id == Project.id)
@@ -749,7 +771,10 @@ class DashboardRepository:
             .where(
                 *self._task_filters(owner, filters),
                 Task.created_at < start,
-                or_(Task.status != TaskStatus.DONE, Task.updated_at >= start),
+                or_(
+                    Task.status_is_completed.is_(False),
+                    Task.updated_at >= start,
+                ),
             )
         )
         return int(self.session.scalar(statement) or 0)

@@ -22,11 +22,14 @@ import {
   type TaskMoveNotice,
 } from "@/features/tasks/kanban/task-kanban-move";
 import { TaskKanbanSkeleton } from "@/features/tasks/kanban/task-kanban-skeleton";
-import { taskStatusLabels } from "@/features/tasks/task-presentation";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
-import type { Project } from "@/types/project";
-import { TASK_STATUSES, type Task, type TaskStatus } from "@/types/task";
+import {
+  DEFAULT_PROJECT_STATUSES,
+  type Project,
+  type ProjectTaskStatus,
+} from "@/types/project";
+import type { Task, TaskStatus } from "@/types/task";
 
 type TaskKanbanProps = {
   canManageTasks: boolean;
@@ -35,12 +38,14 @@ type TaskKanbanProps = {
   isLoading: boolean;
   onAssign: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onDuplicate?: (task: Task) => void;
   onEdit: (task: Task) => void;
   onOpenAttachments: (task: Task) => void;
   onOpenComments: (task: Task) => void;
   onStatusChange: (task: Task, status: TaskStatus) => Promise<void>;
   projects: Project[];
-  statusFilter: TaskStatus | "";
+  statusFilter: TaskStatus;
+  statuses?: ProjectTaskStatus[];
   tasks: Task[];
 };
 
@@ -51,24 +56,26 @@ export function TaskKanban({
   isLoading,
   onAssign,
   onDelete,
+  onDuplicate,
   onEdit,
   onOpenAttachments,
   onOpenComments,
   onStatusChange,
   projects,
   statusFilter,
+  statuses = DEFAULT_PROJECT_STATUSES,
   tasks,
 }: TaskKanbanProps) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const availableStatuses = useMemo(
     () =>
       statusFilter
-        ? TASK_STATUSES.filter((status) => status === statusFilter)
-        : [...TASK_STATUSES],
-    [statusFilter],
+        ? statuses.filter((status) => status.key === statusFilter)
+        : statuses,
+    [statusFilter, statuses],
   );
   const [mobileStatus, setMobileStatus] = useState<TaskStatus>(
-    availableStatuses[0] ?? TASK_STATUSES[0],
+    availableStatuses[0]?.key ?? "todo",
   );
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [notice, setNotice] = useState<TaskMoveNotice | null>(null);
@@ -79,12 +86,12 @@ export function TaskKanban({
   const tasksByStatus = useMemo(
     () =>
       new Map(
-        TASK_STATUSES.map((status) => [
-          status,
-          tasks.filter((task) => task.status === status),
+        statuses.map((status) => [
+          status.key,
+          tasks.filter((task) => task.status === status.key),
         ]),
       ),
-    [tasks],
+    [statuses, tasks],
   );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -121,11 +128,17 @@ export function TaskKanban({
     );
   }
 
-  const resolvedMobileStatus = availableStatuses.includes(mobileStatus)
+  const resolvedMobileStatus = availableStatuses.some(
+    (status) => status.key === mobileStatus,
+  )
     ? mobileStatus
-    : (availableStatuses[0] ?? TASK_STATUSES[0]);
-  const visibleStatuses = isMobile ? [resolvedMobileStatus] : availableStatuses;
-  const mobileIndex = availableStatuses.indexOf(resolvedMobileStatus);
+    : (availableStatuses[0]?.key ?? "todo");
+  const visibleStatuses = isMobile
+    ? availableStatuses.filter((status) => status.key === resolvedMobileStatus)
+    : availableStatuses;
+  const mobileIndex = availableStatuses.findIndex(
+    (status) => status.key === resolvedMobileStatus,
+  );
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     setNotice(null);
@@ -140,11 +153,12 @@ export function TaskKanban({
       String(active.id),
       overData,
       canManageTasks,
+      statuses.map((status) => status.key),
     );
     if (!move) {
       return;
     }
-    setNotice(await performTaskMove(move, onStatusChange));
+    setNotice(await performTaskMove(move, onStatusChange, statuses));
   };
 
   return (
@@ -160,15 +174,15 @@ export function TaskKanban({
             disabled={mobileIndex <= 0}
             onClick={() => {
               const previous = availableStatuses[mobileIndex - 1];
-              if (previous) setMobileStatus(previous);
+              if (previous) setMobileStatus(previous.key);
             }}
             type="button"
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </button>
           <p className="text-sm font-medium">
-            {taskStatusLabels[resolvedMobileStatus]} · {mobileIndex + 1}/
-            {availableStatuses.length}
+            {availableStatuses[mobileIndex]?.label ?? resolvedMobileStatus} ·{" "}
+            {mobileIndex + 1}/{availableStatuses.length}
           </p>
           <button
             aria-label="Colonne suivante"
@@ -176,7 +190,7 @@ export function TaskKanban({
             disabled={mobileIndex >= availableStatuses.length - 1}
             onClick={() => {
               const next = availableStatuses[mobileIndex + 1];
-              if (next) setMobileStatus(next);
+              if (next) setMobileStatus(next.key);
             }}
             type="button"
           >
@@ -214,15 +228,16 @@ export function TaskKanban({
             <TaskKanbanColumn
               canDrag={canManageTasks}
               currentUserId={currentUserId}
-              key={status}
+              key={status.key}
               onAssign={onAssign}
               onDelete={onDelete}
+              {...(onDuplicate ? { onDuplicate } : {})}
               onEdit={onEdit}
               onOpenAttachments={onOpenAttachments}
               onOpenComments={onOpenComments}
               projectsById={projectsById}
               status={status}
-              tasks={tasksByStatus.get(status) ?? []}
+              tasks={tasksByStatus.get(status.key) ?? []}
             />
           ))}
         </div>
@@ -235,6 +250,7 @@ export function TaskKanban({
               isOverlay
               onAssign={onAssign}
               onDelete={onDelete}
+              {...(onDuplicate ? { onDuplicate } : {})}
               onEdit={onEdit}
               onOpenAttachments={onOpenAttachments}
               onOpenComments={onOpenComments}

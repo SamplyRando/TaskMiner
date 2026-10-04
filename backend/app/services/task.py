@@ -7,7 +7,7 @@ from app.core.events import (
     publish,
 )
 from app.models.project import Project
-from app.models.task import Task
+from app.models.task import Task, TaskStatus
 from app.models.user import User
 from app.repositories.project import ProjectRepository
 from app.repositories.task import TaskRepository
@@ -22,6 +22,10 @@ class TaskProjectNotFoundError(Exception):
 
 class TaskNotFoundError(Exception):
     """Raised when a task is inaccessible to the requested owner."""
+
+
+class TaskStatusInvalidError(Exception):
+    """Raised when a status does not belong to the task's project workflow."""
 
 
 class TaskService:
@@ -45,7 +49,7 @@ class TaskService:
     ) -> Task:
         project = self._get_accessible_project(owner, project_id)
         self.permission_service.require_task_management(owner, project.workspace_id)
-        task = self.repository.create(project, data)
+        task = self.repository.create(project, self._validated_data(project, data))
         publish(self.task_created_event(owner, project, task))
         return task
 
@@ -59,7 +63,11 @@ class TaskService:
     ) -> tuple[Task, DomainEvent]:
         """Stage a task and its event inside a caller-owned transaction."""
 
-        task = self.repository.create(project, data, commit=False)
+        task = self.repository.create(
+            project,
+            self._validated_data(project, data),
+            commit=False,
+        )
         return task, self.task_created_event(
             actor,
             project,
@@ -93,7 +101,7 @@ class TaskService:
                     task.due_date.isoformat() if task.due_date is not None else None
                 ),
                 "priority": task.priority.value,
-                "status": task.status.value,
+                "status": task.status,
                 "title": task.title,
             },
             metadata=metadata,
@@ -135,6 +143,7 @@ class TaskService:
             owner,
             task.project.workspace_id,
         )
+        data = self._validated_update(task.project, data)
         changed_fields = data.model_fields_set
         old_values = TaskRead.model_validate(task).model_dump(
             mode="json",
@@ -167,6 +176,7 @@ class TaskService:
     ) -> tuple[Task, DomainEvent]:
         """Stage an update and event inside a caller-owned transaction."""
 
+        data = self._validated_update(project, data)
         changed_fields = data.model_fields_set
         old_values = TaskRead.model_validate(task).model_dump(
             mode="json",
@@ -234,7 +244,7 @@ class TaskService:
                 old_values={
                     "description": task.description,
                     "priority": task.priority.value,
-                    "status": task.status.value,
+                    "status": task.status,
                     "title": task.title,
                 },
                 metadata={
@@ -249,3 +259,61 @@ class TaskService:
         if project is None:
             raise TaskProjectNotFoundError
         return project
+
+    def duplicate_task(self, actor: User, task_id: UUID) -> Task:
+        source = self.repository.get_by_id_for_user(task_id, actor)
+        if source is None:
+            raise TaskNotFoundError
+        project = source.project
+        self.permission_service.require_task_management(actor, project.workspace_id)
+        title = f"{source.title[:247].rstrip()} (copie)"
+        duplicate = self.repository.create(
+            project,
+            TaskCreate(
+                title=title,
+                description=source.description,
+                status=source.status,
+                priority=source.priority,
+                due_date=source.due_date,
+            ),
+        )
+        publish(self.task_created_event(actor, project, duplicate, source="duplicate"))
+        return duplicate
+
+    @staticmethod
+    def _resolve_status(project: Project, requested: str) -> str:
+        by_key = {status.key: status for status in project.task_statuses}
+        if requested in by_key:
+            return requested
+        incomplete = [
+            status for status in project.task_statuses if not status.is_completed
+        ]
+        completed = next(
+            (status for status in project.task_statuses if status.is_completed),
+            None,
+        )
+        legacy_mapping = {
+            TaskStatus.TODO.value: incomplete[0].key if incomplete else None,
+            TaskStatus.IN_PROGRESS.value: (
+                incomplete[1].key
+                if len(incomplete) > 1
+                else incomplete[0].key
+                if incomplete
+                else None
+            ),
+            TaskStatus.DONE.value: completed.key if completed else None,
+        }
+        resolved = legacy_mapping.get(requested)
+        if resolved is None:
+            raise TaskStatusInvalidError
+        return resolved
+
+    def _validated_data(self, project: Project, data: TaskCreate) -> TaskCreate:
+        status = self._resolve_status(project, data.status)
+        return data.model_copy(update={"status": status})
+
+    def _validated_update(self, project: Project, data: TaskUpdate) -> TaskUpdate:
+        if data.status is None:
+            return data
+        status = self._resolve_status(project, data.status)
+        return data.model_copy(update={"status": status})

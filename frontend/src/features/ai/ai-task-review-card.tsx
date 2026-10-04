@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { AIPlanReviewValues } from "@/features/ai/schemas";
 import {
   taskPriorityLabels,
-  taskStatusLabels,
+  getTaskStatusLabel,
 } from "@/features/tasks/task-presentation";
 import { WorkspaceMemberCombobox } from "@/features/workspaces/workspace-member-combobox";
 import { getMemberPrimaryLabel } from "@/features/workspaces/workspace-member-utils";
@@ -118,7 +118,7 @@ export function AITaskReviewCard({
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge variant="outline">{taskPriorityLabels[priority]}</Badge>
-                <Badge variant="secondary">{taskStatusLabels[status]}</Badge>
+                <Badge variant="secondary">{getTaskStatusLabel(status)}</Badge>
                 {milestone ? (
                   <Badge variant="outline">{milestone}</Badge>
                 ) : null}
@@ -258,7 +258,7 @@ export function AITaskReviewCard({
               >
                 {TASK_STATUSES.map((taskStatus) => (
                   <option key={taskStatus} value={taskStatus}>
-                    {taskStatusLabels[taskStatus]}
+                    {getTaskStatusLabel(taskStatus)}
                   </option>
                 ))}
               </Select>

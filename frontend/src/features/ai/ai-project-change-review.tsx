@@ -39,6 +39,10 @@ import type {
   AIProjectChangePlanResponse,
   AITaskChangeState,
 } from "@/types/ai";
+import {
+  DEFAULT_PROJECT_STATUSES,
+  type ProjectTaskStatus,
+} from "@/types/project";
 
 type AIProjectChangeReviewProps = {
   error: unknown;
@@ -50,6 +54,7 @@ type AIProjectChangeReviewProps = {
   onReviewChange: (values: AIProjectChangeReviewValues) => void;
   plan: AIProjectChangePlanResponse;
   projectName: string;
+  statuses?: ProjectTaskStatus[];
   workspaceId: string;
 };
 
@@ -142,6 +147,7 @@ export function AIProjectChangeReview({
   onReviewChange,
   plan,
   projectName,
+  statuses = DEFAULT_PROJECT_STATUSES,
   workspaceId,
 }: AIProjectChangeReviewProps) {
   const submissionLock = useRef(false);
@@ -321,6 +327,7 @@ export function AIProjectChangeReview({
                       });
                     }}
                     register={form.register}
+                    statuses={statuses}
                   />
                 ))}
               </ol>

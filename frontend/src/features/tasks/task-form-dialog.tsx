@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
@@ -18,19 +18,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { type TaskFormValues, taskFormSchema } from "@/features/tasks/schemas";
 import { toDateTimeLocal } from "@/lib/format";
-import type { Project } from "@/types/project";
-import {
-  TASK_PRIORITIES,
-  TASK_STATUSES,
-  type Task,
-  type TaskInput,
-} from "@/types/task";
-
-const statusLabels = {
-  done: "Terminée",
-  in_progress: "En cours",
-  todo: "À faire",
-} as const;
+import { getProjectStatuses, type Project } from "@/types/project";
+import { TASK_PRIORITIES, type Task, type TaskInput } from "@/types/task";
 
 const priorityLabels = {
   high: "Haute",
@@ -71,6 +60,14 @@ export function TaskFormDialog({
     mode: "onChange",
     resolver: zodResolver(taskFormSchema),
   });
+  const selectedProjectId = useWatch({
+    control: form.control,
+    name: "projectId",
+  });
+  const selectedProject = projects.find(
+    (project) => project.id === selectedProjectId,
+  );
+  const statuses = getProjectStatuses(selectedProject);
 
   useEffect(() => {
     if (open) {
@@ -84,6 +81,18 @@ export function TaskFormDialog({
       });
     }
   }, [form, open, projects, task]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      statuses.some((status) => status.key === form.getValues("status"))
+    ) {
+      return;
+    }
+    form.setValue("status", statuses[0]?.key ?? "todo", {
+      shouldValidate: true,
+    });
+  }, [form, open, statuses]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit(values.projectId, {
@@ -181,9 +190,9 @@ export function TaskFormDialog({
                 Statut
               </label>
               <Select id="task-status" {...form.register("status")}>
-                {TASK_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
+                {statuses.map((status) => (
+                  <option key={status.key} value={status.key}>
+                    {status.label}
                   </option>
                 ))}
               </Select>

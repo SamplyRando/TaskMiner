@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { DashboardStatusItem } from "@/types/dashboard";
-import type { TaskStatus } from "@/types/task";
+import type { LegacyTaskStatus } from "@/types/task";
 
 const statusConfig: Record<
-  TaskStatus,
+  LegacyTaskStatus,
   { indicatorClassName: string; label: string }
 > = {
   done: { indicatorClassName: "bg-emerald-500", label: "Terminées" },

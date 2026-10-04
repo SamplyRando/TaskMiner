@@ -13,6 +13,7 @@ from app.database.database import Base
 from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.project_task_status import ProjectTaskStatus
     from app.models.task import Task
     from app.models.workspace import Workspace
 
@@ -51,6 +52,12 @@ class Project(SoftDeleteMixin, TimestampMixin, Base):
         back_populates="project",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+    task_statuses: Mapped[list[ProjectTaskStatus]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="ProjectTaskStatus.position",
     )
 
     @property

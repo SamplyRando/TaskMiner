@@ -49,6 +49,16 @@ class TaskRepository:
 
         return task
 
+    def commit(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+
+    def rollback(self) -> None:
+        self.session.rollback()
+
     def get_by_id_for_owner(
         self,
         task_id: UUID,

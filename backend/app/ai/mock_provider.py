@@ -18,7 +18,7 @@ from app.ai.schemas import (
     AIProjectTaskContext,
     AIProjectTaskChange,
 )
-from app.models.task import TaskPriority, TaskStatus
+from app.models.task import TaskPriority
 
 
 @dataclass(frozen=True)
@@ -335,7 +335,7 @@ class MockAIProvider:
             recognized_operation = True
         for task_id, status in status_changes.items():
             after_states[task_id].status = status
-            reasons[task_id].append(f"Statut proposé : {status.value}.")
+            reasons[task_id].append(f"Statut proposé : {status}.")
 
         try:
             absolute_date = self._parse_absolute_date(instruction, context)
@@ -475,22 +475,24 @@ class MockAIProvider:
         cls,
         instruction: str,
         context: AIProjectContext,
-    ) -> dict[UUID, TaskStatus]:
+    ) -> dict[UUID, str]:
+        incomplete = [status for status in context.statuses if not status.is_completed]
+        completed = next(status for status in context.statuses if status.is_completed)
         patterns = (
             (
                 r"(?:passe|mets)\s+(?P<target>[^,.\n]+?)\s+en cours",
-                TaskStatus.IN_PROGRESS,
+                incomplete[1].key if len(incomplete) > 1 else incomplete[0].key,
             ),
             (
                 r"(?:passe|mets)\s+(?P<target>[^,.\n]+?)\s+(?:terminee|done)",
-                TaskStatus.DONE,
+                completed.key,
             ),
             (
                 r"(?:passe|mets)\s+(?P<target>[^,.\n]+?)\s+(?:a faire|todo)",
-                TaskStatus.TODO,
+                incomplete[0].key,
             ),
         )
-        changes: dict[UUID, TaskStatus] = {}
+        changes: dict[UUID, str] = {}
         for pattern, status in patterns:
             for match in re.finditer(pattern, instruction):
                 target = match.group("target").strip()
@@ -601,8 +603,11 @@ class MockAIProvider:
         scope: str,
     ) -> list[AIProjectTaskContext]:
         if scope == "incomplete":
+            completed_key = next(
+                status.key for status in context.statuses if status.is_completed
+            )
             return [
-                task for task in context.tasks if task.state.status != TaskStatus.DONE
+                task for task in context.tasks if task.state.status != completed_key
             ]
         if scope == "priority:urgent":
             priority = TaskPriority.URGENT
@@ -611,8 +616,21 @@ class MockAIProvider:
             priority = TaskPriority(scope.removeprefix("priority:"))
             return [task for task in context.tasks if task.state.priority == priority]
         if scope.startswith("status:"):
-            status = TaskStatus(scope.removeprefix("status:"))
-            return [task for task in context.tasks if task.state.status == status]
+            semantic = scope.removeprefix("status:")
+            incomplete = [
+                status for status in context.statuses if not status.is_completed
+            ]
+            completed_status = next(
+                status for status in context.statuses if status.is_completed
+            )
+            status_key = {
+                "todo": incomplete[0].key,
+                "in_progress": (
+                    incomplete[1].key if len(incomplete) > 1 else incomplete[0].key
+                ),
+                "done": completed_status.key,
+            }[semantic]
+            return [task for task in context.tasks if task.state.status == status_key]
         if scope.startswith("keyword:"):
             keyword = scope.removeprefix("keyword:")
             aliases = {

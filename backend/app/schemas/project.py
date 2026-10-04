@@ -2,7 +2,50 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.schemas.task import STATUS_PATTERN
+
+
+class ProjectTaskStatusRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
+    key: str
+    label: str
+    position: int
+    is_completed: bool
+
+
+class ProjectTaskStatusCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    label: str = Field(min_length=1, max_length=100)
+    is_completed: bool = False
+
+
+class ProjectTaskStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    label: str | None = Field(default=None, min_length=1, max_length=100)
+    is_completed: bool | None = None
+
+
+class ProjectTaskStatusReorder(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    keys: list[str] = Field(min_length=2, max_length=10)
+
+    @model_validator(mode="after")
+    def unique_keys(self):
+        if len(self.keys) != len(set(self.keys)):
+            raise ValueError("status keys must be unique")
+        return self
+
+
+class ProjectTaskStatusDelete(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    replacement_status: str | None = Field(default=None, pattern=STATUS_PATTERN)
 
 
 class ProjectCreate(BaseModel):
@@ -49,3 +92,4 @@ class ProjectRead(BaseModel):
     workspace_id: UUID
     created_at: datetime
     updated_at: datetime
+    task_statuses: list[ProjectTaskStatusRead]

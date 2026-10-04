@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DeleteDialog } from "@/components/delete-dialog";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -18,6 +19,7 @@ import {
   useAssignTask,
   useCreateTask,
   useDeleteTask,
+  useDuplicateTask,
   useKanbanTasks,
   useTasks,
   useUpdateTask,
@@ -41,6 +43,7 @@ import type {
   TaskStatus,
   TaskUpdate,
 } from "@/types/task";
+import { getProjectStatuses } from "@/types/project";
 
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 const initialSorting: SortingState = [{ desc: true, id: "created_at" }];
@@ -66,7 +69,7 @@ export function TasksPage() {
   const workspace = useActiveWorkspace();
   const [search, setSearch] = useSessionState("taskminer-tasks-search", "");
   const deferredSearch = useDebouncedValue(search, 300);
-  const [status, setStatus] = useSessionState<TaskStatus | "">(
+  const [status, setStatus] = useSessionState<TaskStatus>(
     "taskminer-tasks-status",
     "",
   );
@@ -125,6 +128,10 @@ export function TasksPage() {
     () => projectsQuery.data?.items ?? [],
     [projectsQuery.data?.items],
   );
+  const selectedProject = projects.find((project) => project.id === projectId);
+  const selectedStatuses = selectedProject
+    ? getProjectStatuses(selectedProject)
+    : [];
   const normalizedSearch = deferredSearch.trim();
   const taskFilters = {
     sort: getSortParameter(sorting),
@@ -146,11 +153,14 @@ export function TasksPage() {
   );
   const kanbanQuery = useKanbanTasks(
     taskFilters,
-    mode === "kanban" && workspace.activeWorkspaceId !== null,
+    mode === "kanban" &&
+      workspace.activeWorkspaceId !== null &&
+      Boolean(projectId),
   );
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const duplicateTask = useDuplicateTask();
   const assignTask = useAssignTask();
 
   const columns = useMemo(
@@ -175,6 +185,9 @@ export function TasksPage() {
           setSelectedTask(task);
           setDeleteOpen(true);
         },
+        onDuplicate: (task) => {
+          duplicateTask.mutate(task.id);
+        },
         onEdit: (task) => {
           updateTask.reset();
           setSelectedTask(task);
@@ -185,7 +198,14 @@ export function TasksPage() {
         },
         projects,
       }),
-    [assignTask, canManageTasks, deleteTask, projects, updateTask],
+    [
+      assignTask,
+      canManageTasks,
+      deleteTask,
+      duplicateTask,
+      projects,
+      updateTask,
+    ],
   );
 
   const resetPage = () => {
@@ -300,6 +320,7 @@ export function TasksPage() {
         onValueChange={(workspaceId) => {
           workspace.selectWorkspace(workspaceId);
           setProjectId("");
+          setStatus("");
           resetPage();
         }}
         value={workspace.activeWorkspaceId}
@@ -327,6 +348,7 @@ export function TasksPage() {
           aria-label="Filtrer par projet"
           onChange={(event) => {
             setProjectId(event.target.value);
+            setStatus("");
             resetPage();
           }}
           value={projectId}
@@ -340,16 +362,19 @@ export function TasksPage() {
         </Select>
         <Select
           aria-label="Filtrer par statut"
+          disabled={!projectId}
           onChange={(event) => {
-            setStatus(event.target.value as TaskStatus | "");
+            setStatus(event.target.value);
             resetPage();
           }}
           value={status}
         >
           <option value="">Tous les statuts</option>
-          <option value="todo">À faire</option>
-          <option value="in_progress">En cours</option>
-          <option value="done">Terminée</option>
+          {selectedStatuses.map((item) => (
+            <option key={item.key} value={item.key}>
+              {item.label}
+            </option>
+          ))}
         </Select>
         <Select
           aria-label="Filtrer par priorité"
@@ -390,6 +415,13 @@ export function TasksPage() {
             void workspace.refetch();
           }}
         />
+      ) : mode === "kanban" && !projectId ? (
+        <div className="bg-card rounded-2xl border py-12">
+          <EmptyState
+            description="Sélectionnez un projet pour afficher son workflow personnalisé."
+            title="Choisissez un projet pour le Kanban"
+          />
+        </div>
       ) : mode === "kanban" ? (
         <TaskKanban
           canManageTasks={canManageTasks}
@@ -425,6 +457,9 @@ export function TasksPage() {
             setSelectedTask(task);
             setDeleteOpen(true);
           }}
+          onDuplicate={(task) => {
+            duplicateTask.mutate(task.id);
+          }}
           onEdit={(task) => {
             updateTask.reset();
             setSelectedTask(task);
@@ -446,6 +481,7 @@ export function TasksPage() {
           }}
           projects={projects}
           statusFilter={status}
+          statuses={selectedStatuses}
           tasks={kanbanQuery.data?.items ?? []}
         />
       ) : (

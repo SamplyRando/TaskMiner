@@ -3,6 +3,7 @@ import type {
   AssignableWorkspaceMemberList,
   Workspace,
   WorkspaceInput,
+  RecoverableWorkspace,
 } from "@/types/workspace";
 
 export const listWorkspaces = async (): Promise<Workspace[]> => {
@@ -39,4 +40,22 @@ export const updateWorkspace = async (
 
 export const deleteWorkspace = async (workspaceId: string): Promise<void> => {
   await apiClient.delete(`/workspaces/${workspaceId}`);
+};
+
+export const listRecoverableWorkspaces = async (): Promise<
+  RecoverableWorkspace[]
+> => {
+  const response = await apiClient.get<RecoverableWorkspace[]>(
+    "/workspaces/recoverable",
+  );
+  return response.data;
+};
+
+export const restoreWorkspace = async (
+  workspaceId: string,
+): Promise<Workspace> => {
+  const response = await apiClient.post<Workspace>(
+    `/workspaces/${workspaceId}/restore`,
+  );
+  return response.data;
 };

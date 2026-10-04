@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.models.task import TaskPriority, TaskStatus
 from app.models.workspace_member import WorkspaceMemberRole
 from app.schemas.project import ProjectCreate
-from app.schemas.task import TaskCreate
+from app.schemas.task import STATUS_PATTERN, TaskCreate
 
 
 class AICapabilitiesResponse(BaseModel):
@@ -277,7 +277,7 @@ class AITaskChangeState(BaseModel):
 
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5_000)
-    status: TaskStatus
+    status: str = Field(pattern=STATUS_PATTERN)
     priority: TaskPriority
     due_date: datetime | None = None
 
@@ -293,6 +293,16 @@ class AIProjectTaskContext(BaseModel):
     assigned_user_name: str | None = Field(default=None, max_length=255)
 
 
+class AIProjectStatusContext(BaseModel):
+    """One server-owned valid status available to project-change generation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    key: str = Field(pattern=STATUS_PATTERN)
+    label: str = Field(min_length=1, max_length=100)
+    is_completed: bool
+
+
 class AIProjectContext(BaseModel):
     """Safe project snapshot used for change-plan generation."""
 
@@ -301,6 +311,19 @@ class AIProjectContext(BaseModel):
     id: UUID
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
+    statuses: list[AIProjectStatusContext] = Field(
+        default_factory=lambda: [
+            AIProjectStatusContext(key="todo", label="À faire", is_completed=False),
+            AIProjectStatusContext(
+                key="in_progress",
+                label="En cours",
+                is_completed=False,
+            ),
+            AIProjectStatusContext(key="done", label="Terminée", is_completed=True),
+        ],
+        min_length=2,
+        max_length=10,
+    )
     tasks: list[AIProjectTaskContext]
 
 

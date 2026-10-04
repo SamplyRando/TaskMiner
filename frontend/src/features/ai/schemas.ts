@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TASK_PRIORITIES, TASK_STATUSES } from "@/types/task";
+import { TASK_PRIORITIES } from "@/types/task";
 import type { AIChangeField } from "@/types/ai";
 
 export const aiProjectPlannerSchema = z.object({
@@ -23,7 +23,7 @@ const aiReviewedTaskSchema = z.object({
   title: z.string(),
   description: z.string(),
   priority: z.enum(TASK_PRIORITIES),
-  status: z.enum(TASK_STATUSES),
+  status: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
   dueDate: z.string(),
   milestone: z.string(),
   dependsOn: z.array(z.number().int().positive()),
@@ -116,7 +116,7 @@ export type AIProjectChangeFormValues = z.infer<
 const aiChangeStateSchema = z.object({
   title: z.string().max(255),
   description: z.string().max(5_000),
-  status: z.enum(TASK_STATUSES),
+  status: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
   priority: z.enum(TASK_PRIORITIES),
   dueDate: z.string(),
 });

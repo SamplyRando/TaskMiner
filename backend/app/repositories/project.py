@@ -1,13 +1,18 @@
+from __future__ import annotations
+
+import builtins
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.project import Project
+from app.models.project_task_status import ProjectTaskStatus
+from app.models.task import Task
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember
@@ -26,6 +31,7 @@ class ProjectRepository:
         data: ProjectCreate,
         *,
         commit: bool = True,
+        statuses: list[tuple[str, str, int, bool]] | None = None,
     ) -> Project:
         project = Project(
             name=data.name,
@@ -34,6 +40,19 @@ class ProjectRepository:
             workspace_id=workspace.id,
         )
         self.session.add(project)
+        for key, label, position, is_completed in statuses or [
+            ("todo", "À faire", 0, False),
+            ("in_progress", "En cours", 1, False),
+            ("done", "Terminée", 2, True),
+        ]:
+            project.task_statuses.append(
+                ProjectTaskStatus(
+                    key=key,
+                    label=label,
+                    position=position,
+                    is_completed=is_completed,
+                )
+            )
 
         if commit:
             try:
@@ -236,6 +255,140 @@ class ProjectRepository:
         try:
             self.session.commit()
             self.session.refresh(project)
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+
+    def add_status(
+        self,
+        project: Project,
+        *,
+        key: str,
+        label: str,
+        is_completed: bool,
+    ) -> ProjectTaskStatus:
+        if is_completed:
+            self.session.execute(
+                update(ProjectTaskStatus)
+                .where(ProjectTaskStatus.project_id == project.id)
+                .values(is_completed=False)
+            )
+        status = ProjectTaskStatus(
+            project_id=project.id,
+            key=key,
+            label=label,
+            position=len(project.task_statuses),
+            is_completed=is_completed,
+        )
+        self.session.add(status)
+        self._commit()
+        self.session.refresh(project)
+        return status
+
+    def update_status(
+        self,
+        project: Project,
+        status: ProjectTaskStatus,
+        *,
+        label: str | None,
+        is_completed: bool | None,
+    ) -> ProjectTaskStatus:
+        if label is not None:
+            status.label = label
+        if is_completed:
+            self.session.execute(
+                update(ProjectTaskStatus)
+                .where(
+                    ProjectTaskStatus.project_id == project.id,
+                    ProjectTaskStatus.id != status.id,
+                )
+                .values(is_completed=False)
+            )
+            status.is_completed = True
+        self._commit()
+        self.session.refresh(status)
+        return status
+
+    def reorder_statuses(
+        self,
+        project: Project,
+        ordered_keys: builtins.list[str],
+    ) -> builtins.list[ProjectTaskStatus]:
+        # Offset first to avoid transient violations of the unique position index.
+        self.session.execute(
+            update(ProjectTaskStatus)
+            .where(ProjectTaskStatus.project_id == project.id)
+            .values(position=ProjectTaskStatus.position + 100)
+        )
+        for position, key in enumerate(ordered_keys):
+            self.session.execute(
+                update(ProjectTaskStatus)
+                .where(
+                    ProjectTaskStatus.project_id == project.id,
+                    ProjectTaskStatus.key == key,
+                )
+                .values(position=position)
+            )
+        self._commit()
+        self.session.refresh(project)
+        return list(project.task_statuses)
+
+    def count_tasks_with_status(self, project_id: UUID, key: str) -> int:
+        return int(
+            self.session.scalar(
+                select(func.count(Task.id)).where(
+                    Task.project_id == project_id,
+                    Task.status == key,
+                )
+            )
+            or 0
+        )
+
+    def delete_status(
+        self,
+        project: Project,
+        status: ProjectTaskStatus,
+        *,
+        replacement_status: ProjectTaskStatus | None,
+    ) -> None:
+        if replacement_status is not None:
+            self.session.execute(
+                update(Task)
+                .where(
+                    Task.project_id == project.id,
+                    Task.status == status.key,
+                )
+                .values(status=replacement_status.key)
+            )
+        self.session.execute(
+            delete(ProjectTaskStatus).where(ProjectTaskStatus.id == status.id)
+        )
+        remaining = [item for item in project.task_statuses if item.id != status.id]
+        self.session.flush()
+        self.session.execute(
+            update(ProjectTaskStatus)
+            .where(ProjectTaskStatus.project_id == project.id)
+            .values(position=ProjectTaskStatus.position + 100)
+        )
+        for position, item in enumerate(
+            sorted(remaining, key=lambda item: item.position)
+        ):
+            self.session.execute(
+                update(ProjectTaskStatus)
+                .where(ProjectTaskStatus.id == item.id)
+                .values(position=position)
+            )
+        self._commit()
+
+    def commit(self) -> None:
+        self._commit()
+
+    def rollback(self) -> None:
+        self.session.rollback()
+
+    def _commit(self) -> None:
+        try:
+            self.session.commit()
         except SQLAlchemyError:
             self.session.rollback()
             raise

@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   MessageSquareText,
+  Copy,
   Paperclip,
   Pencil,
   Trash2,
@@ -15,7 +16,7 @@ import {
   InlineTaskTitle,
 } from "@/features/tasks/task-inline-fields";
 import { formatDateTime } from "@/lib/format";
-import type { Project } from "@/types/project";
+import { getProjectStatuses, type Project } from "@/types/project";
 import type { Task, TaskUpdate } from "@/types/task";
 
 type TaskColumnActions = {
@@ -24,6 +25,7 @@ type TaskColumnActions = {
   onAttachments: (task: Task) => void;
   onComments: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onDuplicate?: (task: Task) => void;
   onEdit: (task: Task) => void;
   onInlineUpdate: (task: Task, data: TaskUpdate) => Promise<void>;
   projects: Project[];
@@ -35,12 +37,16 @@ export function getTaskColumns({
   onAttachments,
   onComments,
   onDelete,
+  onDuplicate,
   onEdit,
   onInlineUpdate,
   projects,
 }: TaskColumnActions): ColumnDef<Task>[] {
   const projectNames = new Map(
     projects.map((project) => [project.id, project.name]),
+  );
+  const projectStatuses = new Map(
+    projects.map((project) => [project.id, getProjectStatuses(project)]),
   );
 
   return [
@@ -72,6 +78,7 @@ export function getTaskColumns({
         <InlineTaskStatus
           canManage={canManage}
           onUpdate={onInlineUpdate}
+          statuses={projectStatuses.get(row.original.project_id) ?? []}
           task={row.original}
         />
       ),
@@ -144,6 +151,20 @@ export function getTaskColumns({
               >
                 <UserRoundCog aria-hidden="true" className="size-4" />
               </Button>
+              {onDuplicate ? (
+                <Button
+                  aria-label={`Dupliquer ${row.original.title}`}
+                  onClick={() => {
+                    onDuplicate(row.original);
+                  }}
+                  size="icon"
+                  title="Dupliquer"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Copy aria-hidden="true" className="size-4" />
+                </Button>
+              ) : null}
               <Button
                 aria-label={`Modifier ${row.original.title}`}
                 onClick={() => {

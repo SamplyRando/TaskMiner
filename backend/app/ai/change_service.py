@@ -4,6 +4,7 @@ from app.ai.schemas import (
     AIProjectChangePlanResponse,
     AIProjectContext,
     AIProjectTaskContext,
+    AIProjectStatusContext,
     AITaskChangeState,
 )
 from app.ai.service import AIProjectNotFoundError
@@ -52,6 +53,14 @@ class AIProjectChangePlanService:
             id=project.id,
             name=project.name,
             description=project.description,
+            statuses=[
+                AIProjectStatusContext(
+                    key=status.key,
+                    label=status.label,
+                    is_completed=status.is_completed,
+                )
+                for status in project.task_statuses
+            ],
             tasks=[
                 AIProjectTaskContext(
                     id=task.id,

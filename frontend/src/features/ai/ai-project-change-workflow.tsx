@@ -16,6 +16,7 @@ import type {
 } from "@/features/ai/schemas";
 import { useProjects } from "@/features/projects/hooks";
 import { useSessionState } from "@/hooks/use-session-state";
+import { getProjectStatuses } from "@/types/project";
 import type {
   AIApplyProjectChangePlanRequest,
   AIApplyProjectChangePlanResponse,
@@ -158,6 +159,9 @@ export function AIProjectChangeWorkflow({
     projectId: draft?.projectId ?? "",
     instruction: draft?.instruction ?? "",
   };
+  const draftProject = projectsQuery.data?.items.find(
+    (project) => project.id === draft?.projectId,
+  );
 
   return (
     <div className="space-y-6">
@@ -190,6 +194,7 @@ export function AIProjectChangeWorkflow({
           onReviewChange={handleReviewChange}
           plan={draft.plan}
           projectName={draft.projectName}
+          statuses={getProjectStatuses(draftProject)}
           workspaceId={draft.workspaceId}
         />
       ) : null}

@@ -14,6 +14,7 @@ from app.models.notification import (
     NotificationType,
 )
 from app.models.project import Project
+from app.models.project_task_status import ProjectTaskStatus
 from app.models.reminder_delivery import ReminderDelivery
 from app.models.request_rate_limit_bucket import RequestRateLimitBucket
 from app.models.stripe_webhook_event import StripeWebhookEvent
@@ -43,6 +44,7 @@ __all__ = [
     "NotificationEntityType",
     "NotificationType",
     "Project",
+    "ProjectTaskStatus",
     "ReminderDelivery",
     "RequestRateLimitBucket",
     "StripeWebhookEvent",

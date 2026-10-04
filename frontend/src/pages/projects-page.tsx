@@ -1,5 +1,5 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { AlertTriangle, Plus, Search } from "lucide-react";
+import { AlertTriangle, Plus, Search, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTable } from "@/components/data-table/data-table";
@@ -9,14 +9,18 @@ import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WorkspaceSelector } from "@/components/workspace-selector";
+import { exportProjectTemplate } from "@/api/projects";
 import {
   useCreateProject,
   useDeleteProject,
+  useDuplicateProject,
+  useImportProjectTemplate,
   useProjects,
   useUpdateProject,
 } from "@/features/projects/hooks";
 import { getProjectColumns } from "@/features/projects/project-columns";
 import { ProjectFormDialog } from "@/features/projects/project-form-dialog";
+import { ProjectWorkflowDialog } from "@/features/projects/project-workflow-dialog";
 import { useUserPreferences } from "@/features/settings/hooks";
 import { useWorkspacePermissions } from "@/features/workspaces/permissions-hooks";
 import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
@@ -51,6 +55,7 @@ export function ProjectsPage() {
     permissionsQuery.data?.permissions.manage_projects ?? false;
   const preferences = useUserPreferences();
   const pageSizeApplied = useRef(false);
+  const importInput = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useSessionState("taskminer-projects-search", "");
   const deferredSearch = useDebouncedValue(search, 300);
   const [pagination, setPagination] = useSessionState(
@@ -63,6 +68,10 @@ export function ProjectsPage() {
   );
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [workflowOpen, setWorkflowOpen] = useState(false);
+  const [workflowProject, setWorkflowProject] = useState<Project | null>(null);
+  const [operationMessage, setOperationMessage] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const normalizedSearch = deferredSearch.trim();
   const projectLimitReached = Boolean(
@@ -96,6 +105,8 @@ export function ProjectsPage() {
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+  const duplicateProject = useDuplicateProject();
+  const importTemplate = useImportProjectTemplate();
 
   const columns = useMemo(
     () =>
@@ -106,13 +117,45 @@ export function ProjectsPage() {
           setSelectedProject(project);
           setDeleteOpen(true);
         },
+        onDuplicate: (project) => {
+          setOperationMessage(null);
+          setOperationError(null);
+          void duplicateProject
+            .mutateAsync(project.id)
+            .then(() => {
+              setOperationMessage("Projet dupliqué.");
+            })
+            .catch(() => undefined);
+        },
         onEdit: (project) => {
           updateProject.reset();
           setSelectedProject(project);
           setFormOpen(true);
         },
+        onExport: (project) => {
+          setOperationError(null);
+          void exportProjectTemplate(project.id)
+            .then((template) => {
+              const blob = new Blob([JSON.stringify(template, null, 2)], {
+                type: "application/json",
+              });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = `${project.name.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase()}-taskminer.json`;
+              link.click();
+              URL.revokeObjectURL(url);
+            })
+            .catch(() => {
+              setOperationError("Le modèle n’a pas pu être exporté.");
+            });
+        },
+        onWorkflow: (project) => {
+          setWorkflowProject(project);
+          setWorkflowOpen(true);
+        },
       }),
-    [canManageProjects, deleteProject, updateProject],
+    [canManageProjects, deleteProject, duplicateProject, updateProject],
   );
 
   const handleSubmit = async (data: ProjectInput) => {
@@ -149,23 +192,66 @@ export function ProjectsPage() {
       // L'erreur de mutation reste affichée dans la boîte de dialogue.
     }
   };
+  const currentWorkflowProject =
+    projectsQuery.data?.items.find(
+      (project) => project.id === workflowProject?.id,
+    ) ?? workflowProject;
 
   return (
     <div className="space-y-6">
       <EntityPageHeader
         actions={
-          <Button
-            disabled={!canManageProjects || projectLimitReached}
-            onClick={() => {
-              createProject.reset();
-              setSelectedProject(null);
-              setFormOpen(true);
-            }}
-            type="button"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Nouveau projet
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={importInput}
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file || !workspace.activeWorkspaceId) return;
+                setOperationMessage(null);
+                setOperationError(null);
+                void importTemplate
+                  .mutateAsync({
+                    file,
+                    workspaceId: workspace.activeWorkspaceId,
+                  })
+                  .then(() => {
+                    setOperationMessage("Modèle importé.");
+                  })
+                  .catch(() => undefined);
+                event.target.value = "";
+              }}
+              type="file"
+            />
+            <Button
+              disabled={
+                !canManageProjects ||
+                projectLimitReached ||
+                importTemplate.isPending
+              }
+              onClick={() => {
+                importInput.current?.click();
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Upload aria-hidden="true" className="size-4" />
+              Importer un modèle
+            </Button>
+            <Button
+              disabled={!canManageProjects || projectLimitReached}
+              onClick={() => {
+                createProject.reset();
+                setSelectedProject(null);
+                setFormOpen(true);
+              }}
+              type="button"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Nouveau projet
+            </Button>
+          </div>
         }
         description="Créez et suivez les projets de votre workspace."
         title="Projets"
@@ -190,6 +276,20 @@ export function ProjectsPage() {
           Limite de {subscriptionQuery.data?.limits.projects} projets atteinte
           pour le plan {subscriptionQuery.data?.plan === "pro" ? "Pro" : "Free"}
           .
+        </p>
+      ) : null}
+      {operationMessage ? (
+        <p className="text-sm text-emerald-700" role="status">
+          {operationMessage}
+        </p>
+      ) : null}
+      {operationError || duplicateProject.isError || importTemplate.isError ? (
+        <p className="text-destructive text-sm" role="alert">
+          {operationError ??
+            getPlanLimitMessage(
+              duplicateProject.error ?? importTemplate.error,
+            ) ??
+            "L’opération n’a pas pu être effectuée."}
         </p>
       ) : null}
 
@@ -291,6 +391,13 @@ export function ProjectsPage() {
         open={deleteOpen}
         title="Supprimer le projet ?"
       />
+      {workflowOpen ? (
+        <ProjectWorkflowDialog
+          onOpenChange={setWorkflowOpen}
+          open
+          project={currentWorkflowProject}
+        />
+      ) : null}
     </div>
   );
 }

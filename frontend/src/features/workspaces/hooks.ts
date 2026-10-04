@@ -4,7 +4,9 @@ import {
   createWorkspace,
   deleteWorkspace,
   listAssignableWorkspaceMembers,
+  listRecoverableWorkspaces,
   listWorkspaces,
+  restoreWorkspace,
   updateWorkspace,
 } from "@/api/workspace";
 import { subscriptionKeys } from "@/features/subscriptions/hooks";
@@ -16,12 +18,19 @@ export const workspaceKeys = {
   list: () => [...workspaceKeys.all, "list"] as const,
   assignableMembers: (workspaceId: string) =>
     [...workspaceKeys.all, workspaceId, "assignable-members"] as const,
+  recoverable: () => [...workspaceKeys.all, "recoverable"] as const,
 };
 
 export const useWorkspaces = () =>
   useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: listWorkspaces,
+  });
+
+export const useRecoverableWorkspaces = () =>
+  useQuery({
+    queryKey: workspaceKeys.recoverable(),
+    queryFn: listRecoverableWorkspaces,
   });
 
 export const useAssignableWorkspaceMembers = (
@@ -103,6 +112,22 @@ export const useDeleteWorkspace = () => {
       }
     },
     onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
+      ]);
+    },
+  });
+};
+
+export const useRestoreWorkspace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: restoreWorkspace,
+    onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),

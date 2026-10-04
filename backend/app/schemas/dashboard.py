@@ -159,7 +159,9 @@ class DashboardRecentTask(BaseModel):
     workspace_name: str
     project_id: UUID
     project_name: str
-    status: TaskStatus
+    status: str
+    status_label: str
+    status_is_completed: bool
     priority: TaskPriority
     assigned_user_id: UUID | None
     assigned_user: str | None

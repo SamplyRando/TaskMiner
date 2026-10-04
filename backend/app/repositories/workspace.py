@@ -114,6 +114,38 @@ class WorkspaceRepository:
         )
         return list(self.session.scalars(statement).unique().all())
 
+    def list_recoverable_by_owner(
+        self,
+        owner: User,
+        cutoff: datetime,
+    ) -> list[Workspace]:
+        statement = (
+            select(Workspace)
+            .where(
+                Workspace.owner_id == owner.id,
+                Workspace.deleted_at.is_not(None),
+                Workspace.deleted_at >= cutoff,
+            )
+            .order_by(Workspace.deleted_at.desc(), Workspace.id.asc())
+        )
+        return list(self.session.scalars(statement).all())
+
+    def get_deleted_by_id_for_owner(
+        self,
+        workspace_id: UUID,
+        owner: User,
+    ) -> Workspace | None:
+        statement = (
+            select(Workspace)
+            .where(
+                Workspace.id == workspace_id,
+                Workspace.owner_id == owner.id,
+                Workspace.deleted_at.is_not(None),
+            )
+            .with_for_update()
+        )
+        return self.session.scalar(statement)
+
     def update(self, workspace: Workspace, data: WorkspaceUpdate) -> Workspace:
         updates = data.model_dump(exclude_unset=True)
         for field in ("name", "description"):
@@ -137,3 +169,13 @@ class WorkspaceRepository:
         except SQLAlchemyError:
             self.session.rollback()
             raise
+
+    def restore(self, workspace: Workspace) -> Workspace:
+        workspace.deleted_at = None
+        try:
+            self.session.commit()
+            self.session.refresh(workspace)
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
+        return workspace

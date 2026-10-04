@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
+  getTaskStatusLabelFromTask,
   taskPriorityLabels,
-  taskStatusLabels,
 } from "@/features/tasks/task-presentation";
+import {
+  DEFAULT_PROJECT_STATUSES,
+  type ProjectTaskStatus,
+} from "@/types/project";
 import type { Task, TaskPriority, TaskStatus, TaskUpdate } from "@/types/task";
 
 type InlineUpdate = (task: Task, data: TaskUpdate) => Promise<void>;
@@ -150,18 +154,23 @@ type InlineSelectProps = {
   task: Task;
 };
 
+type InlineTaskStatusProps = InlineSelectProps & {
+  statuses?: ProjectTaskStatus[];
+};
+
 export function InlineTaskStatus({
   canManage,
   onUpdate,
+  statuses = DEFAULT_PROJECT_STATUSES,
   task,
-}: InlineSelectProps) {
+}: InlineTaskStatusProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!canManage) {
     return (
-      <Badge variant={task.status === "done" ? "default" : "secondary"}>
-        {taskStatusLabels[task.status]}
+      <Badge variant={task.status_is_completed ? "default" : "secondary"}>
+        {getTaskStatusLabelFromTask(task)}
       </Badge>
     );
   }
@@ -185,12 +194,14 @@ export function InlineTaskStatus({
         aria-label={`Statut de ${task.title}`}
         className="h-9"
         disabled={isPending}
-        onChange={(event) => void update(event.target.value as TaskStatus)}
+        onChange={(event) => void update(event.target.value)}
         value={task.status}
       >
-        <option value="todo">À faire</option>
-        <option value="in_progress">En cours</option>
-        <option value="done">Terminée</option>
+        {statuses.map((status) => (
+          <option key={status.key} value={status.key}>
+            {status.label}
+          </option>
+        ))}
       </Select>
       {error ? (
         <p className="text-destructive text-xs" role="alert">

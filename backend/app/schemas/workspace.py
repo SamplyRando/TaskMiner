@@ -34,3 +34,13 @@ class WorkspaceRead(BaseModel):
     owner_id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class RecoverableWorkspaceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
+    id: UUID
+    name: str
+    description: str | None
+    deleted_at: datetime
+    recoverable_until: datetime

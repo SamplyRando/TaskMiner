@@ -10,6 +10,7 @@ import { getUserPreferences } from "@/api/settings";
 import {
   assignTask,
   createTask,
+  duplicateTask,
   listAllTasks,
   listTasks,
   unassignTask,
@@ -57,6 +58,7 @@ vi.mock("@/api/tasks", () => ({
   assignTask: vi.fn(),
   createTask: vi.fn(),
   deleteTask: vi.fn(),
+  duplicateTask: vi.fn(),
   listAllTasks: vi.fn(),
   listTasks: vi.fn(),
   unassignTask: vi.fn(),
@@ -79,6 +81,7 @@ const mockedAssignTask = vi.mocked(assignTask);
 const mockedListTaskAttachments = vi.mocked(listTaskAttachments);
 const mockedListTaskComments = vi.mocked(listTaskComments);
 const mockedCreateTask = vi.mocked(createTask);
+const mockedDuplicateTask = vi.mocked(duplicateTask);
 const mockedListAllTasks = vi.mocked(listAllTasks);
 const mockedListProjects = vi.mocked(listProjects);
 const mockedListTasks = vi.mocked(listTasks);
@@ -162,6 +165,10 @@ describe("TasksPage", () => {
 
     expect(await screen.findByText(taskFixture.title)).toBeInTheDocument();
     await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      projectFixture.id,
+    );
+    await user.selectOptions(
       screen.getByRole("combobox", { name: "Filtrer par statut" }),
       "todo",
     );
@@ -169,6 +176,7 @@ describe("TasksPage", () => {
     await waitFor(() => {
       expect(mockedListTasks).toHaveBeenLastCalledWith({
         limit: 20,
+        project_id: projectFixture.id,
         skip: 0,
         sort: "-created_at",
         status: "todo",
@@ -203,7 +211,7 @@ describe("TasksPage", () => {
     await user.click(screen.getByRole("button", { name: "Kanban" }));
 
     expect(
-      await screen.findByText("Aucune tâche à afficher"),
+      await screen.findByText("Choisissez un projet pour le Kanban"),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Liste" })).toBeEnabled();
   });
@@ -420,6 +428,10 @@ describe("TasksPage", () => {
       screen.getByRole("combobox", { name: "Filtrer par priorité" }),
       "medium",
     );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      projectFixture.id,
+    );
     await user.click(screen.getByRole("button", { name: "Kanban" }));
 
     expect(
@@ -428,6 +440,7 @@ describe("TasksPage", () => {
     await waitFor(() => {
       expect(mockedListAllTasks).toHaveBeenLastCalledWith({
         priority: "medium",
+        project_id: projectFixture.id,
         sort: "-created_at",
         workspace_id: workspaceFixture.id,
       });
@@ -440,6 +453,11 @@ describe("TasksPage", () => {
     useTaskViewStore.setState({ mode: "kanban" });
     renderWithQuery(<TasksPage />);
 
+    await screen.findByRole("option", { name: projectFixture.name });
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      projectFixture.id,
+    );
     await screen.findByRole("region", { name: /À faire, 1 tâche/ });
     await user.click(
       screen.getByRole("button", { name: `Modifier ${taskFixture.title}` }),
@@ -476,6 +494,11 @@ describe("TasksPage", () => {
     useTaskViewStore.setState({ mode: "kanban" });
     renderWithQuery(<TasksPage />);
 
+    await screen.findByRole("option", { name: projectFixture.name });
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      projectFixture.id,
+    );
     await screen.findByRole("region", { name: /À faire, 1 tâche/ });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Workspace actif" }),
@@ -483,10 +506,6 @@ describe("TasksPage", () => {
     );
 
     await waitFor(() => {
-      expect(mockedListAllTasks).toHaveBeenLastCalledWith({
-        sort: "-created_at",
-        workspace_id: secondWorkspace.id,
-      });
       expect(mockedListProjects).toHaveBeenLastCalledWith({
         limit: 100,
         skip: 0,
@@ -494,6 +513,9 @@ describe("TasksPage", () => {
         workspace_id: secondWorkspace.id,
       });
     });
+    expect(
+      screen.getByText("Choisissez un projet pour le Kanban"),
+    ).toBeInTheDocument();
   });
 
   it("applies search, project, status and priority to the Kanban query", async () => {
@@ -544,6 +566,11 @@ describe("TasksPage", () => {
       });
     renderWithQuery(<TasksPage />);
 
+    await screen.findByRole("option", { name: projectFixture.name });
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      projectFixture.id,
+    );
     expect(await screen.findByText("Kanban indisponible")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Réessayer" }));
 
@@ -551,5 +578,81 @@ describe("TasksPage", () => {
       await screen.findByRole("region", { name: /À faire, 1 tâche/ }),
     ).toBeInTheDocument();
     expect(mockedListAllTasks).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the selected project's custom workflow in List and Kanban", async () => {
+    const user = userEvent.setup();
+    const customProject = {
+      ...projectFixture,
+      task_statuses: [
+        { key: "backlog", label: "Backlog", position: 0, is_completed: false },
+        { key: "review", label: "À valider", position: 1, is_completed: false },
+        { key: "shipped", label: "Livrée", position: 2, is_completed: true },
+      ],
+    };
+    const customTask = { ...taskFixture, status: "review" };
+    mockedListProjects.mockResolvedValue({
+      items: [customProject],
+      limit: 100,
+      skip: 0,
+      total: 1,
+    });
+    mockedListTasks.mockResolvedValue({
+      items: [customTask],
+      limit: 20,
+      skip: 0,
+      total: 1,
+    });
+    mockedListAllTasks.mockResolvedValue({
+      items: [customTask],
+      limit: 100,
+      skip: 0,
+      total: 1,
+    });
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByText(customTask.title);
+    expect(
+      screen.getByRole("combobox", {
+        name: `Statut de ${customTask.title}`,
+      }),
+    ).toHaveValue("review");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Filtrer par projet" }),
+      customProject.id,
+    );
+    await user.click(screen.getByRole("button", { name: "Kanban" }));
+
+    expect(
+      await screen.findByRole("region", { name: /À valider, 1 tâche/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /Backlog, 0 tâche/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /Livrée, 0 tâche/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("duplicates a task from the existing List action", async () => {
+    const user = userEvent.setup();
+    mockedDuplicateTask.mockResolvedValue({
+      ...taskFixture,
+      id: "00000000-0000-4000-8000-000000000099",
+      title: `${taskFixture.title} (copie)`,
+    });
+    renderWithQuery(<TasksPage />);
+
+    await screen.findByText(taskFixture.title);
+    await user.click(
+      screen.getByRole("button", { name: `Dupliquer ${taskFixture.title}` }),
+    );
+
+    await waitFor(() => {
+      expect(mockedDuplicateTask).toHaveBeenCalledWith(
+        taskFixture.id,
+        expect.anything(),
+      );
+    });
   });
 });

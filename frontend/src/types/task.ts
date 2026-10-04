@@ -3,7 +3,8 @@ import type { PaginationParams } from "@/types/pagination";
 export const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
 export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type TaskStatus = string;
+export type LegacyTaskStatus = (typeof TASK_STATUSES)[number];
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 export type Task = {
@@ -11,6 +12,8 @@ export type Task = {
   title: string;
   description: string | null;
   status: TaskStatus;
+  status_label?: string;
+  status_is_completed?: boolean;
   priority: TaskPriority;
   due_date: string | null;
   project_id: string;

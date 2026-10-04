@@ -8,7 +8,11 @@ from app.models.task import Task
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.task import TaskCreate, TaskListParams, TaskRead, TaskUpdate
 from app.services.permission import PermissionDeniedError
-from app.services.task import TaskNotFoundError, TaskProjectNotFoundError
+from app.services.task import (
+    TaskNotFoundError,
+    TaskProjectNotFoundError,
+    TaskStatusInvalidError,
+)
 
 
 router = APIRouter()
@@ -47,6 +51,11 @@ def create_task(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
         ) from exc
+    except TaskStatusInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Status does not belong to this project.",
+        ) from exc
 
 
 @project_router.get("/{project_id}/tasks", response_model=list[TaskRead])
@@ -79,6 +88,30 @@ def get_task(
         ) from exc
 
 
+@router.post(
+    "/{task_id}/duplicate",
+    response_model=TaskRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def duplicate_task(
+    task_id: UUID,
+    current_user: CurrentUserDep,
+    service: TaskServiceDep,
+) -> Task:
+    try:
+        return service.duplicate_task(current_user, task_id)
+    except TaskNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found.",
+        ) from exc
+    except PermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions.",
+        ) from exc
+
+
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(
     task_id: UUID,
@@ -97,6 +130,11 @@ def update_task(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
+        ) from exc
+    except TaskStatusInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Status does not belong to this project.",
         ) from exc
 
 

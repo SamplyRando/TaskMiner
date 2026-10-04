@@ -8,13 +8,18 @@ from app.api.deps import (
     WorkspaceServiceDep,
 )
 from app.models.workspace import Workspace
-from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate
+from app.schemas.workspace import (
+    RecoverableWorkspaceRead,
+    WorkspaceCreate,
+    WorkspaceRead,
+    WorkspaceUpdate,
+)
 from app.schemas.subscription import WorkspaceSubscriptionRead
 from app.services.subscription import (
     PlanLimitExceededError,
     WorkspaceSubscriptionAttachedError,
 )
-from app.services.workspace import WorkspaceNotFoundError
+from app.services.workspace import WorkspaceNotFoundError, WorkspaceRecoveryExpiredError
 
 
 router = APIRouter()
@@ -59,6 +64,33 @@ def list_workspaces(
     service: WorkspaceServiceDep,
 ) -> list[Workspace]:
     return service.list_workspaces(current_user)
+
+
+@router.get("/recoverable", response_model=list[RecoverableWorkspaceRead])
+def list_recoverable_workspaces(
+    current_user: CurrentUserDep,
+    service: WorkspaceServiceDep,
+) -> list[RecoverableWorkspaceRead]:
+    return service.list_recoverable_workspaces(current_user)
+
+
+@router.post("/{workspace_id}/restore", response_model=WorkspaceRead)
+def restore_workspace(
+    workspace_id: UUID,
+    current_user: CurrentUserDep,
+    service: WorkspaceServiceDep,
+) -> Workspace:
+    try:
+        return service.restore_workspace(current_user, workspace_id)
+    except WorkspaceNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Workspace not found.") from exc
+    except WorkspaceRecoveryExpiredError as exc:
+        raise HTTPException(
+            status_code=410,
+            detail="The 30-day workspace recovery window has expired.",
+        ) from exc
+    except PlanLimitExceededError as exc:
+        raise HTTPException(status_code=409, detail=exc.as_detail()) from exc
 
 
 @router.get("/{workspace_id}", response_model=WorkspaceRead)

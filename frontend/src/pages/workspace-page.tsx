@@ -27,12 +27,15 @@ import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import {
   useCreateWorkspace,
   useDeleteWorkspace,
+  useRecoverableWorkspaces,
+  useRestoreWorkspace,
   useUpdateWorkspace,
 } from "@/features/workspaces/hooks";
 import { getWorkspaceDeletionErrorMessage } from "@/features/workspaces/errors";
 import { getWorkspaceColumns } from "@/features/workspaces/workspace-columns";
 import { WorkspaceFormDialog } from "@/features/workspaces/workspace-form-dialog";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
+import { formatDate } from "@/lib/format";
 
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 
@@ -104,6 +107,8 @@ export function WorkspacePage() {
   const createWorkspace = useCreateWorkspace();
   const updateWorkspace = useUpdateWorkspace();
   const deleteWorkspace = useDeleteWorkspace();
+  const recoverableWorkspaces = useRecoverableWorkspaces();
+  const restoreWorkspace = useRestoreWorkspace();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -346,6 +351,53 @@ export function WorkspacePage() {
           total={filteredWorkspaces.length}
         />
       )}
+
+      {recoverableWorkspaces.data?.length ? (
+        <section
+          className="space-y-3 border-t pt-6"
+          aria-labelledby="recoverable-workspaces"
+        >
+          <div>
+            <h2 className="font-semibold" id="recoverable-workspaces">
+              Workspaces supprimés
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Vous pouvez restaurer vos workspaces pendant 30 jours.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {recoverableWorkspaces.data.map((item) => (
+              <div
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                key={item.id}
+              >
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-muted-foreground text-sm">
+                    Récupérable jusqu’au {formatDate(item.recoverable_until)}
+                  </p>
+                </div>
+                <Button
+                  disabled={restoreWorkspace.isPending}
+                  onClick={() => {
+                    restoreWorkspace.mutate(item.id);
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Restaurer
+                </Button>
+              </div>
+            ))}
+          </div>
+          {restoreWorkspace.isError ? (
+            <p className="text-destructive text-sm" role="alert">
+              {getPlanLimitMessage(restoreWorkspace.error) ??
+                "Le workspace n’a pas pu être restauré."}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <WorkspaceFormDialog
         error={

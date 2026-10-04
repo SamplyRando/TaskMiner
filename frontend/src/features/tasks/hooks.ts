@@ -9,6 +9,7 @@ import {
   assignTask,
   createTask,
   deleteTask,
+  duplicateTask,
   listAllTasks,
   listTasks,
   unassignTask,
@@ -162,6 +163,19 @@ export const useDeleteTask = () => {
       }
     },
     onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+    },
+  });
+};
+
+export const useDuplicateTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: duplicateTask,
+    onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: taskKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["dashboard"] }),

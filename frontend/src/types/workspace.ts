@@ -14,6 +14,14 @@ export type WorkspaceInput = {
   description: string | null;
 };
 
+export type RecoverableWorkspace = {
+  id: string;
+  name: string;
+  description: string | null;
+  deleted_at: string;
+  recoverable_until: string;
+};
+
 export type AssignableWorkspaceMember = {
   user_id: string;
   email: string;

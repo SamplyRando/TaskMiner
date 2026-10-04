@@ -6,9 +6,15 @@ import {
 } from "@tanstack/react-query";
 
 import {
+  addProjectStatus,
   createProject,
+  deleteProjectStatus,
   deleteProject,
+  duplicateProject,
+  importProjectTemplate,
   listProjects,
+  reorderProjectStatuses,
+  updateProjectStatus,
   updateProject,
 } from "@/api/projects";
 import { workspaceKeys } from "@/features/workspaces/hooks";
@@ -149,5 +155,94 @@ export const useDeleteProject = () => {
         queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
       ]);
     },
+  });
+};
+
+const invalidateProjectCreation = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+) => {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+    queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    queryClient.invalidateQueries({ queryKey: subscriptionKeys.all }),
+  ]);
+};
+
+export const useDuplicateProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: duplicateProject,
+    onSuccess: () => invalidateProjectCreation(queryClient),
+  });
+};
+
+export const useImportProjectTemplate = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, workspaceId }: { file: File; workspaceId: string }) =>
+      importProjectTemplate(workspaceId, file),
+    onSuccess: () => invalidateProjectCreation(queryClient),
+  });
+};
+
+export const useAddProjectStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      isCompleted,
+      label,
+      projectId,
+    }: {
+      isCompleted?: boolean;
+      label: string;
+      projectId: string;
+    }) =>
+      addProjectStatus(projectId, {
+        label,
+        ...(isCompleted === undefined ? {} : { is_completed: isCompleted }),
+      }),
+    onSuccess: () => invalidateProjectCreation(queryClient),
+  });
+};
+
+export const useUpdateProjectStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      data,
+      key,
+      projectId,
+    }: {
+      data: { label?: string; is_completed?: boolean };
+      key: string;
+      projectId: string;
+    }) => updateProjectStatus(projectId, key, data),
+    onSuccess: () => invalidateProjectCreation(queryClient),
+  });
+};
+
+export const useReorderProjectStatuses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ keys, projectId }: { keys: string[]; projectId: string }) =>
+      reorderProjectStatuses(projectId, keys),
+    onSuccess: () => invalidateProjectCreation(queryClient),
+  });
+};
+
+export const useDeleteProjectStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      key,
+      projectId,
+      replacementStatus,
+    }: {
+      key: string;
+      projectId: string;
+      replacementStatus?: string;
+    }) => deleteProjectStatus(projectId, key, replacementStatus),
+    onSuccess: () => invalidateProjectCreation(queryClient),
   });
 };

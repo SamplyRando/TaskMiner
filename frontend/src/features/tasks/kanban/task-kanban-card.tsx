@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   CalendarDays,
+  Copy,
   GripVertical,
   MessageSquareText,
   Paperclip,
@@ -27,6 +28,7 @@ type TaskKanbanCardProps = {
   isOverlay?: boolean;
   onAssign: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onDuplicate?: (task: Task) => void;
   onEdit: (task: Task) => void;
   onOpenAttachments: (task: Task) => void;
   onOpenComments: (task: Task) => void;
@@ -62,6 +64,7 @@ export function TaskKanbanCard({
   isOverlay = false,
   onAssign,
   onDelete,
+  onDuplicate,
   onEdit,
   onOpenAttachments,
   onOpenComments,
@@ -208,6 +211,20 @@ export function TaskKanbanCard({
               >
                 <UserRoundCog aria-hidden="true" className="size-4" />
               </Button>
+              {onDuplicate ? (
+                <Button
+                  aria-label={`Dupliquer ${task.title}`}
+                  onClick={() => {
+                    onDuplicate(task);
+                  }}
+                  size="icon"
+                  title="Dupliquer"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Copy aria-hidden="true" className="size-4" />
+                </Button>
+              ) : null}
               <Button
                 aria-label={`Modifier ${task.title}`}
                 onClick={() => {

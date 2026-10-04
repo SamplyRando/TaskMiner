@@ -82,9 +82,11 @@ export const RecentTasks = memo(function RecentTasks({
         ),
         cell: ({ row }) => (
           <Badge
-            variant={row.original.status === "done" ? "default" : "secondary"}
+            variant={row.original.status_is_completed ? "default" : "secondary"}
           >
-            {statusLabels[row.original.status]}
+            {row.original.status_label ??
+              statusLabels[row.original.status] ??
+              row.original.status}
           </Badge>
         ),
       },

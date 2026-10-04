@@ -6,7 +6,9 @@ import { ApiError } from "@/api/client";
 import {
   createWorkspace,
   deleteWorkspace,
+  listRecoverableWorkspaces,
   listWorkspaces,
+  restoreWorkspace,
   updateWorkspace,
 } from "@/api/workspace";
 import {
@@ -30,7 +32,9 @@ import {
 vi.mock("@/api/workspace", () => ({
   createWorkspace: vi.fn(),
   deleteWorkspace: vi.fn(),
+  listRecoverableWorkspaces: vi.fn(),
   listWorkspaces: vi.fn(),
+  restoreWorkspace: vi.fn(),
   updateWorkspace: vi.fn(),
 }));
 vi.mock("@/api/billing", () => ({
@@ -43,7 +47,9 @@ vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
 
 const mockedCreateWorkspace = vi.mocked(createWorkspace);
 const mockedDeleteWorkspace = vi.mocked(deleteWorkspace);
+const mockedListRecoverableWorkspaces = vi.mocked(listRecoverableWorkspaces);
 const mockedListWorkspaces = vi.mocked(listWorkspaces);
+const mockedRestoreWorkspace = vi.mocked(restoreWorkspace);
 const mockedUpdateWorkspace = vi.mocked(updateWorkspace);
 const mockedGetPreferences = vi.mocked(getUserPreferences);
 const mockedSubscription = vi.mocked(getWorkspaceSubscription);
@@ -67,6 +73,7 @@ describe("WorkspacePage", () => {
     });
     mockedGetPreferences.mockResolvedValue(settingsPreferencesFixture);
     mockedListWorkspaces.mockResolvedValue([workspaceFixture]);
+    mockedListRecoverableWorkspaces.mockResolvedValue([]);
     mockedSubscription.mockResolvedValue(freeSubscriptionFixture);
     mockedCheckout.mockResolvedValue({
       checkout_url: "https://checkout.stripe.com/c/pay/test",
@@ -394,6 +401,34 @@ describe("WorkspacePage", () => {
     ).toBeInTheDocument();
     expect(window.location.search).toBe("?source=test");
     expect(mockedCheckout).not.toHaveBeenCalled();
+  });
+
+  it("lists and restores a recoverable workspace", async () => {
+    const user = userEvent.setup();
+    const deletedWorkspace = {
+      deleted_at: "2026-10-01T08:00:00Z",
+      description: "À récupérer",
+      id: "00000000-0000-4000-8000-000000000098",
+      name: "Workspace supprimé",
+      recoverable_until: "2026-10-31T08:00:00Z",
+    };
+    mockedListRecoverableWorkspaces.mockResolvedValue([deletedWorkspace]);
+    mockedRestoreWorkspace.mockResolvedValue({
+      ...workspaceFixture,
+      id: deletedWorkspace.id,
+      name: deletedWorkspace.name,
+    });
+    renderWithQuery(<WorkspacePage />);
+
+    expect(await screen.findByText(deletedWorkspace.name)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Restaurer" }));
+
+    await waitFor(() => {
+      expect(mockedRestoreWorkspace).toHaveBeenCalledWith(
+        deletedWorkspace.id,
+        expect.anything(),
+      );
+    });
   });
 
   it("refetches backend subscription state after a successful Stripe return", async () => {

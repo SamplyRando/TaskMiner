@@ -6,7 +6,6 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
-from app.models.project import Project
 from tests.factories import (
     ProjectFactory,
     RegisteredUser,
@@ -193,26 +192,28 @@ def test_task_list_filters_by_workspace(
     project_factory: ProjectFactory,
     task_factory: TaskFactory,
     workspace_factory: WorkspaceFactory,
-    database_session: Session,
 ) -> None:
     first_project = project_factory.create(user)
     first_task = task_factory.create(first_project)
-    first_project_model = database_session.get(Project, first_project.id)
-    assert first_project_model is not None
     second_workspace = workspace_factory.create(user)
-    second_project = Project(
-        name="Second workspace project",
-        workspace_id=second_workspace.id,
+    second_project = client.post(
+        "/api/v1/projects",
+        headers=user.headers,
+        params={"workspace_id": second_workspace.id},
+        json={"name": "Second workspace project"},
     )
-    database_session.add(second_project)
-    database_session.flush()
-    database_session.add(Task(title="Foreign workspace task", project=second_project))
-    database_session.commit()
+    assert second_project.status_code == 201
+    foreign_task = client.post(
+        f"/api/v1/projects/{second_project.json()['id']}/tasks",
+        headers=user.headers,
+        json={"title": "Foreign workspace task"},
+    )
+    assert foreign_task.status_code == 201
 
     response = client.get(
         "/api/v1/tasks",
         headers=user.headers,
-        params={"workspace_id": str(first_project_model.workspace_id)},
+        params={"workspace_id": str(first_project.workspace_id)},
     )
 
     assert response.status_code == 200
@@ -341,7 +342,7 @@ def test_foreign_project_filter_does_not_reveal_project(
         {"sort": "priority"},
         {"sort": "-unknown"},
         {"search": ""},
-        {"status": "invalid"},
+        {"status": "INVALID STATUS"},
         {"priority": "invalid"},
         {"project_id": "invalid-uuid"},
         {"offset": 0},
