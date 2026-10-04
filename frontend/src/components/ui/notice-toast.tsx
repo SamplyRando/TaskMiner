@@ -20,6 +20,12 @@ const iconByType = {
   success: CheckCircle2,
 };
 
+const iconClassByType = {
+  error: "text-destructive",
+  info: "text-info",
+  success: "text-success",
+};
+
 export function NoticeToast({
   dismissLabel = "Fermer la notification",
   notice,
@@ -31,18 +37,14 @@ export function NoticeToast({
   return (
     <div
       aria-live="polite"
-      className="toast-arrival bg-card fixed right-4 bottom-4 left-4 z-60 flex items-center gap-3 rounded-xl border px-4 py-3 shadow-xl sm:left-auto sm:max-w-sm"
+      className="toast-arrival bg-popover text-popover-foreground rounded-floating shadow-floating fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-60 flex items-center gap-3 border py-2 pr-2 pl-4 sm:left-auto sm:max-w-sm"
       role={notice.type === "error" ? "alert" : "status"}
     >
       <Icon
         aria-hidden="true"
-        className={cn("size-5 shrink-0", {
-          "text-destructive": notice.type === "error",
-          "text-primary": notice.type === "info",
-          "text-emerald-600": notice.type === "success",
-        })}
+        className={cn("size-5 shrink-0", iconClassByType[notice.type])}
       />
-      <p className="flex-1 text-sm font-medium">{notice.message}</p>
+      <p className="flex-1 py-1 text-sm font-medium">{notice.message}</p>
       <Button
         aria-label={dismissLabel}
         onClick={onDismiss}

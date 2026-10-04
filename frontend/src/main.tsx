@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AppProvider } from "@/components/providers/app-provider";
 import { AuthSessionManager } from "@/components/providers/auth-session-manager";
 import { AppRouter } from "@/routes/app-router";
+import "@fontsource-variable/inter/wght.css";
 import "@/styles.css";
 
 const rootElement = document.getElementById("root");

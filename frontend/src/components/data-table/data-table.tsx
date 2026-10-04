@@ -83,7 +83,7 @@ export function DataTable<Data>({
     <div className="space-y-4">
       <div
         aria-busy={isLoading}
-        className="bg-card overflow-hidden rounded-xl border shadow-sm"
+        className="bg-card rounded-card overflow-hidden border shadow-xs"
       >
         {!isMobile ? (
           <div>
@@ -151,7 +151,7 @@ export function DataTable<Data>({
                 )
               : table.getRowModel().rows.map((row) => (
                   <article
-                    className="hover:bg-muted/30 space-y-3 p-4 transition-colors"
+                    className="hover:bg-accent/40 space-y-3 p-4 transition-colors duration-150"
                     key={`mobile-${row.id}`}
                   >
                     {row.getVisibleCells().map((cell) => {

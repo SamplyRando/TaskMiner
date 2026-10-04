@@ -71,8 +71,8 @@ const routeFallback = (
     aria-label="Chargement de la page"
     className="flex min-h-screen flex-col items-center justify-center gap-4"
   >
-    <BrandMark className="text-primary size-12" />
-    <Spinner className="text-primary size-6" label="Chargement de la page" />
+    <BrandMark className="text-brand-solid size-12" />
+    <Spinner className="text-brand size-6" label="Chargement de la page" />
   </main>
 );
 

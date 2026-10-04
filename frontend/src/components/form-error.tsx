@@ -14,7 +14,7 @@ export function FormError({ error, message }: FormErrorProps) {
 
   return (
     <div
-      className="border-destructive/30 bg-destructive/10 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2 text-sm"
+      className="border-destructive-border bg-destructive-subtle text-destructive flex items-start gap-2 rounded-md border px-3 py-2 text-sm"
       role="alert"
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

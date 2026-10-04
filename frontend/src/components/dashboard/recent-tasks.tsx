@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/format";
+import { toneTextClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import type { DashboardRecentTask } from "@/types/dashboard";
 import type { TaskPriority, TaskStatus } from "@/types/task";
@@ -30,10 +31,10 @@ const priorityConfig: Record<
   TaskPriority,
   { className: string; label: string }
 > = {
-  high: { className: "text-orange-700", label: "Haute" },
-  low: { className: "text-slate-600", label: "Basse" },
-  medium: { className: "text-blue-700", label: "Moyenne" },
-  urgent: { className: "text-rose-700", label: "Urgente" },
+  high: { className: toneTextClasses.warning, label: "Haute" },
+  low: { className: toneTextClasses.neutral, label: "Basse" },
+  medium: { className: toneTextClasses.info, label: "Moyenne" },
+  urgent: { className: toneTextClasses.danger, label: "Urgente" },
 };
 
 type RecentTasksProps = {

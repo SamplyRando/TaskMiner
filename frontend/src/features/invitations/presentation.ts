@@ -1,3 +1,4 @@
+import { toneBadgeClasses } from "@/lib/tones";
 import type {
   InvitationDeliveryStatus,
   InvitationStatus,
@@ -20,10 +21,10 @@ export const invitationStatusLabels: Record<InvitationStatus, string> = {
 };
 
 export const invitationStatusClasses: Record<InvitationStatus, string> = {
-  pending: "border-amber-200 bg-amber-50 text-amber-800",
-  accepted: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  expired: "border-slate-200 bg-slate-100 text-slate-700",
-  revoked: "border-rose-200 bg-rose-50 text-rose-800",
+  pending: toneBadgeClasses.warning,
+  accepted: toneBadgeClasses.success,
+  expired: toneBadgeClasses.neutral,
+  revoked: toneBadgeClasses.danger,
 };
 
 export const invitationDeliveryLabels: Record<
@@ -40,10 +41,10 @@ export const invitationDeliveryClasses: Record<
   InvitationDeliveryStatus,
   string
 > = {
-  pending: "border-amber-200 bg-amber-50 text-amber-800",
-  sent: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  failed: "border-rose-200 bg-rose-50 text-rose-800",
-  skipped: "border-slate-200 bg-slate-100 text-slate-700",
+  pending: toneBadgeClasses.warning,
+  sent: toneBadgeClasses.success,
+  failed: toneBadgeClasses.danger,
+  skipped: toneBadgeClasses.neutral,
 };
 
 export const getInviterLabel = (invitation: WorkspaceInvitation): string =>

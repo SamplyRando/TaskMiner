@@ -1,3 +1,4 @@
+import { toneBadgeClasses, type Tone } from "@/lib/tones";
 import type { ProjectTaskStatus } from "@/types/project";
 import type { Task, TaskPriority, TaskStatus } from "@/types/task";
 
@@ -14,18 +15,32 @@ export const taskPriorityLabels: Record<TaskPriority, string> = {
   urgent: "Urgente",
 };
 
-export const taskPriorityClasses: Record<TaskPriority, string> = {
-  high: "border-orange-200 bg-orange-50 text-orange-700",
-  low: "border-slate-200 bg-slate-50 text-slate-600",
-  medium: "border-blue-200 bg-blue-50 text-blue-700",
-  urgent: "border-red-200 bg-red-50 text-red-700",
+export const taskPriorityTones: Record<TaskPriority, Tone> = {
+  high: "warning",
+  low: "neutral",
+  medium: "info",
+  urgent: "danger",
 };
 
-export const taskStatusClasses: Record<string, string> = {
-  done: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  in_progress: "border-amber-200 bg-amber-50 text-amber-700",
-  todo: "border-violet-200 bg-violet-50 text-violet-700",
+export const taskStatusTones: Record<string, Tone> = {
+  done: "success",
+  in_progress: "info",
+  todo: "neutral",
 };
+
+export const taskPriorityClasses: Record<TaskPriority, string> = {
+  high: toneBadgeClasses[taskPriorityTones.high],
+  low: toneBadgeClasses[taskPriorityTones.low],
+  medium: toneBadgeClasses[taskPriorityTones.medium],
+  urgent: toneBadgeClasses[taskPriorityTones.urgent],
+};
+
+export const taskStatusClasses: Record<string, string> = Object.fromEntries(
+  Object.entries(taskStatusTones).map(([status, tone]) => [
+    status,
+    toneBadgeClasses[tone],
+  ]),
+);
 
 export const getTaskStatusLabel = (
   status: TaskStatus,
@@ -40,9 +55,7 @@ export const getTaskStatusClass = (
   completed = false,
 ): string =>
   taskStatusClasses[status] ??
-  (completed
-    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-    : "border-slate-200 bg-slate-50 text-slate-700");
+  (completed ? toneBadgeClasses.success : toneBadgeClasses.neutral);
 
 export const getTaskStatusLabelFromTask = (task: Task): string =>
   task.status_label ?? getTaskStatusLabel(task.status);

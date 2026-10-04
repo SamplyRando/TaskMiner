@@ -1,3 +1,4 @@
+import { toneBadgeClasses } from "@/lib/tones";
 import type { ActivityEvent } from "@/types/activity";
 
 export type AuditActionPresentation = {
@@ -10,59 +11,59 @@ export const auditActionPresentation: Record<
   AuditActionPresentation
 > = {
   workspace_created: {
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    className: toneBadgeClasses.success,
     label: "Création",
   },
   workspace_updated: {
-    className: "border-violet-200 bg-violet-50 text-violet-800",
+    className: toneBadgeClasses.info,
     label: "Modification",
   },
   project_created: {
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    className: toneBadgeClasses.success,
     label: "Création",
   },
   project_updated: {
-    className: "border-violet-200 bg-violet-50 text-violet-800",
+    className: toneBadgeClasses.info,
     label: "Modification",
   },
   project_deleted: {
-    className: "border-orange-200 bg-orange-50 text-orange-800",
+    className: toneBadgeClasses.danger,
     label: "Suppression",
   },
   task_created: {
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    className: toneBadgeClasses.success,
     label: "Création",
   },
   task_updated: {
-    className: "border-violet-200 bg-violet-50 text-violet-800",
+    className: toneBadgeClasses.info,
     label: "Modification",
   },
   task_deleted: {
-    className: "border-orange-200 bg-orange-50 text-orange-800",
+    className: toneBadgeClasses.danger,
     label: "Suppression",
   },
   task_assigned: {
-    className: "border-violet-200 bg-violet-50 text-violet-800",
+    className: toneBadgeClasses.brand,
     label: "Assignation",
   },
   comment_created: {
-    className: "border-blue-200 bg-blue-50 text-blue-800",
+    className: toneBadgeClasses.neutral,
     label: "Commentaire",
   },
   attachment_uploaded: {
-    className: "border-cyan-200 bg-cyan-50 text-cyan-800",
+    className: toneBadgeClasses.neutral,
     label: "Upload",
   },
   invitation_created: {
-    className: "border-sky-200 bg-sky-50 text-sky-800",
+    className: toneBadgeClasses.neutral,
     label: "Invitation",
   },
   invitation_accepted: {
-    className: "border-sky-200 bg-sky-50 text-sky-800",
+    className: toneBadgeClasses.success,
     label: "Invitation",
   },
   member_role_updated: {
-    className: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    className: toneBadgeClasses.warning,
     label: "Permission",
   },
 };

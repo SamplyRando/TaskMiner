@@ -14,13 +14,13 @@ export function Tooltip({ children, content }: TooltipProps) {
         <TooltipPrimitive.Portal>
           <TooltipPrimitive.Content
             avoidCollisions
-            className="bg-popover text-popover-foreground z-[100] w-max max-w-64 rounded-md border px-2 py-1 text-xs shadow-lg"
+            className="tooltip-content bg-tooltip text-tooltip-foreground shadow-floating z-[100] w-max max-w-64 rounded-sm px-2 py-1 text-xs leading-4 font-medium"
             collisionPadding={12}
             side="top"
-            sideOffset={8}
+            sideOffset={6}
           >
             {content}
-            <TooltipPrimitive.Arrow className="fill-popover" />
+            <TooltipPrimitive.Arrow className="fill-tooltip" />
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>

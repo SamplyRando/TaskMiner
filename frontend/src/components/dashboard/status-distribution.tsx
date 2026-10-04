@@ -15,9 +15,9 @@ const statusConfig: Record<
   LegacyTaskStatus,
   { indicatorClassName: string; label: string }
 > = {
-  done: { indicatorClassName: "bg-emerald-500", label: "Terminées" },
-  in_progress: { indicatorClassName: "bg-blue-500", label: "En cours" },
-  todo: { indicatorClassName: "bg-slate-400", label: "En attente" },
+  done: { indicatorClassName: "bg-chart-3", label: "Terminées" },
+  in_progress: { indicatorClassName: "bg-chart-2", label: "En cours" },
+  todo: { indicatorClassName: "bg-chart-6", label: "En attente" },
 };
 
 type StatusDistributionProps = {

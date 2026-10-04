@@ -21,6 +21,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  chartAxisProps,
+  chartColors,
+  chartGridProps,
+  chartStatusColors,
+  chartTooltipProps,
+} from "@/lib/chart-theme";
 import type {
   DashboardPriorityItem,
   DashboardStatusItem,
@@ -39,12 +46,6 @@ const priorityLabels = {
   low: "Basse",
   medium: "Moyenne",
   urgent: "Urgente",
-} as const;
-
-const statusColors = {
-  done: "#10b981",
-  in_progress: "#3b82f6",
-  todo: "#94a3b8",
 } as const;
 
 type DashboardChartsProps = {
@@ -84,15 +85,18 @@ const TrendChart = memo(function TrendChart({
       <CardContent className="h-72 min-w-0" aria-label={title} role="img">
         <ResponsiveContainer height="100%" width="100%">
           <LineChart data={data} margin={{ left: -20, right: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid {...chartGridProps} />
             <XAxis
+              {...chartAxisProps}
               dataKey="date"
               fontSize={11}
               minTickGap={20}
-              tickLine={false}
             />
-            <YAxis allowDecimals={false} fontSize={12} tickLine={false} />
-            <Tooltip />
+            <YAxis {...chartAxisProps} allowDecimals={false} fontSize={12} />
+            <Tooltip
+              {...chartTooltipProps}
+              cursor={{ stroke: "var(--border-strong)" }}
+            />
             <Line
               dataKey="count"
               dot={false}
@@ -117,7 +121,7 @@ export const DashboardCharts = memo(function DashboardCharts({
   const statusData = useMemo(
     () =>
       statuses.map((item) => ({
-        fill: statusColors[item.status],
+        fill: chartStatusColors[item.status],
         name: statusLabels[item.status],
         value: item.count,
       })),
@@ -144,25 +148,25 @@ export const DashboardCharts = memo(function DashboardCharts({
       </div>
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <TrendChart
-          color="#8b5cf6"
+          color={chartColors.amethyst}
           description="Nouvelles tâches par jour."
           items={trends.task_creations}
           title="Création des tâches"
         />
         <TrendChart
-          color="#10b981"
+          color={chartColors.jade}
           description="Tâches passées au statut terminé."
           items={trends.task_completions}
           title="Tâches terminées"
         />
         <TrendChart
-          color="#f59e0b"
+          color={chartColors.amber}
           description="Volume quotidien des tâches restant à traiter."
           items={trends.backlog}
           title="Évolution du backlog"
         />
         <TrendChart
-          color="#3b82f6"
+          color={chartColors.cobalt}
           description="Nouveaux espaces de travail par jour."
           items={trends.workspace_creations}
           title="Workspaces créés"
@@ -185,8 +189,9 @@ export const DashboardCharts = memo(function DashboardCharts({
                   nameKey="name"
                   outerRadius={82}
                   paddingAngle={3}
+                  stroke="var(--card)"
                 />
-                <Tooltip />
+                <Tooltip {...chartTooltipProps} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -203,13 +208,20 @@ export const DashboardCharts = memo(function DashboardCharts({
           <CardContent className="h-72 min-w-0">
             <ResponsiveContainer height="100%" width="100%">
               <BarChart data={priorityData} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" fontSize={12} tickLine={false} />
-                <YAxis allowDecimals={false} fontSize={12} tickLine={false} />
-                <Tooltip />
+                <CartesianGrid {...chartGridProps} />
+                <XAxis {...chartAxisProps} dataKey="name" fontSize={12} />
+                <YAxis
+                  {...chartAxisProps}
+                  allowDecimals={false}
+                  fontSize={12}
+                />
+                <Tooltip
+                  {...chartTooltipProps}
+                  cursor={{ fill: "var(--muted)" }}
+                />
                 <Bar
                   dataKey="count"
-                  fill="#6366f1"
+                  fill={chartColors.amethyst}
                   isAnimationActive={false}
                   radius={[6, 6, 0, 0]}
                 />

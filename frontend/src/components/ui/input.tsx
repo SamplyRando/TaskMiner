@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes } from "react";
 
+import { fieldClassName } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement>;
@@ -8,7 +9,8 @@ export function Input({ className, type, ...props }: InputProps) {
   return (
     <input
       className={cn(
-        "border-input bg-background placeholder:text-muted-foreground hover:border-ring/40 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:bg-muted/40 flex h-10 w-full rounded-md border px-3 py-2 text-sm shadow-xs transition-[border-color,box-shadow,background-color] disabled:cursor-not-allowed disabled:opacity-60",
+        fieldClassName,
+        "placeholder:text-muted-foreground h-control pointer-coarse:min-h-control-lg flex px-3 py-1.5 file:border-0 file:bg-transparent file:text-sm file:font-medium",
         className,
       )}
       type={type}

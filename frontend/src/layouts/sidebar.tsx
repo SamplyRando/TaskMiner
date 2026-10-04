@@ -74,7 +74,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <button
         aria-label="Fermer la navigation"
         className={cn(
-          "fixed inset-0 z-30 bg-slate-950/50 transition-opacity lg:hidden",
+          "bg-scrim fixed inset-0 z-30 transition-opacity lg:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={onClose}

@@ -34,14 +34,7 @@ export function AuditDetailDialog({
                 <Badge variant="outline">
                   {activityResourceLabels[log.resource]}
                 </Badge>
-                <Badge
-                  className={
-                    log.success
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                      : "border-red-200 bg-red-50 text-red-800"
-                  }
-                  variant="outline"
-                >
+                <Badge variant={log.success ? "success" : "destructive"}>
                   {log.success ? (
                     <ShieldCheck aria-hidden="true" className="mr-1 size-3.5" />
                   ) : (
@@ -67,7 +60,7 @@ export function AuditDetailDialog({
                 <h3 className="mb-2 font-semibold" id="audit-before-title">
                   Avant
                 </h3>
-                <div className="min-h-28 rounded-lg border border-rose-200 bg-rose-50/50 p-3">
+                <div className="border-destructive-border bg-destructive-subtle/60 min-h-28 rounded-lg border p-3">
                   <JsonValueView value={log.old_values} />
                 </div>
               </section>
@@ -80,7 +73,7 @@ export function AuditDetailDialog({
                 <h3 className="mb-2 font-semibold" id="audit-after-title">
                   Après
                 </h3>
-                <div className="min-h-28 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+                <div className="border-success-border bg-success-subtle/60 min-h-28 rounded-lg border p-3">
                   <JsonValueView value={log.new_values} />
                 </div>
               </section>

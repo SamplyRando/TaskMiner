@@ -22,7 +22,15 @@ export function TableHeader({
   className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn("[&_tr]:border-b", className)} {...props} />;
+  return (
+    <thead
+      className={cn(
+        "bg-surface-sunken [&_tr]:border-b [&_tr]:hover:bg-transparent",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function TableBody({
@@ -41,7 +49,7 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        "hover:bg-muted/50 focus-within:bg-muted/40 border-b transition-colors",
+        "hover:bg-accent/50 focus-within:bg-accent/40 border-b transition-colors duration-150",
         className,
       )}
       {...props}
@@ -56,7 +64,7 @@ export function TableHead({
   return (
     <th
       className={cn(
-        "text-muted-foreground h-11 px-4 text-left align-middle font-medium whitespace-nowrap",
+        "text-muted-foreground h-10 px-4 text-left align-middle font-medium whitespace-nowrap",
         className,
       )}
       {...props}

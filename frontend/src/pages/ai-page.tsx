@@ -208,7 +208,7 @@ export function AIPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[96rem] space-y-8">
+    <div className="brand-scope mx-auto w-full max-w-[96rem] space-y-8">
       <EntityPageHeader
         actions={
           <p className="text-muted-foreground text-xs">

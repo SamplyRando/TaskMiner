@@ -10,7 +10,7 @@ export function Skeleton({
     <div
       aria-hidden="true"
       className={cn(
-        "skeleton-shimmer bg-muted relative animate-pulse overflow-hidden rounded-md",
+        "skeleton-shimmer bg-muted relative animate-pulse overflow-hidden rounded-sm",
         className,
       )}
       {...props}

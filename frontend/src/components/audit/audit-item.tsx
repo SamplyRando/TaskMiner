@@ -48,14 +48,7 @@ export const AuditItem = memo(function AuditItem({
           <Badge variant="outline">
             {activityResourceLabels[auditLog.resource]}
           </Badge>
-          <Badge
-            className={
-              auditLog.success
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-red-200 bg-red-50 text-red-800"
-            }
-            variant="outline"
-          >
+          <Badge variant={auditLog.success ? "success" : "destructive"}>
             <ResultIcon aria-hidden="true" className="mr-1 size-3.5" />
             {auditLog.success ? "Succès" : "Échec"}
           </Badge>

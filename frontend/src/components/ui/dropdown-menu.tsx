@@ -9,11 +9,11 @@ export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuContent = React.forwardRef<
   React.ComponentRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 8, ...props }, ref) => (
+>(({ className, sideOffset = 6, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       className={cn(
-        "dropdown-content bg-popover text-popover-foreground z-50 min-w-56 overflow-hidden rounded-lg border p-1 shadow-xl",
+        "dropdown-content bg-popover text-popover-foreground rounded-floating shadow-floating z-50 min-w-56 overflow-hidden border p-1",
         className,
       )}
       ref={ref}
@@ -42,7 +42,7 @@ export const DropdownMenuItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     className={cn(
-      "focus:bg-accent focus:text-accent-foreground relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm outline-hidden transition-colors select-none data-disabled:pointer-events-none data-disabled:cursor-not-allowed data-disabled:opacity-50",
+      "focus:bg-accent focus:text-accent-foreground relative flex min-h-8 cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors duration-150 select-none data-disabled:pointer-events-none data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-10",
       className,
     )}
     ref={ref}
@@ -56,7 +56,7 @@ export const DropdownMenuSeparator = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Separator
-    className={cn("bg-muted -mx-1 my-1 h-px", className)}
+    className={cn("bg-border -mx-1 my-1 h-px", className)}
     ref={ref}
     {...props}
   />

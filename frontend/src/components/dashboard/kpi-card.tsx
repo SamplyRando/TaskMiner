@@ -15,11 +15,11 @@ type KpiCardProps = {
 };
 
 const colorClasses: Record<KpiCardProps["color"], string> = {
-  amber: "text-amber-600 dark:text-amber-400",
-  blue: "text-blue-600 dark:text-blue-400",
-  emerald: "text-emerald-600 dark:text-emerald-400",
-  rose: "text-rose-600 dark:text-rose-400",
-  violet: "text-violet-600 dark:text-violet-400",
+  amber: "text-warning",
+  blue: "text-info",
+  emerald: "text-success",
+  rose: "text-destructive",
+  violet: "text-brand",
 };
 
 export const KpiCard = memo(function KpiCard({
@@ -62,8 +62,8 @@ export const KpiCard = memo(function KpiCard({
               variation === null || variation === undefined
                 ? "text-muted-foreground"
                 : variation >= 0
-                  ? "text-emerald-700"
-                  : "text-rose-700",
+                  ? "text-success"
+                  : "text-destructive",
             )}
           >
             {variation !== null && variation !== undefined ? (

@@ -18,17 +18,12 @@ export function AuditLiveBadge({ status }: AuditLiveBadgeProps) {
   return (
     <Badge
       aria-label={`Statut du journal d’audit : ${label}`}
-      className={
-        isLive
-          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-          : "border-amber-200 bg-amber-50 text-amber-800"
-      }
       role="status"
-      variant="outline"
+      variant={isLive ? "success" : "warning"}
     >
       <span
         aria-hidden="true"
-        className={`mr-1.5 size-2 rounded-full ${isLive ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`}
+        className={`mr-0.5 size-2 rounded-full ${isLive ? "bg-success" : "bg-warning"}`}
       />
       {label}
     </Badge>

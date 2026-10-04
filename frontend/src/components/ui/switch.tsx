@@ -18,8 +18,10 @@ export function Switch({
     <button
       aria-checked={checked}
       className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent shadow-inner transition-[background-color,box-shadow] hover:shadow-md",
-        checked ? "bg-primary" : "bg-input",
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-150",
+        checked
+          ? "bg-primary hover:bg-primary/90"
+          : "bg-input hover:bg-input-hover",
         disabled && "cursor-not-allowed opacity-50",
         className,
       )}
@@ -34,8 +36,10 @@ export function Switch({
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none block size-5 rounded-full bg-white shadow transition-transform duration-200",
-          checked ? "translate-x-5" : "translate-x-0",
+          "ease-standard pointer-events-none block size-5 rounded-full shadow-xs transition-transform duration-150",
+          checked
+            ? "bg-primary-foreground translate-x-5"
+            : "bg-switch-thumb translate-x-0",
         )}
       />
     </button>

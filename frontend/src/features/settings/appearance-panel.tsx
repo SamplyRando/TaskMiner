@@ -17,10 +17,26 @@ const accents: {
   label: string;
   className: string;
 }[] = [
-  { value: "violet", label: "Violet", className: "bg-violet-600" },
-  { value: "blue", label: "Bleu", className: "bg-blue-600" },
-  { value: "green", label: "Vert", className: "bg-emerald-600" },
-  { value: "orange", label: "Orange", className: "bg-orange-600" },
+  {
+    value: "violet",
+    label: "Violet",
+    className: "bg-(--accent-violet) text-(--accent-violet-foreground)",
+  },
+  {
+    value: "blue",
+    label: "Bleu",
+    className: "bg-(--accent-blue) text-(--accent-blue-foreground)",
+  },
+  {
+    value: "green",
+    label: "Vert",
+    className: "bg-(--accent-green) text-(--accent-green-foreground)",
+  },
+  {
+    value: "orange",
+    label: "Orange",
+    className: "bg-(--accent-orange) text-(--accent-orange-foreground)",
+  },
 ];
 
 type AppearancePanelProps = {
@@ -82,7 +98,7 @@ export function AppearancePanel({
               >
                 <span
                   className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-white",
+                    "flex size-7 items-center justify-center rounded-full",
                     accent.className,
                   )}
                 >

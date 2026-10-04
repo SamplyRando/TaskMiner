@@ -45,7 +45,7 @@ export function BrandLogo({
     <Link
       aria-label="TaskMiner — Accueil"
       className={cn(
-        "text-primary inline-flex items-center gap-2.5 rounded-lg font-extrabold tracking-tight",
+        "text-brand-solid inline-flex items-center gap-2.5 rounded-lg font-extrabold tracking-tight",
         className,
       )}
       onClick={onClick}
