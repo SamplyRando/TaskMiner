@@ -12,13 +12,18 @@ def test_create_project_for_authenticated_user(
     response = client.post(
         "/api/v1/projects",
         headers=user.headers,
-        json={"name": "New project", "description": "Project description"},
+        json={
+            "name": "New project",
+            "description": "Project description",
+            "due_date": "2030-01-05T00:00:00Z",
+        },
     )
 
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "New project"
     assert data["description"] == "Project description"
+    assert data["due_date"] == "2030-01-05T00:00:00Z"
     assert UUID(data["owner_id"]) == user.id
 
 
@@ -71,6 +76,32 @@ def test_update_project(
     assert data["name"] == "Updated project"
     assert data["description"] is None
     assert UUID(data["owner_id"]) == project.owner.id
+
+
+def test_project_due_date_is_nullable_and_can_be_updated(
+    client: TestClient,
+    project: CreatedProject,
+) -> None:
+    initial = client.get(
+        f"/api/v1/projects/{project.id}",
+        headers=project.owner.headers,
+    )
+    updated = client.patch(
+        f"/api/v1/projects/{project.id}",
+        headers=project.owner.headers,
+        json={"due_date": "2030-12-31T00:00:00Z"},
+    )
+    cleared = client.patch(
+        f"/api/v1/projects/{project.id}",
+        headers=project.owner.headers,
+        json={"due_date": None},
+    )
+
+    assert initial.json()["due_date"] is None
+    assert updated.status_code == 200
+    assert updated.json()["due_date"] == "2030-12-31T00:00:00Z"
+    assert cleared.status_code == 200
+    assert cleared.json()["due_date"] is None
 
 
 def test_delete_project(

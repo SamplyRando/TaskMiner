@@ -202,12 +202,14 @@ describe("ProjectsPage", () => {
       screen.getByRole("textbox", { name: "Nom" }),
       "Projet Beta",
     );
+    await user.type(screen.getByLabelText("Échéance"), "2030-12-31");
     await user.click(screen.getByRole("button", { name: "Créer" }));
 
     await waitFor(() => {
       expect(mockedCreateProject).toHaveBeenCalledWith(
         {
           description: null,
+          due_date: "2030-12-31T00:00:00.000Z",
           name: "Projet Beta",
         },
         workspaceFixture.id,

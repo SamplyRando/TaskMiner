@@ -22,5 +22,8 @@ export const settingsPreferencesFixture: UserPreferences = {
   notify_audit: true,
   notify_comments: true,
   notify_invitations: true,
+  notify_project_reminders: true,
+  notify_task_reminders: true,
+  reminder_lead_days: 2,
   theme: "system",
 };

@@ -19,6 +19,7 @@ export const workspaceFixture: Workspace = {
 export const projectFixture: Project = {
   created_at: "2026-07-31T08:30:00Z",
   description: "Projet de test",
+  due_date: null,
   id: projectId,
   name: "Projet Alpha",
   owner_id: userId,

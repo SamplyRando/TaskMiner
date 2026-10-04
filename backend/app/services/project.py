@@ -101,16 +101,19 @@ class ProjectService:
         metadata = {"name": project.name}
         if source is not None:
             metadata["source"] = source
+        new_values: dict[str, object] = {
+            "description": project.description,
+            "name": project.name,
+        }
+        if project.due_date is not None:
+            new_values["due_date"] = project.due_date.isoformat()
         return DomainEvent(
             event_type=ActivityEventType.PROJECT_CREATED,
             resource_type=ActivityResourceType.PROJECT,
             workspace_id=workspace.id,
             resource_id=project.id,
             actor_id=actor.id,
-            new_values={
-                "description": project.description,
-                "name": project.name,
-            },
+            new_values=new_values,
             metadata=metadata,
         )
 

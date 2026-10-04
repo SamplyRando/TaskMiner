@@ -348,3 +348,111 @@ def test_notification_failure_does_not_fail_assignment(
 
     assert response.status_code == 200
     assert response.json()["assigned_user_id"] == str(other_user.id)
+
+
+def test_mention_notifies_member_and_suppresses_weaker_assignee_notification(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
+    _assign(client, task, task.project.owner, other_user)
+    response = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{other_user.full_name} merci de vérifier",
+            "mentioned_user_ids": [str(other_user.id), str(other_user.id)],
+        },
+    )
+    assert response.status_code == 201, response.text
+    types = [item["type"] for item in _notifications(client, other_user)]
+    assert types.count("comment_mention") == 1
+    assert "task_commented" not in types
+
+
+def test_self_mention_and_disabled_comment_preference_are_suppressed(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
+    response = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{task.project.owner.full_name}",
+            "mentioned_user_ids": [str(task.project.owner.id)],
+        },
+    )
+    assert response.status_code == 201
+    assert _notifications(client, task.project.owner) == []
+
+    preferences = client.patch(
+        "/api/v1/users/me/preferences",
+        headers=other_user.headers,
+        json={"notify_comments": False},
+    )
+    assert preferences.status_code == 200
+    response = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{other_user.full_name}",
+            "mentioned_user_ids": [str(other_user.id)],
+        },
+    )
+    assert response.status_code == 201
+    assert _notifications(client, other_user) == []
+
+
+def test_comment_edit_only_notifies_new_mentions(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+    user_factory,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    third_user = user_factory.create()
+    for member in (other_user, third_user):
+        workspace_member_factory.create_for_workspace_id(
+            task.project.workspace_id,
+            member,
+        )
+    created = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{other_user.full_name}",
+            "mentioned_user_ids": [str(other_user.id)],
+        },
+    )
+    assert created.status_code == 201
+    comment_id = created.json()["id"]
+    unchanged = client.patch(
+        f"/api/v1/comments/{comment_id}",
+        headers=task.project.owner.headers,
+        json={"mentioned_user_ids": [str(other_user.id)]},
+    )
+    added = client.patch(
+        f"/api/v1/comments/{comment_id}",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{other_user.full_name} @{third_user.full_name}",
+            "mentioned_user_ids": [str(other_user.id), str(third_user.id)],
+        },
+    )
+    assert unchanged.status_code == 200
+    assert added.status_code == 200
+    assert len(_notifications(client, other_user)) == 1
+    assert [item["type"] for item in _notifications(client, third_user)] == [
+        "comment_mention"
+    ]

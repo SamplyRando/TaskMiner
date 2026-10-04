@@ -9,6 +9,15 @@ export function formatDateTime(value: string | null): string {
   }).format(new Date(value));
 }
 
+export function formatDate(value: string | null): string {
+  if (!value) {
+    return "—";
+  }
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
 export function toDateTimeLocal(value: string | null): string {
   if (!value) {
     return "";

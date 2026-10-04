@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import { formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import type { Project } from "@/types/project";
 
 type ProjectColumnActions = {
@@ -18,6 +18,13 @@ export function getProjectColumns({
   onEdit,
 }: ProjectColumnActions): ColumnDef<Project>[] {
   return [
+    {
+      accessorKey: "due_date",
+      enableSorting: false,
+      header: "Échéance",
+      cell: ({ row }) =>
+        row.original.due_date ? formatDate(row.original.due_date) : "—",
+    },
     {
       accessorKey: "name",
       header: ({ column }) => (

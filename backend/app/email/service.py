@@ -157,6 +157,67 @@ class EmailService:
             idempotency_key=idempotency_key,
         )
 
+    def send_due_reminder(
+        self,
+        *,
+        recipient: str,
+        entity_type: str,
+        entity_name: str,
+        workspace_name: str,
+        project_name: str | None,
+        due_at: datetime,
+        idempotency_key: str,
+    ) -> EmailDeliveryResult:
+        """Send one concise task or project due-date reminder."""
+
+        is_task = entity_type == "task"
+        entity_label = "tâche" if is_task else "projet"
+        heading = f"Échéance de {entity_label} à venir"
+        due_date = due_at.astimezone(timezone.utc).strftime("%d/%m/%Y à %H:%M UTC")
+        destination = "/app/tasks" if is_task else "/app/projects"
+        action_url = f"{self.frontend_url}{destination}"
+        context = f"Workspace : {workspace_name}"
+        if project_name is not None:
+            context += f" · Projet : {project_name}"
+        safe_heading = escape(heading)
+        safe_entity = escape(entity_name)
+        safe_context = escape(context)
+        safe_due_date = escape(due_date)
+        safe_url = escape(action_url, quote=True)
+        html = f"""<!doctype html>
+<html lang="fr">
+  <body style="margin:0;background:#0b0b10;color:#f7f7fb;font-family:Arial,sans-serif">
+    <div style="max-width:600px;margin:0 auto;padding:40px 24px">
+      <p style="margin:0 0 28px;color:#a78bfa;font-size:18px;font-weight:700">TaskMiner</p>
+      <div style="border:1px solid #2a2735;border-radius:16px;background:#14131a;padding:32px">
+        <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25">{safe_heading}</h1>
+        <p style="margin:0 0 12px;color:#f7f7fb;line-height:1.6"><strong>{safe_entity}</strong></p>
+        <p style="margin:0 0 12px;color:#c9c6d4;line-height:1.6">{safe_context}</p>
+        <p style="margin:0 0 24px;color:#c9c6d4;line-height:1.6">Échéance : {safe_due_date}</p>
+        <p style="margin:0">
+          <a href="{safe_url}" style="display:inline-block;border-radius:10px;background:#7c3aed;color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">
+            Ouvrir TaskMiner
+          </a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>"""
+        text = (
+            f"TaskMiner\n\n{heading}\n\n{entity_name}\n{context}\n"
+            f"Échéance : {due_date}\n\nOuvrir TaskMiner : {action_url}"
+        )
+        return self.provider.send(
+            EmailMessage(
+                sender=self.sender,
+                recipient=recipient,
+                subject=f"TaskMiner — {heading}",
+                html=html,
+                text=text,
+                idempotency_key=idempotency_key,
+            )
+        )
+
     def _send_account_action(
         self,
         *,

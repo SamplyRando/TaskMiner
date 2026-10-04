@@ -30,6 +30,7 @@ class ProjectRepository:
         project = Project(
             name=data.name,
             description=data.description,
+            due_date=data.due_date,
             workspace_id=workspace.id,
         )
         self.session.add(project)
@@ -217,7 +218,7 @@ class ProjectRepository:
 
     def update(self, project: Project, data: ProjectUpdate) -> Project:
         updates = data.model_dump(exclude_unset=True)
-        for field in ("name", "description"):
+        for field in ("name", "description", "due_date"):
             if field in updates:
                 setattr(project, field, updates[field])
 

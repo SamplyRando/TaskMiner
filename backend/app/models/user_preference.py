@@ -47,6 +47,10 @@ class UserPreference(TimestampMixin, Base):
             "dashboard_period IN (7, 30, 90)",
             name="ck_user_preferences_dashboard_period",
         ),
+        CheckConstraint(
+            "reminder_lead_days IN (1, 2, 3, 7)",
+            name="ck_user_preferences_reminder_lead_days",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -117,6 +121,15 @@ class UserPreference(TimestampMixin, Base):
     )
     notify_assignments: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    notify_task_reminders: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    notify_project_reminders: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    reminder_lead_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=2, server_default=text("2")
     )
 
     user: Mapped[User] = relationship(back_populates="preferences")

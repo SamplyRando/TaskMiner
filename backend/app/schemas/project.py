@@ -10,6 +10,7 @@ class ProjectCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5_000)
+    due_date: datetime | None = None
 
 
 class ProjectUpdate(BaseModel):
@@ -17,6 +18,7 @@ class ProjectUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=5_000)
+    due_date: datetime | None = None
 
 
 class ProjectListParams(BaseModel):
@@ -42,6 +44,7 @@ class ProjectRead(BaseModel):
     id: UUID
     name: str
     description: str | None
+    due_date: datetime | None
     owner_id: UUID
     workspace_id: UUID
     created_at: datetime

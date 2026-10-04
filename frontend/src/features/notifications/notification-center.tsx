@@ -47,6 +47,12 @@ export function NotificationCenter({
     if (notification.entity_type === "task" && notification.entity_id) {
       onWorkspaceChange(notification.workspace_id);
       void navigate("/app/tasks");
+    } else if (
+      notification.entity_type === "project" &&
+      notification.entity_id
+    ) {
+      onWorkspaceChange(notification.workspace_id);
+      void navigate("/app/projects");
     }
   };
 

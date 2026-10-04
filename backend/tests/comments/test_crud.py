@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.models.comment import Comment
 from app.models.task import Task
-from tests.factories import CommentFactory, CreatedComment, CreatedTask, TaskFactory
+from tests.factories import (
+    CommentFactory,
+    CreatedComment,
+    CreatedTask,
+    RegisteredUser,
+    TaskFactory,
+    WorkspaceMemberFactory,
+)
 
 
 def test_create_comment_records_authenticated_author(
@@ -161,3 +168,47 @@ def test_physical_task_deletion_cascades_to_comments(
     database_session.commit()
 
     assert database_session.get(Comment, comment.id) is None
+
+
+def test_comment_mentions_are_validated_and_do_not_expose_email(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+    workspace_member_factory: WorkspaceMemberFactory,
+) -> None:
+    workspace_member_factory.create_for_workspace_id(
+        task.project.workspace_id,
+        other_user,
+    )
+    response = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": f"@{other_user.full_name} pouvez-vous vérifier ?",
+            "mentioned_user_ids": [str(other_user.id), str(other_user.id)],
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["mentions"] == [
+        {"user_id": str(other_user.id), "display_name": other_user.full_name}
+    ]
+    assert other_user.email not in response.text
+
+
+def test_comment_rejects_mention_outside_workspace(
+    client: TestClient,
+    task: CreatedTask,
+    other_user: RegisteredUser,
+) -> None:
+    response = client.post(
+        f"/api/v1/tasks/{task.id}/comments",
+        headers=task.project.owner.headers,
+        json={
+            "content": "Mention invalide",
+            "mentioned_user_ids": [str(other_user.id)],
+        },
+    )
+    assert response.status_code == 422
+    assert (
+        response.json()["detail"] == "Only active workspace members can be mentioned."
+    )

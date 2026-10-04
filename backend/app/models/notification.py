@@ -23,10 +23,14 @@ from app.database.database import Base
 class NotificationType(str, Enum):
     TASK_ASSIGNED = "task_assigned"
     TASK_COMMENTED = "task_commented"
+    COMMENT_MENTION = "comment_mention"
+    TASK_DUE_REMINDER = "task_due_reminder"
+    PROJECT_DUE_REMINDER = "project_due_reminder"
 
 
 class NotificationEntityType(str, Enum):
     TASK = "task"
+    PROJECT = "project"
 
 
 class Notification(Base):

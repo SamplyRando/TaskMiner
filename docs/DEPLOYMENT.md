@@ -247,6 +247,20 @@ alembic current
 Ne jamais lancer `alembic downgrade` en production sans sauvegarde et procédure
 de retour arrière validée.
 
+### Rappels d’échéance planifiés
+
+Créer dans Railway un service Cron utilisant la même image backend et les mêmes
+variables de base de données et d’e-mail que l’API. Programmer une exécution
+horaire avec la commande suivante depuis le répertoire backend :
+
+```bash
+python -m app.commands.send_due_reminders
+```
+
+Le scan est idempotent et peut être relancé : la base déduplique chaque rappel
+par destinataire, entité, échéance et délai configuré. Aucun endpoint public ni
+secret supplémentaire n’est nécessaire.
+
 ## 5. URLs de production
 
 Remplacer les valeurs après la création des services :

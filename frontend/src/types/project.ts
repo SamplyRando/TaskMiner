@@ -4,6 +4,7 @@ export type Project = {
   id: string;
   name: string;
   description: string | null;
+  due_date: string | null;
   owner_id: string;
   workspace_id: string;
   created_at: string;
@@ -13,6 +14,7 @@ export type Project = {
 export type ProjectInput = {
   name: string;
   description: string | null;
+  due_date: string | null;
 };
 
 export type ProjectSort =

@@ -21,14 +21,15 @@ class NotificationService:
     def __init__(self, repository: NotificationRepository) -> None:
         self.repository = repository
 
-    def handle_domain_event(self, event: DomainEvent) -> Notification | None:
+    def handle_domain_event(self, event: DomainEvent) -> list[Notification]:
         if not event.success:
-            return None
+            return []
         if event.event_type == ActivityEventType.TASK_ASSIGNED:
-            return self._handle_task_assigned(event)
+            notification = self._handle_task_assigned(event)
+            return [notification] if notification is not None else []
         if event.event_type == ActivityEventType.COMMENT_CREATED:
             return self._handle_comment_created(event)
-        return None
+        return []
 
     def list_notifications(
         self,
@@ -100,28 +101,38 @@ class NotificationService:
             created_at=event.occurred_at,
         )
 
-    def _handle_comment_created(self, event: DomainEvent) -> Notification | None:
+    def _handle_comment_created(self, event: DomainEvent) -> list[Notification]:
         task_id = self._metadata_uuid(event, "task_id")
         if task_id is None:
-            return None
+            return []
+        mentioned_user_ids = self._metadata_uuids(event, "mentioned_user_ids")
+        notifications = self.notify_comment_mentions(
+            workspace_id=event.workspace_id,
+            task_id=task_id,
+            actor_id=event.actor_id,
+            mentioned_user_ids=mentioned_user_ids,
+            source_event_id=event.id,
+            created_at=event.occurred_at,
+        )
         task = self.repository.get_active_task(event.workspace_id, task_id)
         if (
             task is None
             or task.assigned_user_id is None
             or task.assigned_user_id == event.actor_id
+            or task.assigned_user_id in mentioned_user_ids
         ):
-            return None
+            return notifications
         recipient = self.repository.get_active_workspace_user(
             event.workspace_id,
             task.assigned_user_id,
         )
         if recipient is None:
-            return None
+            return notifications
         preferences = self.repository.get_preferences(recipient.id)
         if preferences is not None and not preferences.notify_comments:
-            return None
+            return notifications
         actor_name = self._actor_name(event.workspace_id, event.actor_id)
-        return self.repository.create_if_absent(
+        notification = self.repository.create_if_absent(
             workspace_id=event.workspace_id,
             recipient_user_id=recipient.id,
             actor_user_id=event.actor_id,
@@ -133,6 +144,56 @@ class NotificationService:
             source_event_id=event.id,
             created_at=event.occurred_at,
         )
+        if notification is not None:
+            notifications.append(notification)
+        return notifications
+
+    def notify_comment_mentions(
+        self,
+        *,
+        workspace_id: UUID,
+        task_id: UUID,
+        actor_id: UUID | None,
+        mentioned_user_ids: set[UUID],
+        source_event_id: UUID,
+        created_at: datetime | None = None,
+    ) -> list[Notification]:
+        """Create one stronger mention notification per valid recipient."""
+
+        task = self.repository.get_active_task(workspace_id, task_id)
+        if task is None:
+            return []
+        actor_name = self._actor_name(workspace_id, actor_id)
+        notifications: list[Notification] = []
+        for recipient_id in mentioned_user_ids:
+            if recipient_id == actor_id:
+                continue
+            recipient = self.repository.get_active_workspace_user(
+                workspace_id,
+                recipient_id,
+            )
+            if recipient is None:
+                continue
+            preferences = self.repository.get_preferences(recipient.id)
+            if preferences is not None and not preferences.notify_comments:
+                continue
+            notification = self.repository.create_if_absent(
+                workspace_id=workspace_id,
+                recipient_user_id=recipient.id,
+                actor_user_id=actor_id,
+                notification_type=NotificationType.COMMENT_MENTION.value,
+                title="Vous avez été mentionné",
+                message=(
+                    f"{actor_name} vous a mentionné dans la tâche « {task.title} »."
+                ),
+                entity_type=NotificationEntityType.TASK.value,
+                entity_id=task.id,
+                source_event_id=source_event_id,
+                created_at=created_at or datetime.now(timezone.utc),
+            )
+            if notification is not None:
+                notifications.append(notification)
+        return notifications
 
     def _get_notification(
         self,
@@ -158,6 +219,17 @@ class NotificationService:
     @staticmethod
     def _metadata_uuid(event: DomainEvent, key: str) -> UUID | None:
         return NotificationService._parse_uuid(event.metadata.get(key))
+
+    @staticmethod
+    def _metadata_uuids(event: DomainEvent, key: str) -> set[UUID]:
+        raw = event.metadata.get(key)
+        if not isinstance(raw, list):
+            return set()
+        return {
+            parsed
+            for value in raw
+            if (parsed := NotificationService._parse_uuid(value)) is not None
+        }
 
     @staticmethod
     def _value_uuid(values: dict[str, object] | None, key: str) -> UUID | None:

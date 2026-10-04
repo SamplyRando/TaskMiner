@@ -5,7 +5,11 @@ from fastapi import APIRouter, HTTPException, status
 from app.api.deps import CommentServiceDep, CurrentUserDep
 from app.models.comment import Comment
 from app.schemas.comment import CommentCreate, CommentRead, CommentUpdate
-from app.services.comment import CommentNotFoundError, CommentTaskNotFoundError
+from app.services.comment import (
+    CommentMentionInvalidError,
+    CommentNotFoundError,
+    CommentTaskNotFoundError,
+)
 from app.services.permission import PermissionDeniedError
 
 
@@ -35,6 +39,11 @@ def create_comment(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
+        ) from exc
+    except CommentMentionInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Only active workspace members can be mentioned.",
         ) from exc
 
 
@@ -89,6 +98,11 @@ def update_comment(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions.",
+        ) from exc
+    except CommentMentionInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Only active workspace members can be mentioned.",
         ) from exc
 
 

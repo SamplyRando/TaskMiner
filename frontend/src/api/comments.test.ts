@@ -15,6 +15,7 @@ const comment: TaskComment = {
   content: "Premier commentaire",
   created_at: "2026-10-03T10:00:00Z",
   id: "comment-1",
+  mentions: [],
   task_id: "task-1",
   updated_at: "2026-10-03T10:00:00Z",
 };

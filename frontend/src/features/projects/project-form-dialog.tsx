@@ -42,7 +42,7 @@ export function ProjectFormDialog({
 }: ProjectFormDialogProps) {
   const isEditing = Boolean(project);
   const form = useForm<ProjectFormValues>({
-    defaultValues: { description: "", name: "" },
+    defaultValues: { description: "", due_date: "", name: "" },
     mode: "onChange",
     resolver: zodResolver(projectFormSchema),
   });
@@ -51,6 +51,7 @@ export function ProjectFormDialog({
     if (open) {
       form.reset({
         description: project?.description ?? "",
+        due_date: project?.due_date?.slice(0, 10) ?? "",
         name: project?.name ?? "",
       });
     }
@@ -59,6 +60,9 @@ export function ProjectFormDialog({
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit({
       description: values.description.trim() || null,
+      due_date: values.due_date
+        ? new Date(`${values.due_date}T00:00:00.000Z`).toISOString()
+        : null,
       name: values.name.trim(),
     });
   });
@@ -93,6 +97,17 @@ export function ProjectFormDialog({
                 {form.formState.errors.name.message}
               </p>
             ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="project-due-date">
+              Échéance
+            </label>
+            <Input
+              id="project-due-date"
+              type="date"
+              {...form.register("due_date")}
+            />
           </div>
 
           <div className="space-y-2">

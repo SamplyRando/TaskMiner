@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+import { CommentMentionEditor } from "@/features/comments/comment-mention-editor";
 import {
   useCreateComment,
   useDeleteComment,
@@ -21,6 +21,7 @@ import {
 } from "@/features/comments/hooks";
 import { formatDateTime } from "@/lib/format";
 import type { Task } from "@/types/task";
+import type { AssignableWorkspaceMember } from "@/types/workspace";
 
 const getCommentErrorMessage = (error: unknown): string => {
   if (!(error instanceof ApiError)) {
@@ -41,6 +42,9 @@ const getCommentErrorMessage = (error: unknown): string => {
 type TaskCommentsDialogProps = {
   canManage: boolean;
   currentUserId: string;
+  members?: AssignableWorkspaceMember[];
+  membersError?: unknown;
+  membersLoading?: boolean;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   task: Task | null;
@@ -49,13 +53,20 @@ type TaskCommentsDialogProps = {
 export function TaskCommentsDialog({
   canManage,
   currentUserId,
+  members = [],
+  membersError,
+  membersLoading = false,
   onOpenChange,
   open,
   task,
 }: TaskCommentsDialogProps) {
   const [content, setContent] = useState("");
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [editMentionedUserIds, setEditMentionedUserIds] = useState<string[]>(
+    [],
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const comments = useTaskComments(task?.id, open);
@@ -67,8 +78,10 @@ export function TaskCommentsDialog({
 
   const resetActions = () => {
     setContent("");
+    setMentionedUserIds([]);
     setEditingId(null);
     setEditContent("");
+    setEditMentionedUserIds([]);
     setDeletingId(null);
     setNotice(null);
     createComment.reset();
@@ -89,10 +102,11 @@ export function TaskCommentsDialog({
     createComment.reset();
     try {
       await createComment.mutateAsync({
-        data: { content: nextContent },
+        data: { content: nextContent, mentioned_user_ids: mentionedUserIds },
         taskId: task.id,
       });
       setContent("");
+      setMentionedUserIds([]);
       setNotice("Commentaire ajouté.");
     } catch {
       // React Query exposes the normalized error below the form.
@@ -107,11 +121,15 @@ export function TaskCommentsDialog({
     try {
       await updateComment.mutateAsync({
         commentId,
-        data: { content: nextContent },
+        data: {
+          content: nextContent,
+          mentioned_user_ids: editMentionedUserIds,
+        },
         taskId: task.id,
       });
       setEditingId(null);
       setEditContent("");
+      setEditMentionedUserIds([]);
       setNotice("Commentaire modifié.");
     } catch {
       // React Query exposes the normalized error below the list.
@@ -159,16 +177,25 @@ export function TaskCommentsDialog({
             >
               Ajouter un commentaire
             </label>
-            <Textarea
+            <CommentMentionEditor
               id="task-comment-content"
-              maxLength={2000}
-              onChange={(event) => {
-                setContent(event.target.value);
-              }}
-              placeholder="Écrire un commentaire…"
-              rows={3}
+              label="Ajouter un commentaire"
+              members={members}
+              mentionedUserIds={mentionedUserIds}
+              onMentionedUserIdsChange={setMentionedUserIds}
+              onValueChange={setContent}
               value={content}
             />
+            {membersLoading ? (
+              <p className="text-muted-foreground text-xs">
+                Chargement des membres mentionnables…
+              </p>
+            ) : null}
+            {membersError ? (
+              <p className="text-destructive text-xs">
+                Impossible de charger les membres mentionnables.
+              </p>
+            ) : null}
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground text-xs">
                 {content.length}/2000
@@ -238,6 +265,11 @@ export function TaskCommentsDialog({
                               setDeletingId(null);
                               setEditingId(comment.id);
                               setEditContent(comment.content);
+                              setEditMentionedUserIds(
+                                comment.mentions.map(
+                                  (mention) => mention.user_id,
+                                ),
+                              );
                             }}
                             size="icon"
                             type="button"
@@ -266,14 +298,13 @@ export function TaskCommentsDialog({
 
                     {isEditing ? (
                       <div className="space-y-2">
-                        <Textarea
-                          aria-label="Contenu du commentaire"
-                          autoFocus
-                          maxLength={2000}
-                          onChange={(event) => {
-                            setEditContent(event.target.value);
-                          }}
-                          rows={3}
+                        <CommentMentionEditor
+                          id={`comment-${comment.id}-content`}
+                          label="Contenu du commentaire"
+                          members={members}
+                          mentionedUserIds={editMentionedUserIds}
+                          onMentionedUserIdsChange={setEditMentionedUserIds}
+                          onValueChange={setEditContent}
                           value={editContent}
                         />
                         <div className="flex justify-end gap-2">
@@ -282,6 +313,7 @@ export function TaskCommentsDialog({
                             onClick={() => {
                               setEditingId(null);
                               setEditContent("");
+                              setEditMentionedUserIds([]);
                             }}
                             size="sm"
                             type="button"

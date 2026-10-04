@@ -11,7 +11,11 @@ describe("resource form schemas", () => {
       workspaceFormSchema.safeParse({ description: "", name: " " }).success,
     ).toBe(false);
     expect(
-      projectFormSchema.safeParse({ description: "", name: "Projet" }).success,
+      projectFormSchema.safeParse({
+        description: "",
+        due_date: "",
+        name: "Projet",
+      }).success,
     ).toBe(true);
   });
 

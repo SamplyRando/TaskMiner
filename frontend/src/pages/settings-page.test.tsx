@@ -224,6 +224,25 @@ describe("SettingsPage", () => {
     expect(comments).toHaveAttribute("aria-checked", "false");
   });
 
+  it("persists due reminder categories and lead time", async () => {
+    const user = userEvent.setup();
+    renderPage("/app/settings?section=notifications");
+    const taskReminders = await screen.findByRole("switch", {
+      name: "Notifications Échéances des tâches",
+    });
+    await user.click(taskReminders);
+    await user.selectOptions(screen.getByLabelText("Délai des rappels"), "7");
+
+    await waitFor(() => {
+      expect(mockedUpdatePreferences).toHaveBeenCalledWith({
+        notify_task_reminders: false,
+      });
+      expect(mockedUpdatePreferences).toHaveBeenCalledWith({
+        reminder_lead_days: 7,
+      });
+    });
+  });
+
   it("applies theme, accent and reduced motion immediately", async () => {
     const user = userEvent.setup();
     renderPage("/app/settings?section=appearance");

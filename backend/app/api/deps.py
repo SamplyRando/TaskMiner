@@ -330,6 +330,7 @@ def get_comment_service(session: SessionDep) -> CommentService:
             WorkspaceMemberRepository(session),
             workspace_repository,
         ),
+        NotificationService(NotificationRepository(session)),
     )
 
 

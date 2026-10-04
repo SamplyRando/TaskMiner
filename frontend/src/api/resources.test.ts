@@ -99,7 +99,7 @@ describe("resource API clients", () => {
       skip: 0,
       sort: "-created_at",
     } as const;
-    const input = { description: null, name: "Projet Alpha" };
+    const input = { description: null, due_date: null, name: "Projet Alpha" };
 
     await expect(listProjects(params)).resolves.toEqual(page);
     await createProject(input);

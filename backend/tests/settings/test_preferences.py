@@ -21,6 +21,9 @@ def test_preferences_have_production_defaults(
         "notify_invitations": True,
         "notify_comments": True,
         "notify_assignments": True,
+        "notify_task_reminders": True,
+        "notify_project_reminders": True,
+        "reminder_lead_days": 2,
     }
 
 

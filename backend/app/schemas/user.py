@@ -135,6 +135,9 @@ class UserPreferenceUpdate(BaseModel):
     notify_invitations: bool | None = None
     notify_comments: bool | None = None
     notify_assignments: bool | None = None
+    notify_task_reminders: bool | None = None
+    notify_project_reminders: bool | None = None
+    reminder_lead_days: Literal[1, 2, 3, 7] | None = None
 
 
 class UserPreferenceRead(BaseModel):
@@ -150,6 +153,9 @@ class UserPreferenceRead(BaseModel):
     notify_invitations: bool
     notify_comments: bool
     notify_assignments: bool
+    notify_task_reminders: bool
+    notify_project_reminders: bool
+    reminder_lead_days: Literal[1, 2, 3, 7]
 
 
 class DangerConfirmation(BaseModel):

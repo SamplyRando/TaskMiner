@@ -179,4 +179,34 @@ describe("NotificationCenter", () => {
       await screen.findByText("Nouvelle tâche assignée"),
     ).toBeInTheDocument();
   });
+
+  it("renders reminder and mention notification types in the same center", async () => {
+    const user = userEvent.setup();
+    mockedList.mockResolvedValue({
+      ...page,
+      items: [
+        {
+          ...notification,
+          id: "mention",
+          title: "Vous avez été mentionné",
+          type: "comment_mention",
+        },
+        {
+          ...notification,
+          entity_id: "project-id",
+          entity_type: "project",
+          id: "project-reminder",
+          title: "Échéance de projet à venir",
+          type: "project_due_reminder",
+        },
+      ],
+      total: 2,
+    });
+    renderCenter();
+    await user.click(
+      await screen.findByRole("button", { name: "Notifications, 1 non lue" }),
+    );
+    expect(await screen.findByText("Vous avez été mentionné")).toBeVisible();
+    expect(screen.getByText("Échéance de projet à venir")).toBeVisible();
+  });
 });

@@ -295,6 +295,7 @@ describe("TasksPage", () => {
         content: "Commentaire visible",
         created_at: "2026-10-03T10:00:00Z",
         id: "comment-1",
+        mentions: [],
         task_id: taskFixture.id,
         updated_at: "2026-10-03T10:00:00Z",
       },

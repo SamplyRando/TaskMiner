@@ -36,6 +36,9 @@ export type UserPreferences = {
   notify_invitations: boolean;
   notify_comments: boolean;
   notify_assignments: boolean;
+  notify_task_reminders: boolean;
+  notify_project_reminders: boolean;
+  reminder_lead_days: 1 | 2 | 3 | 7;
 };
 
 export type UserPreferenceUpdate = Partial<UserPreferences>;

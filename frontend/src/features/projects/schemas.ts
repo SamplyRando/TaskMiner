@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const projectFormSchema = z.object({
+  due_date: z.string(),
   name: z
     .string()
     .trim()

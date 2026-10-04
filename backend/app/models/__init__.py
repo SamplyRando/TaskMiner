@@ -7,13 +7,14 @@ from app.models.ai_usage_event import AIUsageEvent
 from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.billing_checkout_consent import BillingCheckoutConsent
-from app.models.comment import Comment
+from app.models.comment import Comment, CommentMention
 from app.models.notification import (
     Notification,
     NotificationEntityType,
     NotificationType,
 )
 from app.models.project import Project
+from app.models.reminder_delivery import ReminderDelivery
 from app.models.request_rate_limit_bucket import RequestRateLimitBucket
 from app.models.stripe_webhook_event import StripeWebhookEvent
 from app.models.task import Task, TaskPriority, TaskStatus
@@ -37,10 +38,12 @@ __all__ = [
     "Attachment",
     "BillingCheckoutConsent",
     "Comment",
+    "CommentMention",
     "Notification",
     "NotificationEntityType",
     "NotificationType",
     "Project",
+    "ReminderDelivery",
     "RequestRateLimitBucket",
     "StripeWebhookEvent",
     "Task",

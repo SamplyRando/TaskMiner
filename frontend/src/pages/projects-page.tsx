@@ -250,6 +250,7 @@ export function ProjectsPage() {
           mobileLabels={{
             created_at: "Créé le",
             description: "Description",
+            due_date: "Échéance",
             name: "Projet",
             workspace_name: "Workspace",
           }}

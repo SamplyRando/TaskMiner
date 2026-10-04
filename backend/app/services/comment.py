@@ -1,4 +1,5 @@
-from uuid import UUID
+import logging
+from uuid import UUID, uuid4
 
 from app.core.events import (
     ActivityEventType,
@@ -12,7 +13,11 @@ from app.models.user import User
 from app.repositories.comment import CommentRepository
 from app.repositories.task import TaskRepository
 from app.schemas.comment import CommentCreate, CommentUpdate
+from app.services.notification import NotificationService
 from app.services.permission import PermissionService
+
+
+logger = logging.getLogger(__name__)
 
 
 class CommentTaskNotFoundError(Exception):
@@ -23,6 +28,10 @@ class CommentNotFoundError(Exception):
     """Raised when a comment is inaccessible to the current user."""
 
 
+class CommentMentionInvalidError(Exception):
+    """Raised when a requested mention is not an active workspace member."""
+
+
 class CommentService:
     """Application service for task comment use cases."""
 
@@ -31,10 +40,12 @@ class CommentService:
         repository: CommentRepository,
         task_repository: TaskRepository,
         permission_service: PermissionService,
+        notification_service: NotificationService,
     ) -> None:
         self.repository = repository
         self.task_repository = task_repository
         self.permission_service = permission_service
+        self.notification_service = notification_service
 
     def create_comment(
         self,
@@ -47,7 +58,14 @@ class CommentService:
             author,
             task.project.workspace_id,
         )
-        comment = self.repository.create(task, author, data)
+        mentioned_users = self._validate_mentions(
+            task.project.workspace_id,
+            data.mentioned_user_ids,
+        )
+        comment = self.repository.create(task, author, data, mentioned_users)
+        metadata: dict[str, object] = {"task_id": str(task.id)}
+        if mentioned_users:
+            metadata["mentioned_user_ids"] = [str(user.id) for user in mentioned_users]
         publish(
             DomainEvent(
                 event_type=ActivityEventType.COMMENT_CREATED,
@@ -59,7 +77,7 @@ class CommentService:
                     "content": comment.content,
                     "task_id": str(task.id),
                 },
-                metadata={"task_id": str(task.id)},
+                metadata=metadata,
             )
         )
         return comment
@@ -81,7 +99,32 @@ class CommentService:
         data: CommentUpdate,
     ) -> Comment:
         comment = self._get_authored_comment(author, comment_id)
-        return self.repository.update(comment, data)
+        mentioned_users = None
+        if data.mentioned_user_ids is not None:
+            mentioned_users = self._validate_mentions(
+                comment.task.project.workspace_id,
+                data.mentioned_user_ids,
+            )
+        updated, added_mention_ids = self.repository.update(
+            comment,
+            data,
+            mentioned_users,
+        )
+        if added_mention_ids:
+            try:
+                self.notification_service.notify_comment_mentions(
+                    workspace_id=comment.task.project.workspace_id,
+                    task_id=comment.task_id,
+                    actor_id=author.id,
+                    mentioned_user_ids=added_mention_ids,
+                    source_event_id=uuid4(),
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to materialize mention notifications for comment %s",
+                    comment.id,
+                )
+        return updated
 
     def delete_comment(self, author: User, comment_id: UUID) -> None:
         comment = self._get_authored_comment(author, comment_id)
@@ -102,3 +145,17 @@ class CommentService:
             comment.task.project.workspace_id,
         )
         return comment
+
+    def _validate_mentions(
+        self,
+        workspace_id: UUID,
+        requested_ids: list[UUID],
+    ) -> list[User]:
+        mentioned_users = self.repository.list_active_workspace_users(
+            workspace_id,
+            requested_ids,
+        )
+        if {user.id for user in mentioned_users} != set(requested_ids):
+            raise CommentMentionInvalidError
+        users_by_id = {user.id: user for user in mentioned_users}
+        return [users_by_id[user_id] for user_id in requested_ids]

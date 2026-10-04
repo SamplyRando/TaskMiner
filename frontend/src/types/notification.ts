@@ -1,6 +1,11 @@
-export type NotificationType = "task_assigned" | "task_commented";
+export type NotificationType =
+  | "task_assigned"
+  | "task_commented"
+  | "comment_mention"
+  | "task_due_reminder"
+  | "project_due_reminder";
 
-export type NotificationEntityType = "task";
+export type NotificationEntityType = "task" | "project";
 
 export type InAppNotification = {
   id: string;

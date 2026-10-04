@@ -2,6 +2,7 @@ import { Bell } from "lucide-react";
 
 import { FormError } from "@/components/form-error";
 import { Separator } from "@/components/ui/separator";
+import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateUserPreferences } from "@/features/settings/hooks";
 import { SettingsSectionCard } from "@/features/settings/settings-section-card";
@@ -12,7 +13,9 @@ type NotificationKey =
   | "notify_audit"
   | "notify_invitations"
   | "notify_comments"
-  | "notify_assignments";
+  | "notify_assignments"
+  | "notify_task_reminders"
+  | "notify_project_reminders";
 
 const notificationOptions: {
   key: NotificationKey;
@@ -43,6 +46,16 @@ const notificationOptions: {
     key: "notify_assignments",
     label: "Assignations",
     description: "Tâches qui vous sont assignées ou retirées.",
+  },
+  {
+    key: "notify_task_reminders",
+    label: "Échéances des tâches",
+    description: "Rappels pour les tâches qui vous sont assignées.",
+  },
+  {
+    key: "notify_project_reminders",
+    label: "Échéances des projets",
+    description: "Rappels pour les projets dont vous êtes responsable.",
   },
 ];
 
@@ -90,6 +103,37 @@ export function NotificationsPanel({
             </div>
           </div>
         ))}
+      </div>
+      <Separator />
+      <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div>
+          <label className="text-sm font-medium" htmlFor="reminder-lead-days">
+            Délai des rappels
+          </label>
+          <p className="text-muted-foreground text-sm">
+            Recevoir le rappel avant la date d’échéance.
+          </p>
+        </div>
+        <Select
+          className="w-full sm:w-44"
+          disabled={update.isPending}
+          id="reminder-lead-days"
+          onChange={(event) => {
+            const leadDays = Number(event.target.value) as 1 | 2 | 3 | 7;
+            void update
+              .mutateAsync({ reminder_lead_days: leadDays })
+              .then(() => {
+                onSuccess("Délai de rappel enregistré.");
+              })
+              .catch(() => undefined);
+          }}
+          value={preferences.reminder_lead_days}
+        >
+          <option value={1}>1 jour avant</option>
+          <option value={2}>2 jours avant</option>
+          <option value={3}>3 jours avant</option>
+          <option value={7}>7 jours avant</option>
+        </Select>
       </div>
       <FormError error={update.error} />
     </SettingsSectionCard>

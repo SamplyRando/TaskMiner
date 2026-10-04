@@ -119,7 +119,7 @@ export function TasksPage() {
     permissionsQuery.data?.permissions.manage_tasks ?? false;
   const assignableMembersQuery = useAssignableWorkspaceMembers(
     workspace.activeWorkspaceId,
-    assignmentOpen && canManageTasks,
+    (assignmentOpen || commentsOpen) && canManageTasks,
   );
   const projects = useMemo(
     () => projectsQuery.data?.items ?? [],
@@ -527,6 +527,9 @@ export function TasksPage() {
       <TaskCommentsDialog
         canManage={canManageTasks}
         currentUserId={currentUserId}
+        members={assignableMembersQuery.data?.items ?? []}
+        membersError={assignableMembersQuery.error}
+        membersLoading={assignableMembersQuery.isPending}
         onOpenChange={setCommentsOpen}
         open={commentsOpen}
         task={selectedTask}

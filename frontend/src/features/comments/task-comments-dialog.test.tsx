@@ -13,6 +13,7 @@ import { TaskCommentsDialog } from "@/features/comments/task-comments-dialog";
 import { renderWithQuery } from "@/test/query-wrapper";
 import { taskFixture, userId } from "@/test/resource-fixtures";
 import type { TaskComment } from "@/types/comment";
+import type { AssignableWorkspaceMember } from "@/types/workspace";
 
 vi.mock("@/api/comments", () => ({
   createTaskComment: vi.fn(),
@@ -32,6 +33,7 @@ const ownComment: TaskComment = {
   content: "Préparer la validation.",
   created_at: "2026-10-03T10:00:00Z",
   id: "comment-own",
+  mentions: [],
   task_id: taskFixture.id,
   updated_at: "2026-10-03T10:00:00Z",
 };
@@ -43,11 +45,22 @@ const otherComment: TaskComment = {
   id: "comment-other",
 };
 
-const renderDialog = (canManage = true) =>
+const member: AssignableWorkspaceMember = {
+  email: "grace@example.com",
+  full_name: "Grace Hopper",
+  role: "member",
+  user_id: "user-other",
+};
+
+const renderDialog = (
+  canManage = true,
+  members: AssignableWorkspaceMember[] = [],
+) =>
   renderWithQuery(
     <TaskCommentsDialog
       canManage={canManage}
       currentUserId={userId}
+      members={members}
       onOpenChange={vi.fn()}
       open
       task={taskFixture}
@@ -106,6 +119,7 @@ describe("TaskCommentsDialog", () => {
     expect(mockedCreate).toHaveBeenCalledTimes(1);
     expect(mockedCreate).toHaveBeenCalledWith(taskFixture.id, {
       content: "Nouveau commentaire",
+      mentioned_user_ids: [],
     });
 
     resolveCreate?.(ownComment);
@@ -132,6 +146,7 @@ describe("TaskCommentsDialog", () => {
     await waitFor(() => {
       expect(mockedUpdate).toHaveBeenCalledWith(ownComment.id, {
         content: "Commentaire actualisé",
+        mentioned_user_ids: [],
       });
     });
     expect(
@@ -188,5 +203,60 @@ describe("TaskCommentsDialog", () => {
     expect(
       screen.getByText(/consulter les commentaires en lecture seule/),
     ).toBeInTheDocument();
+  });
+
+  it("selects a mention with the keyboard without exposing member email", async () => {
+    const user = userEvent.setup();
+    mockedCreate.mockResolvedValue({
+      ...ownComment,
+      content: "@Grace Hopper merci",
+      mentions: [{ display_name: "Grace Hopper", user_id: member.user_id }],
+    });
+    renderDialog(true, [member]);
+    const editor = screen.getByLabelText("Ajouter un commentaire");
+
+    await user.type(editor, "@");
+    expect(screen.getByRole("option", { name: "Grace Hopper" })).toBeVisible();
+    expect(screen.queryByText(member.email)).toBeNull();
+    await user.keyboard("{ArrowDown}{Enter}");
+    await user.type(editor, "merci");
+    await user.click(screen.getByRole("button", { name: "Ajouter" }));
+
+    await waitFor(() => {
+      expect(mockedCreate).toHaveBeenCalledWith(taskFixture.id, {
+        content: "@Grace Hopper merci",
+        mentioned_user_ids: [member.user_id],
+      });
+    });
+  });
+
+  it("preserves and updates mentions while editing a comment", async () => {
+    const user = userEvent.setup();
+    mockedList.mockResolvedValue([
+      {
+        ...ownComment,
+        mentions: [{ display_name: "Grace Hopper", user_id: member.user_id }],
+      },
+    ]);
+    mockedUpdate.mockResolvedValue(ownComment);
+    renderDialog(true, [member]);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Modifier le commentaire" }),
+    );
+    expect(screen.getByText("@Grace Hopper")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Retirer la mention de Grace Hopper",
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => {
+      expect(mockedUpdate).toHaveBeenCalledWith(ownComment.id, {
+        content: ownComment.content,
+        mentioned_user_ids: [],
+      });
+    });
   });
 });
