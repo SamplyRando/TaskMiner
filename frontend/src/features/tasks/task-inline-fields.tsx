@@ -1,5 +1,5 @@
 import { Check, Pencil, X } from "lucide-react";
-import { useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { ApiError } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
   getTaskStatusLabelFromTask,
+  getTaskStatusTone,
   taskPriorityLabels,
+  taskPriorityTones,
 } from "@/features/tasks/task-presentation";
+import { toneBadgeClasses, toneDotClasses } from "@/lib/tones";
+import { cn } from "@/lib/utils";
 import {
   DEFAULT_PROJECT_STATUSES,
   type ProjectTaskStatus,
@@ -148,6 +152,32 @@ export function InlineTaskTitle({
   );
 }
 
+// Inline status / priority stay native <select>s: only the frame changes. The
+// tone dot makes the value scannable; the border appears on hover and focus.
+const inlineSelectClassName =
+  "h-8 border-transparent bg-transparent pl-7 font-medium shadow-none hover:border-input hover:bg-surface focus-visible:bg-surface";
+
+function InlineSelectFrame({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: keyof typeof toneDotClasses;
+}) {
+  return (
+    <div className="relative">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute top-1/2 left-2.5 size-2 -translate-y-1/2 rounded-full",
+          toneDotClasses[tone],
+        )}
+      />
+      {children}
+    </div>
+  );
+}
+
 type InlineSelectProps = {
   canManage: boolean;
   onUpdate: InlineUpdate;
@@ -169,7 +199,14 @@ export function InlineTaskStatus({
 
   if (!canManage) {
     return (
-      <Badge variant={task.status_is_completed ? "default" : "secondary"}>
+      <Badge
+        className={
+          toneBadgeClasses[
+            getTaskStatusTone(task.status, task.status_is_completed)
+          ]
+        }
+        variant="outline"
+      >
         {getTaskStatusLabelFromTask(task)}
       </Badge>
     );
@@ -190,19 +227,23 @@ export function InlineTaskStatus({
 
   return (
     <div className="min-w-32 space-y-1">
-      <Select
-        aria-label={`Statut de ${task.title}`}
-        className="h-9"
-        disabled={isPending}
-        onChange={(event) => void update(event.target.value)}
-        value={task.status}
+      <InlineSelectFrame
+        tone={getTaskStatusTone(task.status, task.status_is_completed)}
       >
-        {statuses.map((status) => (
-          <option key={status.key} value={status.key}>
-            {status.label}
-          </option>
-        ))}
-      </Select>
+        <Select
+          aria-label={`Statut de ${task.title}`}
+          className={inlineSelectClassName}
+          disabled={isPending}
+          onChange={(event) => void update(event.target.value)}
+          value={task.status}
+        >
+          {statuses.map((status) => (
+            <option key={status.key} value={status.key}>
+              {status.label}
+            </option>
+          ))}
+        </Select>
+      </InlineSelectFrame>
       {error ? (
         <p className="text-destructive text-xs" role="alert">
           {error}
@@ -222,7 +263,10 @@ export function InlineTaskPriority({
 
   if (!canManage) {
     return (
-      <Badge variant={task.priority === "urgent" ? "destructive" : "outline"}>
+      <Badge
+        className={toneBadgeClasses[taskPriorityTones[task.priority]]}
+        variant="outline"
+      >
         {taskPriorityLabels[task.priority]}
       </Badge>
     );
@@ -243,18 +287,20 @@ export function InlineTaskPriority({
 
   return (
     <div className="min-w-28 space-y-1">
-      <Select
-        aria-label={`Priorité de ${task.title}`}
-        className="h-9"
-        disabled={isPending}
-        onChange={(event) => void update(event.target.value as TaskPriority)}
-        value={task.priority}
-      >
-        <option value="low">Basse</option>
-        <option value="medium">Moyenne</option>
-        <option value="high">Haute</option>
-        <option value="urgent">Urgente</option>
-      </Select>
+      <InlineSelectFrame tone={taskPriorityTones[task.priority]}>
+        <Select
+          aria-label={`Priorité de ${task.title}`}
+          className={inlineSelectClassName}
+          disabled={isPending}
+          onChange={(event) => void update(event.target.value as TaskPriority)}
+          value={task.priority}
+        >
+          <option value="low">Basse</option>
+          <option value="medium">Moyenne</option>
+          <option value="high">Haute</option>
+          <option value="urgent">Urgente</option>
+        </Select>
+      </InlineSelectFrame>
       {error ? (
         <p className="text-destructive text-xs" role="alert">
           {error}

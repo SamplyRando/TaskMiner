@@ -32,10 +32,14 @@ import type {
 
 function AuditPermissionState() {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-6 text-center">
-      <ShieldAlert aria-hidden="true" className="size-8 text-amber-700" />
-      <p className="mt-3 font-medium">Accès à l’audit restreint</p>
-      <p className="mt-1 max-w-lg text-sm text-amber-900/80">
+    <div className="border-warning-border bg-warning-subtle rounded-card flex min-h-56 flex-col items-center justify-center border px-6 text-center">
+      <span className="bg-surface border-warning-border text-warning flex size-11 items-center justify-center rounded-lg border">
+        <ShieldAlert aria-hidden="true" className="size-5" />
+      </span>
+      <p className="mt-4 font-semibold tracking-tight">
+        Accès à l’audit restreint
+      </p>
+      <p className="text-muted-foreground mt-1.5 max-w-lg text-sm leading-relaxed">
         Le journal d’audit est réservé aux propriétaires et administrateurs de
         ce workspace.
       </p>
@@ -45,10 +49,12 @@ function AuditPermissionState() {
 
 function AuditNotFoundState() {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border px-6 text-center">
-      <FileSearch aria-hidden="true" className="text-muted-foreground size-8" />
-      <p className="mt-3 font-medium">Workspace introuvable</p>
-      <p className="text-muted-foreground mt-1 text-sm">
+    <div className="bg-card rounded-card flex min-h-56 flex-col items-center justify-center border px-6 text-center">
+      <span className="bg-surface-sunken text-muted-foreground flex size-11 items-center justify-center rounded-lg border">
+        <FileSearch aria-hidden="true" className="size-5" />
+      </span>
+      <p className="mt-4 font-semibold tracking-tight">Workspace introuvable</p>
+      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
         Ce workspace n’existe plus ou ne vous est pas accessible.
       </p>
     </div>
@@ -125,21 +131,24 @@ export function AuditPage() {
     auditQuery.error instanceof ApiError && auditQuery.error.status === 404;
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-5">
       <EntityPageHeader
         actions={
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+          <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center">
             <AuditLiveBadge status={stream.status} />
-            <WorkspaceSelector
-              disabled={workspace.isPending}
-              onValueChange={(workspaceId) => {
-                workspace.selectWorkspace(workspaceId);
-                setFilterState(emptyAuditFilters);
-                setSelectedLog(null);
-              }}
-              value={workspace.activeWorkspaceId}
-              workspaces={workspace.workspaces}
-            />
+            <div className="w-full sm:w-56">
+              <WorkspaceSelector
+                compact
+                disabled={workspace.isPending}
+                onValueChange={(workspaceId) => {
+                  workspace.selectWorkspace(workspaceId);
+                  setFilterState(emptyAuditFilters);
+                  setSelectedLog(null);
+                }}
+                value={workspace.activeWorkspaceId}
+                workspaces={workspace.workspaces}
+              />
+            </div>
           </div>
         }
         description="Consultez en direct la trace immuable des opérations sensibles."
@@ -156,7 +165,7 @@ export function AuditPage() {
       {!workspace.isPending &&
       !workspace.isError &&
       workspace.workspaces.length === 0 ? (
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-card border">
           <EmptyState
             action={
               <EmptyStateLink to="/app/workspace">
@@ -191,7 +200,10 @@ export function AuditPage() {
             <AuditTimelineSkeleton />
           ) : (
             <>
-              <p className="text-muted-foreground text-sm" aria-live="polite">
+              <p
+                aria-live="polite"
+                className="text-muted-foreground text-sm tabular-nums"
+              >
                 {total} entrée{total > 1 ? "s" : ""}
               </p>
               <AuditTimeline

@@ -26,23 +26,30 @@ const PeriodCard = ({
   label: string;
   stats: DashboardPeriodStats;
 }) => (
-  <div className="bg-muted/40 rounded-lg border p-4">
+  <div className="bg-surface-sunken rounded-md border p-4">
     <div className="flex items-center gap-2">
-      <CalendarDays aria-hidden="true" className="text-primary size-4" />
+      <CalendarDays
+        aria-hidden="true"
+        className="text-muted-foreground size-4"
+      />
       <h3 className="font-medium">{label}</h3>
     </div>
     <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
       <div>
         <dt className="text-muted-foreground text-xs">Créées</dt>
-        <dd className="mt-1 text-xl font-bold">{stats.created}</dd>
+        <dd className="mt-1 text-xl font-semibold tabular-nums">
+          {stats.created}
+        </dd>
       </div>
       <div>
         <dt className="text-muted-foreground text-xs">Terminées</dt>
-        <dd className="mt-1 text-xl font-bold">{stats.completed}</dd>
+        <dd className="mt-1 text-xl font-semibold tabular-nums">
+          {stats.completed}
+        </dd>
       </div>
       <div>
         <dt className="text-muted-foreground text-xs">Taux</dt>
-        <dd className="mt-1 text-xl font-bold">
+        <dd className="mt-1 text-xl font-semibold tabular-nums">
           {stats.completion_rate.toLocaleString("fr-FR")}%
         </dd>
       </div>
@@ -58,7 +65,7 @@ export const QuickStats = memo(function QuickStats({ stats }: QuickStatsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Statistiques rapides</CardTitle>
+        <CardTitle className="text-base">Statistiques rapides</CardTitle>
         <CardDescription>Activité sur les périodes en cours.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-3">

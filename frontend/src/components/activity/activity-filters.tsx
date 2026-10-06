@@ -38,7 +38,10 @@ export function ActivityFilters({
   );
 
   return (
-    <section aria-label="Filtres du flux d’activité" className="space-y-3">
+    <section
+      aria-label="Filtres du flux d’activité"
+      className="bg-card rounded-card space-y-3 border p-3 shadow-xs"
+    >
       <div className="relative">
         <Search
           aria-hidden="true"
@@ -55,10 +58,10 @@ export function ActivityFilters({
           value={value.search}
         />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
         <div>
           <label
-            className="text-muted-foreground mb-1.5 block text-sm font-medium"
+            className="text-label text-muted-foreground mb-1.5 block"
             htmlFor="activity-actor-filter"
           >
             Utilisateur
@@ -80,7 +83,7 @@ export function ActivityFilters({
         </div>
         <div>
           <label
-            className="text-muted-foreground mb-1.5 block text-sm font-medium"
+            className="text-label text-muted-foreground mb-1.5 block"
             htmlFor="activity-event-filter"
           >
             Type d’événement
@@ -105,7 +108,7 @@ export function ActivityFilters({
         </div>
         <div>
           <label
-            className="text-muted-foreground mb-1.5 block text-sm font-medium"
+            className="text-label text-muted-foreground mb-1.5 block"
             htmlFor="activity-period-filter"
           >
             Période

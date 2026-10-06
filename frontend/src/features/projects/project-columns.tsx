@@ -4,6 +4,7 @@ import { Copy, Download, ListChecks, Pencil, Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { Project } from "@/types/project";
 
 type ProjectColumnActions = {
@@ -25,13 +26,6 @@ export function getProjectColumns({
 }: ProjectColumnActions): ColumnDef<Project>[] {
   return [
     {
-      accessorKey: "due_date",
-      enableSorting: false,
-      header: "Échéance",
-      cell: ({ row }) =>
-        row.original.due_date ? formatDate(row.original.due_date) : "—",
-    },
-    {
       accessorKey: "name",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Nom" />
@@ -51,11 +45,35 @@ export function getProjectColumns({
       ),
     },
     {
+      accessorKey: "due_date",
+      enableSorting: false,
+      header: "Échéance",
+      cell: ({ row }) => {
+        const dueDate = row.original.due_date;
+        return (
+          <span
+            className={cn(
+              "whitespace-nowrap tabular-nums",
+              dueDate && new Date(dueDate).getTime() < Date.now()
+                ? "text-destructive font-medium"
+                : "text-muted-foreground",
+            )}
+          >
+            {dueDate ? formatDate(dueDate) : "—"}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "created_at",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Créé le" />
       ),
-      cell: ({ row }) => formatDateTime(row.original.created_at),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground whitespace-nowrap tabular-nums">
+          {formatDateTime(row.original.created_at)}
+        </span>
+      ),
     },
     {
       id: "actions",
@@ -63,13 +81,14 @@ export function getProjectColumns({
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) =>
         canManage ? (
-          <div className="flex justify-end gap-1">
+          <div className="flex justify-end gap-0.5">
             {onWorkflow ? (
               <Button
                 aria-label={`Configurer le workflow de ${row.original.name}`}
                 onClick={() => {
                   onWorkflow(row.original);
                 }}
+                className="text-muted-foreground hover:text-foreground size-8"
                 size="icon"
                 title="Configurer les statuts"
                 type="button"
@@ -84,6 +103,7 @@ export function getProjectColumns({
                 onClick={() => {
                   onExport(row.original);
                 }}
+                className="text-muted-foreground hover:text-foreground size-8"
                 size="icon"
                 title="Exporter le modèle"
                 type="button"
@@ -98,6 +118,7 @@ export function getProjectColumns({
                 onClick={() => {
                   onDuplicate(row.original);
                 }}
+                className="text-muted-foreground hover:text-foreground size-8"
                 size="icon"
                 title="Dupliquer"
                 type="button"
@@ -111,6 +132,7 @@ export function getProjectColumns({
               onClick={() => {
                 onEdit(row.original);
               }}
+              className="text-muted-foreground hover:text-foreground size-8"
               size="icon"
               type="button"
               variant="ghost"
@@ -122,11 +144,12 @@ export function getProjectColumns({
               onClick={() => {
                 onDelete(row.original);
               }}
+              className="text-muted-foreground hover:text-destructive size-8"
               size="icon"
               type="button"
               variant="ghost"
             >
-              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+              <Trash2 aria-hidden="true" className="size-4" />
             </Button>
           </div>
         ) : null,

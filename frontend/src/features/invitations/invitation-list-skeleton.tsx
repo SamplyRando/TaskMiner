@@ -9,7 +9,7 @@ export function InvitationListSkeleton() {
     >
       {Array.from({ length: 4 }, (_, index) => (
         <div
-          className="rounded-xl border bg-white p-4"
+          className="bg-card rounded-card border p-4"
           key={`invitation-skeleton-${String(index)}`}
         >
           <div className="flex items-center justify-between gap-4">

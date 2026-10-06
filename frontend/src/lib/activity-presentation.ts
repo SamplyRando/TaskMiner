@@ -1,3 +1,4 @@
+import type { Tone } from "@/lib/tones";
 import type { ActivityEvent, ActivityResource } from "@/types/activity";
 
 export const activityEventLabels: Record<ActivityEvent, string> = {
@@ -15,6 +16,25 @@ export const activityEventLabels: Record<ActivityEvent, string> = {
   task_updated: "Tâche modifiée",
   workspace_created: "Workspace créé",
   workspace_updated: "Workspace modifié",
+};
+
+// Semantic tone of each event family, shared by Activity and Audit so a
+// creation, a deletion or a permission change reads the same on both feeds.
+export const activityEventTones: Record<ActivityEvent, Tone> = {
+  attachment_uploaded: "neutral",
+  comment_created: "neutral",
+  invitation_accepted: "success",
+  invitation_created: "neutral",
+  member_role_updated: "warning",
+  project_created: "success",
+  project_deleted: "danger",
+  project_updated: "info",
+  task_assigned: "brand",
+  task_created: "success",
+  task_deleted: "danger",
+  task_updated: "info",
+  workspace_created: "success",
+  workspace_updated: "info",
 };
 
 export const activityResourceLabels: Record<ActivityResource, string> = {
@@ -44,6 +64,15 @@ const formatPrimitive = (value: string | number | boolean): string => {
   }
   return String(value);
 };
+
+// Initials shown in the decorative actor avatar of Activity and Audit rows.
+export const getActorInitials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toLocaleUpperCase("fr-FR"))
+    .join("");
 
 export const formatActor = (actorId: string | null): string =>
   actorId ? `Utilisateur ${actorId.slice(0, 8)}` : "Système";

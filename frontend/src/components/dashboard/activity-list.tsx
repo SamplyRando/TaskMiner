@@ -48,7 +48,7 @@ export const ActivityList = memo(function ActivityList({
     <Card className="h-full min-w-0">
       <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
         <div className="space-y-1.5">
-          <CardTitle>Dernières activités</CardTitle>
+          <CardTitle className="text-base">Dernières activités</CardTitle>
           <CardDescription>
             Événements récents de vos workspaces.
           </CardDescription>
@@ -90,7 +90,7 @@ export const ActivityList = memo(function ActivityList({
                 <li className="flex gap-3 px-6 py-3" key={item.id}>
                   <div
                     aria-hidden="true"
-                    className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    className="bg-primary-subtle text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
                   >
                     {initials(actorName) || "TM"}
                   </div>

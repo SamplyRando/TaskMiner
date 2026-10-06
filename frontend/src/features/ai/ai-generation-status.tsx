@@ -2,6 +2,7 @@ import { Check, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Facet } from "@/components/ui/facet";
 
 type AIGenerationStatusProps = {
   mode: "change" | "plan";
@@ -43,44 +44,43 @@ export function AIGenerationStatus({ mode }: AIGenerationStatusProps) {
     <Card
       aria-busy="true"
       aria-labelledby={`ai-${mode}-generation-title`}
-      className="border-primary/20 overflow-hidden"
+      className="border-brand-border overflow-hidden"
       role="status"
     >
-      <CardContent className="min-h-52 p-6 sm:p-8">
+      <CardContent className="min-h-52 p-6 sm:p-7">
         <div className="max-w-3xl min-w-0">
           <div className="flex items-center gap-2">
             <LoaderCircle
               aria-hidden="true"
-              className="text-primary size-4 animate-spin motion-reduce:animate-none"
+              className="text-brand size-4 animate-spin motion-reduce:animate-none"
             />
             <h2 className="font-semibold" id={`ai-${mode}-generation-title`}>
               TaskMiner AI prépare votre brouillon
             </h2>
           </div>
-          <p
-            aria-live="polite"
-            className="text-primary mt-2 text-sm font-medium"
-          >
+          <p aria-live="polite" className="text-brand mt-2 text-sm font-medium">
             {modeStages[activeStage]}
           </p>
-          <ol className="mt-5 grid gap-2 sm:grid-cols-2">
+          <ol className="bg-border rounded-card mt-5 grid gap-px overflow-hidden border sm:grid-cols-2">
             {modeStages.map((stage, index) => (
               <li
-                className={`flex items-center gap-2 text-xs ${
-                  index <= activeStage
-                    ? "text-foreground"
-                    : "text-muted-foreground"
+                className={`flex items-center gap-2.5 px-3 py-2.5 text-xs ${
+                  index === activeStage
+                    ? "bg-brand-subtle text-foreground font-medium"
+                    : index < activeStage
+                      ? "bg-card text-foreground"
+                      : "bg-card text-muted-foreground"
                 }`}
                 key={stage}
               >
                 {index < activeStage ? (
-                  <Check aria-hidden="true" className="text-primary size-3.5" />
+                  <Check aria-hidden="true" className="text-brand size-3.5" />
+                ) : index === activeStage ? (
+                  <Facet className="size-3.5" />
                 ) : (
                   <span
                     aria-hidden="true"
-                    className={`size-1.5 rounded-full ${
-                      index === activeStage ? "bg-primary" : "bg-border"
-                    }`}
+                    className="bg-border mx-1 size-1.5 rounded-full"
                   />
                 )}
                 {stage}

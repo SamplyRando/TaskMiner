@@ -164,15 +164,17 @@ export function HomePage() {
 
     return [
       {
-        color: "violet" as const,
+        color: "neutral" as const,
         icon: BriefcaseBusiness,
+        size: "compact" as const,
         title: "Workspaces",
         value: dashboard.kpis.workspaces,
         variation: dashboard.kpis.variations.workspaces,
       },
       {
-        color: "blue" as const,
+        color: "neutral" as const,
         icon: FolderKanban,
+        size: "compact" as const,
         title: "Projets",
         value: dashboard.kpis.projects,
         variation: dashboard.kpis.variations.projects,
@@ -180,6 +182,7 @@ export function HomePage() {
       {
         color: "violet" as const,
         icon: ListTodo,
+        size: "primary" as const,
         title: "Tâches",
         value: dashboard.kpis.tasks,
         variation: dashboard.kpis.variations.tasks,
@@ -187,6 +190,7 @@ export function HomePage() {
       {
         color: "emerald" as const,
         icon: CheckCircle2,
+        size: "primary" as const,
         title: "Tâches terminées",
         value: dashboard.kpis.completed,
         variation: dashboard.kpis.variations.completed,
@@ -194,6 +198,7 @@ export function HomePage() {
       {
         color: "rose" as const,
         icon: AlarmClock,
+        size: "primary" as const,
         title: "Tâches en retard",
         tooltip: "Tâches non terminées dont l’échéance est dépassée.",
         value: dashboard.kpis.overdue,
@@ -202,30 +207,34 @@ export function HomePage() {
       {
         color: "amber" as const,
         icon: CalendarClock,
+        size: "compact" as const,
         title: "À échéance aujourd’hui",
         tooltip: "Tâches non terminées arrivant à échéance aujourd’hui.",
         value: dashboard.kpis.due_today,
         variation: null,
       },
       {
-        color: "blue" as const,
+        color: "neutral" as const,
         icon: CalendarCheck2,
+        size: "compact" as const,
         title: "À échéance cette semaine",
         tooltip: "Tâches non terminées dues avant la fin de la semaine.",
         value: dashboard.kpis.due_this_week,
         variation: null,
       },
       {
-        color: "emerald" as const,
+        color: "blue" as const,
         icon: Gauge,
+        size: "primary" as const,
         title: "Taux de complétion",
         tooltip: "Part des tâches actives actuellement terminées.",
         value: `${dashboard.kpis.completion_rate.toLocaleString("fr-FR")}%`,
         variation: dashboard.kpis.variations.completion_rate,
       },
       {
-        color: "amber" as const,
+        color: "neutral" as const,
         icon: Timer,
+        size: "compact" as const,
         title: "Temps moyen de clôture",
         tooltip:
           "Durée moyenne entre création et dernière clôture des tâches terminées.",
@@ -233,8 +242,9 @@ export function HomePage() {
         variation: dashboard.kpis.variations.average_completion_hours,
       },
       {
-        color: "blue" as const,
+        color: "neutral" as const,
         icon: BarChart3,
+        size: "compact" as const,
         title: "Tâches par projet",
         tooltip: "Nombre moyen de tâches actives par projet actif.",
         value: dashboard.kpis.average_tasks_per_project.toLocaleString("fr-FR"),
@@ -274,7 +284,7 @@ export function HomePage() {
     <div className="min-w-0 space-y-8">
       <header className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-page-title">
             Bonjour{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -306,11 +316,22 @@ export function HomePage() {
 
       <section
         aria-label="Indicateurs clés"
-        className="bg-border grid gap-px overflow-hidden rounded-lg border shadow-xs sm:grid-cols-2 xl:grid-cols-5"
+        className="bg-border rounded-card grid gap-px overflow-hidden border shadow-xs"
       >
-        {kpis.map((kpi) => (
-          <KpiCard {...kpi} key={kpi.title} />
-        ))}
+        <div className="bg-border grid gap-px sm:grid-cols-2 xl:grid-cols-4">
+          {kpis
+            .filter((kpi) => kpi.size === "primary")
+            .map((kpi) => (
+              <KpiCard {...kpi} key={kpi.title} />
+            ))}
+        </div>
+        <div className="bg-border grid grid-cols-2 gap-px md:grid-cols-3 xl:grid-cols-6">
+          {kpis
+            .filter((kpi) => kpi.size === "compact")
+            .map((kpi) => (
+              <KpiCard {...kpi} key={kpi.title} />
+            ))}
+        </div>
       </section>
 
       <section className="grid min-w-0 gap-4 lg:grid-cols-2">

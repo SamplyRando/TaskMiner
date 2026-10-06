@@ -341,7 +341,7 @@ export const RecentProjects = memo(function RecentProjects({
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>Projets récents</CardTitle>
+        <CardTitle className="text-base">Projets récents</CardTitle>
         <CardDescription>
           Recherche, tri et pagination calculés côté serveur.
         </CardDescription>

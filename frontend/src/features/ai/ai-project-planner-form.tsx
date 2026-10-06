@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
+import { Facet } from "@/components/ui/facet";
 import {
   Card,
   CardContent,
@@ -272,7 +272,7 @@ export function AIProjectPlannerForm({
               loadingLabel="Génération du plan en cours"
               type="submit"
             >
-              <Sparkles aria-hidden="true" className="size-4" />
+              <Facet className="size-4" tone="current" />
               {isPending ? "Génération…" : "Générer le plan"}
             </Button>
           </div>

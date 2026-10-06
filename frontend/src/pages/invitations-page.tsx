@@ -1,5 +1,11 @@
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, MailPlus, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  MailPlus,
+  Search,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -286,21 +292,24 @@ export function InvitationsPage() {
   };
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-5">
       <EntityPageHeader
         actions={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <WorkspaceSelector
-              disabled={workspace.isPending}
-              onValueChange={(workspaceId) => {
-                workspace.selectWorkspace(workspaceId);
-                setPaginationState({ ...initialPagination, workspaceId });
-                setSelectedInvitation(null);
-                setRevokeOpen(false);
-              }}
-              value={workspace.activeWorkspaceId}
-              workspaces={workspace.workspaces}
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-56">
+              <WorkspaceSelector
+                compact
+                disabled={workspace.isPending}
+                onValueChange={(workspaceId) => {
+                  workspace.selectWorkspace(workspaceId);
+                  setPaginationState({ ...initialPagination, workspaceId });
+                  setSelectedInvitation(null);
+                  setRevokeOpen(false);
+                }}
+                value={workspace.activeWorkspaceId}
+                workspaces={workspace.workspaces}
+              />
+            </div>
             {canManage ? (
               <Button
                 disabled={memberLimitReached}
@@ -355,9 +364,10 @@ export function InvitationsPage() {
 
       {canManage && memberLimitReached ? (
         <p
-          className="border-destructive/30 bg-destructive/5 text-destructive rounded-lg border px-4 py-3 text-sm"
+          className="border-warning-border bg-warning-subtle text-warning flex items-center gap-2 rounded-md border px-4 py-3 text-sm font-medium"
           role="status"
         >
+          <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
           Limite de {subscriptionQuery.data?.limits.members} membres atteinte
           pour le plan {subscriptionQuery.data?.plan === "pro" ? "Pro" : "Free"}
           . Retirez un membre avant d’accepter une nouvelle invitation.
@@ -367,7 +377,7 @@ export function InvitationsPage() {
       {!workspace.isPending &&
       !workspace.isError &&
       workspace.workspaces.length === 0 ? (
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-card border">
           <EmptyState
             action={
               <Button
@@ -433,9 +443,9 @@ export function InvitationsPage() {
               invitationsQuery.isPending ? (
                 <InvitationListSkeleton />
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {invitationsQuery.data.items.length === 0 ? (
-                    <div className="bg-card rounded-xl border">
+                    <div className="bg-card rounded-card border">
                       <EmptyState
                         action={
                           debouncedSearch ? (
@@ -502,7 +512,7 @@ export function InvitationsPage() {
                     aria-label="Pagination des invitations"
                     className="flex items-center justify-between"
                   >
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-sm tabular-nums">
                       {total} invitation{total > 1 ? "s" : ""}
                     </p>
                     <div className="flex items-center gap-2">

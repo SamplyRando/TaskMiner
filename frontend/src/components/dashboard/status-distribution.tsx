@@ -30,7 +30,7 @@ export const StatusDistribution = memo(function StatusDistribution({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Répartition par statut</CardTitle>
+        <CardTitle className="text-base">Répartition par statut</CardTitle>
         <CardDescription>
           Progression globale des tâches actives.
         </CardDescription>

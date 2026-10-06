@@ -13,6 +13,7 @@ import {
   invitationStatusLabels,
 } from "@/features/invitations/presentation";
 import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { WorkspaceInvitation } from "@/types/invitation";
 
 type InvitationColumnsOptions = {
@@ -29,21 +30,15 @@ export const getInvitationColumns = ({
   onResend,
 }: InvitationColumnsOptions): ColumnDef<WorkspaceInvitation>[] => [
   {
-    accessorKey: "email_delivery_status",
-    cell: ({ row }) => (
-      <Badge
-        className={
-          invitationDeliveryClasses[row.original.email_delivery_status]
-        }
-      >
-        {invitationDeliveryLabels[row.original.email_delivery_status]}
-      </Badge>
-    ),
-    enableSorting: false,
-    header: "Livraison",
-  },
-  {
     accessorKey: "email",
+    cell: ({ row }) => (
+      <span
+        className="block max-w-52 truncate font-medium"
+        title={row.original.email}
+      >
+        {row.original.email}
+      </span>
+    ),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Email" />
     ),
@@ -58,13 +53,33 @@ export const getInvitationColumns = ({
   {
     accessorKey: "status",
     cell: ({ row }) => (
-      <Badge className={invitationStatusClasses[row.original.status]}>
+      <Badge
+        className={cn(
+          "whitespace-nowrap",
+          invitationStatusClasses[row.original.status],
+        )}
+      >
         {invitationStatusLabels[row.original.status]}
       </Badge>
     ),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Statut" />
     ),
+  },
+  {
+    accessorKey: "email_delivery_status",
+    cell: ({ row }) => (
+      <Badge
+        className={cn(
+          "whitespace-nowrap",
+          invitationDeliveryClasses[row.original.email_delivery_status],
+        )}
+      >
+        {invitationDeliveryLabels[row.original.email_delivery_status]}
+      </Badge>
+    ),
+    enableSorting: false,
+    header: "Livraison",
   },
   {
     accessorFn: getInviterLabel,
@@ -84,14 +99,22 @@ export const getInvitationColumns = ({
   },
   {
     accessorKey: "created_at",
-    cell: ({ row }) => formatDateTime(row.original.created_at),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground tabular-nums">
+        {formatDateTime(row.original.created_at)}
+      </span>
+    ),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Créée le" />
     ),
   },
   {
     accessorKey: "expires_at",
-    cell: ({ row }) => formatDateTime(row.original.expires_at),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground tabular-nums">
+        {formatDateTime(row.original.expires_at)}
+      </span>
+    ),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Expiration" />
     ),
@@ -99,31 +122,33 @@ export const getInvitationColumns = ({
   {
     cell: ({ row }) =>
       canManage && row.original.status === "pending" ? (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             aria-label={`Renvoyer l’invitation à ${row.original.email}`}
+            className="text-muted-foreground hover:text-foreground size-8"
             disabled={isResending(row.original)}
             onClick={() => {
               onResend(row.original);
             }}
-            size="sm"
+            size="icon"
+            title="Renvoyer"
             type="button"
             variant="ghost"
           >
             <Send aria-hidden="true" className="size-4" />
-            Renvoyer
           </Button>
           <Button
             aria-label={`Révoquer l’invitation de ${row.original.email}`}
+            className="text-muted-foreground hover:text-destructive size-8"
             onClick={() => {
               onRevoke(row.original);
             }}
-            size="sm"
+            size="icon"
+            title="Révoquer"
             type="button"
             variant="ghost"
           >
             <Ban aria-hidden="true" className="size-4" />
-            Révoquer
           </Button>
         </div>
       ) : (

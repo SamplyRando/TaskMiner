@@ -87,20 +87,23 @@ export function ActivityPage() {
   const total = activitiesQuery.data?.pages[0]?.count ?? 0;
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-5">
       <EntityPageHeader
         actions={
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+          <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center">
             <ActivityLiveBadge status={stream.status} />
-            <WorkspaceSelector
-              disabled={workspace.isPending}
-              onValueChange={(workspaceId) => {
-                workspace.selectWorkspace(workspaceId);
-                setFilterState(emptyFilters);
-              }}
-              value={workspace.activeWorkspaceId}
-              workspaces={workspace.workspaces}
-            />
+            <div className="w-full sm:w-56">
+              <WorkspaceSelector
+                compact
+                disabled={workspace.isPending}
+                onValueChange={(workspaceId) => {
+                  workspace.selectWorkspace(workspaceId);
+                  setFilterState(emptyFilters);
+                }}
+                value={workspace.activeWorkspaceId}
+                workspaces={workspace.workspaces}
+              />
+            </div>
           </div>
         }
         description="Suivez en direct les événements de votre espace de travail."
@@ -117,7 +120,7 @@ export function ActivityPage() {
       {!workspace.isPending &&
       !workspace.isError &&
       workspace.workspaces.length === 0 ? (
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-card border">
           <EmptyState
             action={
               <EmptyStateLink to="/app/workspace">
@@ -148,7 +151,10 @@ export function ActivityPage() {
             <ActivityTimelineSkeleton />
           ) : (
             <>
-              <p className="text-muted-foreground text-sm" aria-live="polite">
+              <p
+                aria-live="polite"
+                className="text-muted-foreground text-sm tabular-nums"
+              >
                 {total} activité{total > 1 ? "s" : ""}
               </p>
               <ActivityTimeline

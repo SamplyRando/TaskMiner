@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  isTaskOverdue,
   taskPriorityClasses,
   taskPriorityLabels,
 } from "@/features/tasks/task-presentation";
@@ -93,10 +94,10 @@ export function TaskKanbanCard({
       ref={setNodeRef}
       aria-describedby={!canDrag ? `task-permission-${task.id}` : undefined}
       className={cn(
-        "bg-card border-border group rounded-xl border p-3.5 shadow-sm transition-[box-shadow,opacity,transform]",
-        canDrag ? "hover:shadow-md" : "opacity-75",
+        "bg-card group rounded-card border p-3 shadow-xs transition-[border-color,box-shadow,opacity,transform] duration-150",
+        canDrag ? "hover:border-border-strong hover:shadow-sm" : "opacity-80",
         isDragging && "opacity-30",
-        isOverlay && "w-80 rotate-2 shadow-xl",
+        isOverlay && "shadow-floating w-76 rotate-1",
       )}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -141,28 +142,30 @@ export function TaskKanbanCard({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="text-muted-foreground mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
         <Badge className={taskPriorityClasses[task.priority]} variant="outline">
           {taskPriorityLabels[task.priority]}
         </Badge>
-      </div>
-
-      <div className="text-muted-foreground mt-3 space-y-1.5 text-xs">
-        <div className="flex items-center gap-1.5">
+        <span
+          className={cn(
+            "flex items-center gap-1.5 tabular-nums",
+            isTaskOverdue(task) && "text-destructive font-medium",
+          )}
+        >
           <CalendarDays aria-hidden="true" className="size-3.5" />
-          <span>{formatDueDate(task.due_date)}</span>
-        </div>
+          {formatDueDate(task.due_date)}
+        </span>
         {assigneeLabel ? (
-          <div className="flex items-center gap-1.5">
-            <UserRound aria-hidden="true" className="size-3.5" />
+          <span className="flex min-w-0 items-center gap-1.5">
+            <UserRound aria-hidden="true" className="size-3.5 shrink-0" />
             <span className="truncate">{assigneeLabel}</span>
-          </div>
+          </span>
         ) : null}
       </div>
 
       {!isOverlay ? (
         <div
-          className="mt-3 flex flex-wrap justify-end gap-1 border-t pt-2"
+          className="text-muted-foreground mt-2.5 flex flex-wrap justify-end gap-0.5 border-t pt-1.5"
           onClick={(event) => {
             event.stopPropagation();
           }}
@@ -178,6 +181,7 @@ export function TaskKanbanCard({
             onClick={() => {
               onOpenComments(task);
             }}
+            className="text-muted-foreground hover:text-foreground size-7"
             size="icon"
             title="Commentaires"
             type="button"
@@ -190,6 +194,7 @@ export function TaskKanbanCard({
             onClick={() => {
               onOpenAttachments(task);
             }}
+            className="text-muted-foreground hover:text-foreground size-7"
             size="icon"
             title="Pièces jointes"
             type="button"
@@ -204,6 +209,7 @@ export function TaskKanbanCard({
                 onClick={() => {
                   onAssign(task);
                 }}
+                className="text-muted-foreground hover:text-foreground size-7"
                 size="icon"
                 title="Assigner"
                 type="button"
@@ -217,6 +223,7 @@ export function TaskKanbanCard({
                   onClick={() => {
                     onDuplicate(task);
                   }}
+                  className="text-muted-foreground hover:text-foreground size-7"
                   size="icon"
                   title="Dupliquer"
                   type="button"
@@ -230,6 +237,7 @@ export function TaskKanbanCard({
                 onClick={() => {
                   onEdit(task);
                 }}
+                className="text-muted-foreground hover:text-foreground size-7"
                 size="icon"
                 title="Modifier"
                 type="button"
@@ -242,15 +250,13 @@ export function TaskKanbanCard({
                 onClick={() => {
                   onDelete(task);
                 }}
+                className="text-muted-foreground hover:text-destructive size-7"
                 size="icon"
                 title="Supprimer"
                 type="button"
                 variant="ghost"
               >
-                <Trash2
-                  aria-hidden="true"
-                  className="text-destructive size-4"
-                />
+                <Trash2 aria-hidden="true" className="size-4" />
               </Button>
             </>
           ) : null}
@@ -259,7 +265,7 @@ export function TaskKanbanCard({
 
       {!canDrag ? (
         <p
-          className="text-destructive mt-2 text-xs"
+          className="text-muted-foreground mt-2 text-xs"
           id={`task-permission-${task.id}`}
         >
           {unavailableMessage}

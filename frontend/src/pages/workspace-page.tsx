@@ -216,54 +216,75 @@ export function WorkspacePage() {
     }
   };
 
+  // Kept at a stable place in the tree (page header) so switching never
+  // remounts the native select.
+  const workspaceSelector = (
+    <WorkspaceSelector
+      compact
+      disabled={workspace.isPending}
+      onValueChange={(workspaceId) => {
+        workspace.selectWorkspace(workspaceId);
+        setPagination((current) => ({ ...current, pageIndex: 0 }));
+      }}
+      value={workspace.activeWorkspaceId}
+      workspaces={workspace.workspaces}
+    />
+  );
+
   return (
     <div className="space-y-6">
       <EntityPageHeader
         actions={
-          <Button
-            onClick={() => {
-              createWorkspace.reset();
-              setSelectedWorkspace(null);
-              setFormOpen(true);
-            }}
-            type="button"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Nouveau workspace
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-56">{workspaceSelector}</div>
+            <Button
+              onClick={() => {
+                createWorkspace.reset();
+                setSelectedWorkspace(null);
+                setFormOpen(true);
+              }}
+              type="button"
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Nouveau workspace
+            </Button>
+          </div>
         }
         description="Organisez vos projets au sein de vos espaces de travail."
         title="Workspaces"
       />
 
-      <WorkspaceSelector
-        disabled={workspace.isPending}
-        onValueChange={(workspaceId) => {
-          workspace.selectWorkspace(workspaceId);
-          setPagination((current) => ({ ...current, pageIndex: 0 }));
-        }}
-        value={workspace.activeWorkspaceId}
-        workspaces={workspace.workspaces}
-      />
-
       {activeWorkspace ? (
         <section
           aria-label="Contexte du workspace actif"
-          className="bg-muted/25 flex min-w-0 flex-col gap-2 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          className="bg-card rounded-card flex min-w-0 flex-col gap-4 border p-5 shadow-xs md:flex-row md:items-center md:justify-between"
         >
-          <div className="min-w-0">
-            <p className="truncate font-medium">{activeWorkspace.name}</p>
-            <p className="text-muted-foreground text-sm">
-              Les projets, permissions et quotas affichés suivent ce workspace.
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span
+              aria-hidden="true"
+              className="bg-brand-subtle text-brand border-brand-border flex size-11 shrink-0 items-center justify-center rounded-lg border text-lg font-semibold"
+            >
+              {activeWorkspace.name.trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-section-title truncate">
+                {activeWorkspace.name}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Les projets, permissions et quotas affichés suivent ce
+                workspace.
+              </p>
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-col gap-2 md:items-end">
+            <p className="text-sm font-semibold">
+              {subscriptionQuery.isPending
+                ? "Chargement du plan…"
+                : subscriptionQuery.data
+                  ? `Abonnement actif : ${subscriptionQuery.data.plan === "pro" ? "Pro" : "Free"}`
+                  : "Plan indisponible"}
             </p>
           </div>
-          <p className="shrink-0 text-sm font-semibold">
-            {subscriptionQuery.isPending
-              ? "Chargement du plan…"
-              : subscriptionQuery.data
-                ? `Abonnement actif : ${subscriptionQuery.data.plan === "pro" ? "Pro" : "Free"}`
-                : "Plan indisponible"}
-          </p>
         </section>
       ) : null}
 
@@ -292,21 +313,29 @@ export function WorkspacePage() {
         />
       ) : null}
 
-      <div className="relative max-w-md">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          aria-label="Rechercher un workspace"
-          className="pl-9"
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPagination((current) => ({ ...current, pageIndex: 0 }));
-          }}
-          placeholder="Rechercher un workspace…"
-          value={search}
-        />
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-section-title">Vos workspaces</h2>
+          <p className="text-muted-foreground text-sm">
+            Tous les espaces auxquels vous avez accès.
+          </p>
+        </div>
+        <div className="relative w-full max-w-md">
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          />
+          <Input
+            aria-label="Rechercher un workspace"
+            className="pl-9"
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPagination((current) => ({ ...current, pageIndex: 0 }));
+            }}
+            placeholder="Rechercher un workspace…"
+            value={search}
+          />
+        </div>
       </div>
 
       {workspace.isError ? (
@@ -368,7 +397,7 @@ export function WorkspacePage() {
           <div className="space-y-2">
             {recoverableWorkspaces.data.map((item) => (
               <div
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                className="bg-card rounded-card flex flex-wrap items-center justify-between gap-3 border px-4 py-3 shadow-xs"
                 key={item.id}
               >
                 <div>

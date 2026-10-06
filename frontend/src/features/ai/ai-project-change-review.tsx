@@ -245,11 +245,11 @@ export function AIProjectChangeReview({
       </Card>
 
       {plan.warnings.length > 0 ? (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-warning-border bg-warning-subtle/60">
           <CardContent className="flex gap-3 p-4">
             <AlertTriangle
               aria-hidden="true"
-              className="mt-0.5 size-5 shrink-0 text-amber-600"
+              className="text-warning mt-0.5 size-5 shrink-0"
             />
             <ul className="text-muted-foreground list-disc space-y-1 pl-4 text-sm">
               {plan.warnings.map((warning) => (

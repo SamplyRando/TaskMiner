@@ -116,7 +116,7 @@ export function SecurityPanel({ onSuccess }: SecurityPanelProps) {
           </label>
         ))}
         <ul
-          className="grid gap-2 rounded-lg border p-4 text-sm sm:grid-cols-2"
+          className="bg-surface-sunken grid gap-2 rounded-md border p-4 text-sm sm:grid-cols-2"
           aria-label="Exigences du mot de passe"
         >
           {requirementRows(password, confirmation).map(({ label, valid }) => {
@@ -125,7 +125,7 @@ export function SecurityPanel({ onSuccess }: SecurityPanelProps) {
               <li
                 className={cn(
                   "flex items-center gap-2",
-                  valid ? "text-emerald-700" : "text-muted-foreground",
+                  valid ? "text-success" : "text-muted-foreground",
                 )}
                 key={label}
               >

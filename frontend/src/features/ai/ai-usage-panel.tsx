@@ -106,7 +106,7 @@ export function AIUsagePanel({
         isReached
           ? "border-destructive/40"
           : isNearLimit
-            ? "border-amber-500/40"
+            ? "border-warning-border"
             : undefined
       }
     >
@@ -125,10 +125,10 @@ export function AIUsagePanel({
         <span
           className={
             isReached
-              ? "bg-destructive/10 text-destructive rounded-full px-3 py-1 text-xs font-medium"
+              ? "border-destructive-border bg-destructive-subtle text-destructive w-fit shrink-0 rounded-sm border px-2 py-0.5 text-xs font-medium whitespace-nowrap"
               : isNearLimit
-                ? "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"
-                : "bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium"
+                ? "border-warning-border bg-warning-subtle text-warning w-fit shrink-0 rounded-sm border px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+                : "border-brand-border bg-brand-subtle text-brand w-fit shrink-0 rounded-sm border px-2 py-0.5 text-xs font-medium whitespace-nowrap"
           }
         >
           {isReached
@@ -151,30 +151,30 @@ export function AIUsagePanel({
             {...(isReached
               ? { indicatorClassName: "bg-destructive" }
               : isNearLimit
-                ? { indicatorClassName: "bg-amber-500" }
+                ? { indicatorClassName: "bg-warning" }
                 : {})}
             value={percentage}
           />
         </div>
 
-        <dl className="grid gap-3 text-sm sm:grid-cols-3">
-          <div>
-            <dt className="text-muted-foreground">Succès / erreurs</dt>
-            <dd className="mt-1 font-medium">
+        <dl className="bg-border grid gap-px overflow-hidden rounded-md border text-sm sm:grid-cols-3">
+          <div className="bg-surface-sunken px-3 py-2.5">
+            <dt className="text-muted-foreground text-xs">Succès / erreurs</dt>
+            <dd className="mt-1 font-medium tabular-nums">
               {data.successful_requests} / {data.failed_requests}
             </dd>
           </div>
-          <div>
-            <dt className="text-muted-foreground">Coût estimé</dt>
-            <dd className="mt-1 font-medium">
+          <div className="bg-surface-sunken px-3 py-2.5">
+            <dt className="text-muted-foreground text-xs">Coût estimé</dt>
+            <dd className="mt-1 font-medium tabular-nums">
               {data.pricing_configured
                 ? formatCost(data.estimated_cost_usd)
                 : "Tarification non configurée"}
             </dd>
           </div>
-          <div>
-            <dt className="text-muted-foreground">Latence moyenne</dt>
-            <dd className="mt-1 font-medium">
+          <div className="bg-surface-sunken px-3 py-2.5">
+            <dt className="text-muted-foreground text-xs">Latence moyenne</dt>
+            <dd className="mt-1 font-medium tabular-nums">
               {data.average_latency_ms === null
                 ? "—"
                 : `${String(data.average_latency_ms)} ms`}

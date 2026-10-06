@@ -1,6 +1,7 @@
 import {
   BriefcaseBusiness,
   CircleUserRound,
+  Cog,
   FileUp,
   FolderKanban,
   MailCheck,
@@ -15,8 +16,13 @@ import {
 import { memo, type CSSProperties } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { activityResourceLabels } from "@/lib/activity-presentation";
+import {
+  activityEventTones,
+  activityResourceLabels,
+  getActorInitials,
+} from "@/lib/activity-presentation";
 import { formatDateTime, formatRelativeDate } from "@/lib/format";
+import { toneBadgeClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import type { ActivityEvent, ActivityItem as Activity } from "@/types/activity";
 
@@ -61,43 +67,61 @@ export const ActivityItem = memo(function ActivityItem({
     <li
       aria-posinset={position}
       aria-setsize={total}
-      className={cn(
-        "relative flex gap-3 pb-4 last:pb-0",
-        isNew && "activity-arrival",
-      )}
+      className={cn("relative", isNew && "activity-arrival")}
       style={style}
     >
+      {/* Rail: links this event's node to the next one. */}
       {!isLast ? (
         <span
           aria-hidden="true"
-          className="bg-border absolute top-10 bottom-0 left-5 w-px"
+          className="bg-border absolute top-8 bottom-1 left-3.5 w-px"
         />
       ) : null}
-      <div className="bg-primary/10 text-primary relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full">
-        <Icon aria-hidden="true" className="size-4" />
+      {/* Each slot reads top-down: when (on the rail), then what and who. */}
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "relative z-10 flex size-7 shrink-0 items-center justify-center rounded-md border",
+            toneBadgeClasses[activityEventTones[activity.event]],
+          )}
+        >
+          <Icon aria-hidden="true" className="size-3.5" />
+        </div>
+        <time
+          className="text-muted-foreground text-xs tabular-nums"
+          dateTime={activity.created_at}
+          title={formatDateTime(activity.created_at)}
+        >
+          {formatRelativeDate(activity.created_at)}
+        </time>
       </div>
-      <article className="bg-card min-w-0 flex-1 rounded-xl border p-3 shadow-sm">
-        <div className="flex flex-col justify-between gap-1.5 sm:flex-row sm:items-start sm:gap-2">
-          <div className="min-w-0">
-            <h2 className="text-sm leading-5 font-semibold">
-              {activity.message}
-            </h2>
-          </div>
-          <Badge className="w-fit shrink-0" variant="outline">
+      <article
+        className={cn(
+          "bg-card rounded-card mt-2 ml-10 min-w-0 border px-3.5 py-3 shadow-xs",
+          isNew && "border-primary/40",
+        )}
+      >
+        <h2 className="line-clamp-2 max-w-3xl text-sm leading-5 font-medium">
+          {activity.message}
+        </h2>
+        <div className="text-muted-foreground mt-2 flex min-w-0 items-center gap-2 text-xs">
+          <span
+            aria-hidden="true"
+            className="bg-surface-sunken flex size-5 shrink-0 items-center justify-center rounded-full border text-[0.625rem] font-semibold"
+          >
+            {activity.actor ? (
+              getActorInitials(actor)
+            ) : (
+              <Cog className="size-3" />
+            )}
+          </span>
+          <span className="text-foreground/80 min-w-0 truncate font-medium">
+            {actor}
+          </span>
+          <span aria-hidden="true">·</span>
+          <Badge className="shrink-0" variant="outline">
             {activityResourceLabels[activity.resource]}
           </Badge>
-        </div>
-        <div className="text-muted-foreground mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
-          <span>{actor}</span>
-          <span aria-hidden="true" className="hidden sm:inline">
-            ·
-          </span>
-          <time
-            dateTime={activity.created_at}
-            title={formatDateTime(activity.created_at)}
-          >
-            {formatRelativeDate(activity.created_at)}
-          </time>
         </div>
       </article>
     </li>

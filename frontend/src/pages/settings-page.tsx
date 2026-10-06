@@ -84,14 +84,14 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-primary text-sm font-semibold">Votre compte</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">Paramètres</h1>
-        <p className="text-muted-foreground mt-2 max-w-2xl">
+        <p className="text-label text-muted-foreground">Votre compte</p>
+        <h1 className="text-page-title mt-0.5">Paramètres</h1>
+        <p className="text-muted-foreground mt-1 max-w-2xl">
           Gérez votre profil, votre sécurité et votre expérience TaskMiner.
         </p>
       </header>
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <aside className="max-w-full min-w-0 lg:sticky lg:top-24 lg:self-start">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="max-w-full min-w-0 lg:sticky lg:top-20 lg:self-start">
           <SettingsNav
             active={activeSection}
             onChange={(section) => {

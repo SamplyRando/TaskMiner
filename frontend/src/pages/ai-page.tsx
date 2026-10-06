@@ -1,8 +1,7 @@
-import { BrainCircuit } from "lucide-react";
 import { useCallback, useState } from "react";
 
-import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
+import { Facet } from "@/components/ui/facet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AIProjectPlan } from "@/features/ai/ai-project-plan";
@@ -10,6 +9,7 @@ import { AIApplySuccess } from "@/features/ai/ai-apply-success";
 import { AIProjectChangeWorkflow } from "@/features/ai/ai-project-change-workflow";
 import { AIGenerationStatus } from "@/features/ai/ai-generation-status";
 import { AIProjectPlannerForm } from "@/features/ai/ai-project-planner-form";
+import { AIDraftIllustration, AIFlowStrip } from "@/features/ai/ai-signature";
 import { AIUsagePanel } from "@/features/ai/ai-usage-panel";
 import {
   useAICapabilities,
@@ -27,6 +27,7 @@ import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
 import { useAssignableWorkspaceMembers } from "@/features/workspaces/hooks";
 import { useActiveWorkspace } from "@/hooks/use-active-workspace";
 import { useSessionState } from "@/hooks/use-session-state";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import type {
   AIApplyProjectPlanRequest,
@@ -207,45 +208,82 @@ export function AIPage() {
     );
   }
 
+  // Mirrors the existing state only (no new step logic): brief → draft
+  // generation → human review → applied.
+  const flowStep =
+    mode !== "plan"
+      ? null
+      : appliedPlan?.result
+        ? 3
+        : draft
+          ? 2
+          : generatePlan.isPending
+            ? 1
+            : 0;
+
   return (
-    <div className="brand-scope mx-auto w-full max-w-[96rem] space-y-8">
-      <EntityPageHeader
-        actions={
-          <p className="text-muted-foreground text-xs">
+    <div className="brand-scope mx-auto w-full max-w-[96rem] space-y-6">
+      <header className="bg-card rounded-card relative overflow-hidden border shadow-xs">
+        <div
+          aria-hidden="true"
+          className="bg-brand-subtle pointer-events-none absolute -top-16 -right-16 size-48 rotate-45 opacity-70"
+        />
+        <div className="relative flex flex-col gap-4 px-5 pt-5 pb-4 sm:px-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-label text-brand flex items-center gap-2">
+              <Facet className="size-3.5" />
+              Planification assistée, validée par vous
+            </p>
+            <h1 className="text-page-title mt-2">TaskMiner AI</h1>
+            <p className="text-muted-foreground mt-1.5 max-w-2xl">
+              Décrivez le résultat attendu, révisez le brouillon, puis appliquez
+              uniquement ce que vous validez.
+            </p>
+          </div>
+          <p className="text-muted-foreground shrink-0 text-xs">
             Fournisseur :{" "}
             {capabilitiesQuery.data?.provider_label ?? "TaskMiner AI"}
           </p>
-        }
-        description="Décrivez le résultat attendu, révisez le brouillon, puis appliquez uniquement ce que vous validez."
-        title="TaskMiner AI"
-      />
+        </div>
+        <div className="relative px-5 pb-5 sm:px-6">
+          <AIFlowStrip current={flowStep} />
+        </div>
+      </header>
 
       <div
         aria-label="Mode TaskMiner AI"
-        className="bg-muted/50 inline-flex w-full rounded-xl border p-1 sm:w-auto"
+        className="bg-surface-sunken inline-flex w-full gap-1 rounded-lg border p-1 sm:w-auto"
         role="tablist"
       >
         <Button
           aria-selected={mode === "plan"}
-          className="flex-1 sm:flex-none"
+          className={cn(
+            "h-8 flex-1 sm:flex-none",
+            mode === "plan" &&
+              "bg-surface text-foreground hover:bg-surface shadow-xs",
+          )}
           onClick={() => {
             setMode("plan");
           }}
           role="tab"
           type="button"
-          variant={mode === "plan" ? "default" : "ghost"}
+          variant="ghost"
         >
           Créer / planifier
         </Button>
         <Button
           aria-selected={mode === "change"}
-          className="flex-1 sm:flex-none"
+          className={cn(
+            "h-8 flex-1 sm:flex-none",
+            mode === "change" &&
+              "bg-surface text-foreground hover:bg-surface shadow-xs",
+          )}
           onClick={() => {
             setMode("change");
           }}
           role="tab"
           type="button"
-          variant={mode === "change" ? "default" : "ghost"}
+          variant="ghost"
         >
           Modifier un projet
         </Button>
@@ -264,8 +302,8 @@ export function AIPage() {
       {!workspaceState.isPending && workspaceState.workspaces.length === 0 ? (
         <Card>
           <CardContent className="flex min-h-56 flex-col items-center justify-center px-6 py-10 text-center">
-            <BrainCircuit aria-hidden="true" className="text-primary size-10" />
-            <h2 className="mt-4 text-lg font-semibold">
+            <AIDraftIllustration />
+            <h2 className="mt-6 text-lg font-semibold">
               Créez d’abord un workspace
             </h2>
             <p className="text-muted-foreground mt-2 max-w-lg text-sm">
@@ -341,13 +379,10 @@ export function AIPage() {
       !appliedPlan &&
       !generatePlan.isPending &&
       workspaceState.workspaces.length > 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex min-h-48 flex-col items-center justify-center px-6 py-10 text-center">
-            <BrainCircuit
-              aria-hidden="true"
-              className="text-muted-foreground size-9"
-            />
-            <h2 className="mt-4 font-semibold">
+        <Card className="bg-surface-sunken/40 border-dashed shadow-none">
+          <CardContent className="flex min-h-56 flex-col items-center justify-center px-6 py-10 text-center">
+            <AIDraftIllustration />
+            <h2 className="mt-6 font-semibold">
               Votre brouillon apparaîtra ici
             </h2>
             <p className="text-muted-foreground mt-2 max-w-xl text-sm">

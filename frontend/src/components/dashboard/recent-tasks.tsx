@@ -165,7 +165,7 @@ export const RecentTasks = memo(function RecentTasks({
   return (
     <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-0 pb-2">

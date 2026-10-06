@@ -18,12 +18,12 @@ export function AIChangeApplySuccess({
 }: AIChangeApplySuccessProps) {
   const navigate = useNavigate();
   return (
-    <Card className="border-emerald-500/30 bg-emerald-500/5">
+    <Card className="border-success-border bg-success-subtle/60">
       <CardContent className="flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <CheckCircle2
             aria-hidden="true"
-            className="mt-0.5 size-6 shrink-0 text-emerald-600"
+            className="text-success mt-0.5 size-6 shrink-0"
           />
           <div>
             <h2 className="font-semibold">

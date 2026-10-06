@@ -87,9 +87,10 @@ export function AppearancePanel({
               <button
                 aria-pressed={preferences.accent === accent.value}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg border p-3 text-sm font-medium transition-colors",
-                  preferences.accent === accent.value &&
-                    "border-primary ring-primary ring-1",
+                  "bg-card flex items-center gap-3 rounded-md border p-3 text-sm font-medium transition-colors",
+                  preferences.accent === accent.value
+                    ? "border-primary ring-primary ring-1"
+                    : "hover:bg-accent hover:border-border-strong",
                 )}
                 disabled={update.isPending}
                 key={accent.value}
@@ -111,7 +112,7 @@ export function AppearancePanel({
             ))}
           </div>
         </fieldset>
-        <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+        <div className="flex items-center justify-between gap-4 rounded-md border p-4">
           <div className="min-w-0">
             <p className="text-sm font-medium">Réduire les animations</p>
             <p className="text-muted-foreground text-sm">

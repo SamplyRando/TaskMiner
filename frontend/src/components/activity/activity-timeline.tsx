@@ -59,7 +59,7 @@ export const ActivityTimeline = memo(function ActivityTimeline({
 
   if (items.length === 0) {
     return (
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-card border">
         <EmptyState
           action={emptyAction}
           description="Les prochains événements de ce workspace apparaîtront ici."
@@ -71,10 +71,10 @@ export const ActivityTimeline = memo(function ActivityTimeline({
   }
 
   return (
-    <div className="relative mx-auto max-w-4xl">
+    <div className="relative">
       <div
         aria-label="Flux d’activités virtualisé"
-        className="max-h-[640px] overflow-y-auto overscroll-contain pr-2"
+        className="rounded-card max-h-[640px] overflow-y-auto overscroll-contain pr-2"
         onScroll={(event) => {
           const viewport = event.currentTarget;
           setScrollTop(viewport.scrollTop);
@@ -127,7 +127,7 @@ export const ActivityTimeline = memo(function ActivityTimeline({
       </div>
       {scrollTop > ITEM_HEIGHT * 2 ? (
         <Button
-          className="absolute right-5 bottom-5 shadow-lg"
+          className="shadow-floating absolute right-5 bottom-5"
           onClick={() => {
             viewportRef.current?.scrollTo({ behavior: "smooth", top: 0 });
           }}

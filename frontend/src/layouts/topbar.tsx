@@ -42,7 +42,7 @@ export function Topbar({
     : "TM";
 
   return (
-    <header className="bg-background/95 sticky top-0 z-20 flex h-16 min-w-0 items-center gap-3 border-b px-4 shadow-xs backdrop-blur-xl sm:px-6">
+    <header className="bg-background/85 sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b px-4 backdrop-blur-xl sm:px-6">
       <Button
         aria-label="Ouvrir le menu"
         className="lg:hidden"
@@ -61,32 +61,36 @@ export function Topbar({
         value={activeWorkspaceId}
         workspaces={workspaces}
       />
-      <div className="ml-auto flex shrink-0 items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
         <NotificationCenter onWorkspaceChange={onWorkspaceChange} />
+        <span
+          aria-hidden="true"
+          className="bg-border hidden h-6 w-px sm:block"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label="Ouvrir le menu utilisateur"
-              className="h-auto gap-3 px-2 py-1.5"
+              className="h-auto gap-2.5 px-1.5 py-1"
               type="button"
               variant="ghost"
             >
               {currentUser?.avatar_url ? (
                 <img
                   alt=""
-                  className="size-9 rounded-full border object-cover shadow-sm"
+                  className="size-8 rounded-full border object-cover"
                   src={currentUser.avatar_url}
                 />
               ) : (
-                <span className="bg-primary text-primary-foreground ring-primary/10 flex size-9 items-center justify-center rounded-full text-xs font-bold shadow-sm ring-2">
+                <span className="bg-primary-subtle text-primary ring-primary/20 flex size-8 items-center justify-center rounded-full text-xs font-semibold ring-1">
                   {initials}
                 </span>
               )}
               <span className="hidden min-w-0 text-left sm:block">
-                <span className="block max-w-48 truncate text-sm font-medium">
+                <span className="block max-w-48 truncate text-sm leading-5 font-medium">
                   {displayName}
                 </span>
-                <span className="text-muted-foreground block max-w-48 truncate text-xs font-normal">
+                <span className="text-muted-foreground block max-w-48 truncate text-xs leading-4 font-normal">
                   {currentUser?.email ?? "Session active"}
                 </span>
               </span>

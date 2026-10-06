@@ -139,7 +139,7 @@ export const DashboardCharts = memo(function DashboardCharts({
   return (
     <section aria-labelledby="dashboard-charts-title" className="space-y-4">
       <div>
-        <h2 className="text-xl font-semibold" id="dashboard-charts-title">
+        <h2 className="text-section-title" id="dashboard-charts-title">
           Évolution temporelle
         </h2>
         <p className="text-muted-foreground text-sm">

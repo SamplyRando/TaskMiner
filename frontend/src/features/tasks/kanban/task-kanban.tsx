@@ -118,7 +118,7 @@ export function TaskKanban({
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-card rounded-2xl border py-12">
+      <div className="bg-card rounded-card border py-12">
         <EmptyState
           action={emptyAction}
           description="Créez une tâche ou ajustez les filtres actifs."
@@ -166,11 +166,11 @@ export function TaskKanban({
       {isMobile && availableStatuses.length > 1 ? (
         <nav
           aria-label="Navigation entre les colonnes Kanban"
-          className="mb-3 flex items-center justify-between rounded-xl border p-2"
+          className="bg-card rounded-card mb-3 flex items-center justify-between border p-1.5 shadow-xs"
         >
           <button
             aria-label="Colonne précédente"
-            className="hover:bg-muted rounded-md p-2 disabled:opacity-40"
+            className="hover:bg-accent rounded-md p-2.5 transition-colors duration-150 disabled:opacity-40"
             disabled={mobileIndex <= 0}
             onClick={() => {
               const previous = availableStatuses[mobileIndex - 1];
@@ -186,7 +186,7 @@ export function TaskKanban({
           </p>
           <button
             aria-label="Colonne suivante"
-            className="hover:bg-muted rounded-md p-2 disabled:opacity-40"
+            className="hover:bg-accent rounded-md p-2.5 transition-colors duration-150 disabled:opacity-40"
             disabled={mobileIndex >= availableStatuses.length - 1}
             onClick={() => {
               const next = availableStatuses[mobileIndex + 1];
@@ -220,7 +220,7 @@ export function TaskKanban({
         <div
           aria-label="Tableau Kanban des tâches"
           className={cn(
-            "flex gap-4 pb-3",
+            "flex gap-3 pb-3",
             isMobile ? "w-full" : "overflow-x-auto overscroll-x-contain",
           )}
         >
@@ -264,10 +264,10 @@ export function TaskKanban({
       {notice ? (
         <div
           className={cn(
-            "fixed right-4 bottom-4 z-50 max-w-sm rounded-xl border px-4 py-3 text-sm shadow-lg",
+            "toast-arrival bg-popover rounded-floating shadow-floating fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 max-w-sm border-l-2 px-4 py-3 text-sm font-medium",
             notice.kind === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-red-200 bg-red-50 text-red-800",
+              ? "border-border border-l-success"
+              : "border-destructive-border border-l-destructive text-destructive",
           )}
           role={notice.kind === "error" ? "alert" : "status"}
         >

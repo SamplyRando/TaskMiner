@@ -12,18 +12,17 @@ const warningStyle = {
   blocking: {
     Icon: AlertCircle,
     label: "Bloquant",
-    style: "border-destructive/30 bg-destructive/5 text-destructive",
+    style: "border-destructive-border bg-destructive-subtle text-destructive",
   },
   warning: {
     Icon: AlertTriangle,
     label: "À vérifier",
-    style:
-      "border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200",
+    style: "border-warning-border bg-warning-subtle text-warning",
   },
   info: {
     Icon: Info,
     label: "Information",
-    style: "border-primary/20 bg-primary/5 text-foreground",
+    style: "border-info-border bg-info-subtle text-foreground",
   },
 } as const;
 

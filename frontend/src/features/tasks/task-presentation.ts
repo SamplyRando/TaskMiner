@@ -50,12 +50,25 @@ export const getTaskStatusLabel = (
   taskStatusLabels[status] ??
   status;
 
+export const getTaskStatusTone = (
+  status: TaskStatus,
+  completed = false,
+): Tone => taskStatusTones[status] ?? (completed ? "success" : "neutral");
+
 export const getTaskStatusClass = (
   status: TaskStatus,
   completed = false,
-): string =>
-  taskStatusClasses[status] ??
-  (completed ? toneBadgeClasses.success : toneBadgeClasses.neutral);
+): string => toneBadgeClasses[getTaskStatusTone(status, completed)];
+
+// Same definition as the dashboard "overdue" metric: unfinished task whose
+// due date is in the past. Presentation only.
+export const isTaskOverdue = (
+  task: Pick<Task, "due_date" | "status" | "status_is_completed">,
+  now = Date.now(),
+): boolean =>
+  task.due_date !== null &&
+  new Date(task.due_date).getTime() < now &&
+  !(task.status_is_completed ?? task.status === "done");
 
 export const getTaskStatusLabelFromTask = (task: Task): string =>
   task.status_label ?? getTaskStatusLabel(task.status);

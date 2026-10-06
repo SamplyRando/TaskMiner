@@ -30,7 +30,10 @@ export function AuditFilters({ actors, onChange, value }: AuditFiltersProps) {
   const hasFilters = Object.values(value).some(Boolean);
 
   return (
-    <section aria-label="Filtres du journal d’audit" className="space-y-3">
+    <section
+      aria-label="Filtres du journal d’audit"
+      className="bg-card rounded-card space-y-3 border p-3 shadow-xs"
+    >
       <div className="relative">
         <Search
           aria-hidden="true"
@@ -47,7 +50,7 @@ export function AuditFilters({ actors, onChange, value }: AuditFiltersProps) {
           value={value.search}
         />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
         <FilterField label="Utilisateur" name="audit-actor-filter">
           <Select
             id="audit-actor-filter"
@@ -173,7 +176,7 @@ function FilterField({
   return (
     <div>
       <label
-        className="text-muted-foreground mb-1.5 block text-sm font-medium"
+        className="text-label text-muted-foreground mb-1.5 block"
         htmlFor={name}
       >
         {label}

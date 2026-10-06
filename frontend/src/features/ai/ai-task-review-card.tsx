@@ -175,7 +175,7 @@ export function AITaskReviewCard({
                       className={cn(
                         "rounded-md border px-2 py-1",
                         !dependency.selected &&
-                          "border-amber-500/30 bg-amber-500/5 text-amber-700 line-through dark:text-amber-300",
+                          "border-warning-border bg-warning-subtle text-warning line-through",
                       )}
                       key={dependency.order}
                     >

@@ -48,15 +48,27 @@ type UsageItemProps = {
 
 function UsageItem({ label, limit, used }: UsageItemProps) {
   const percentage = Math.min(100, Math.round((used / limit) * 100));
+  // Display-only emphasis close to the limit; limits themselves are unchanged.
+  const indicatorClassName =
+    percentage >= 100
+      ? "bg-destructive"
+      : percentage >= 80
+        ? "bg-warning"
+        : undefined;
   return (
-    <div className="space-y-2">
+    <div className="bg-surface-sunken space-y-2.5 rounded-md border px-3.5 py-3">
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">
+        <span className="font-medium tabular-nums">
           {used} / {limit}
         </span>
       </div>
-      <Progress aria-label={`${label} utilisés`} value={percentage} />
+      <Progress
+        aria-label={`${label} utilisés`}
+        className="h-1.5"
+        {...(indicatorClassName ? { indicatorClassName } : {})}
+        value={percentage}
+      />
     </div>
   );
 }
@@ -128,7 +140,7 @@ export function WorkspacePlanCard({
       <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
         <div>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Crown aria-hidden="true" className="text-primary size-5" />
+            <Crown aria-hidden="true" className="text-brand size-5" />
             Plan {isPro ? "Pro" : "Free"}
           </CardTitle>
           <CardDescription className="mt-1">
@@ -172,7 +184,7 @@ export function WorkspacePlanCard({
           {billingError}
         </p>
       ) : null}
-      <CardContent className="grid gap-5 sm:grid-cols-3">
+      <CardContent className="grid gap-3 sm:grid-cols-3">
         <UsageItem
           label="Membres"
           limit={data.limits.members}

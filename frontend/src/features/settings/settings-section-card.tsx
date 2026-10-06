@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type SettingsSectionCardProps = PropsWithChildren<{
   title: string;
@@ -23,17 +24,33 @@ export function SettingsSectionCard({
   title,
 }: SettingsSectionCardProps) {
   return (
-    <Card className={destructive ? "border-destructive/50" : undefined}>
-      <CardHeader className="p-4 sm:p-6">
-        <div className="flex items-center gap-2">
-          {icon}
+    <Card className={destructive ? "border-destructive-border" : undefined}>
+      <CardHeader
+        className={cn(
+          "flex-row items-start gap-3 space-y-0 border-b p-4 sm:px-6 sm:py-5",
+          destructive && "border-destructive-border",
+        )}
+      >
+        {icon ? (
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-md border",
+              destructive
+                ? "border-destructive-border bg-destructive-subtle"
+                : "bg-surface-sunken",
+            )}
+          >
+            {icon}
+          </span>
+        ) : null}
+        <div className="min-w-0 space-y-1">
           <CardTitle className={destructive ? "text-destructive" : undefined}>
             {title}
           </CardTitle>
+          <CardDescription>{description}</CardDescription>
         </div>
-        <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">{children}</CardContent>
+      <CardContent className="p-4 sm:p-6">{children}</CardContent>
     </Card>
   );
 }

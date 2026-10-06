@@ -45,6 +45,52 @@ describe("dashboard components", () => {
     expect(container.querySelector(".rounded-lg.border")).toBeNull();
   });
 
+  it("renders a compact secondary KPI with its full title and info button", () => {
+    const { container } = render(
+      <KpiCard
+        color="neutral"
+        icon={CheckCircle2}
+        size="compact"
+        title="À échéance cette semaine"
+        tooltip="Tâches dont l’échéance tombe dans les 7 jours."
+        value={3}
+        variation={-10}
+      />,
+    );
+
+    expect(screen.getByText("À échéance cette semaine")).toHaveClass(
+      "line-clamp-2",
+    );
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("-10 % vs période précédente")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Information sur À échéance cette semaine",
+      }),
+    ).toBeInTheDocument();
+    expect(container.querySelector("article")).toHaveClass("bg-surface-sunken");
+  });
+
+  it("renders the compact empty state without the Facette mark", () => {
+    const { container, rerender } = render(
+      <EmptyState
+        description="Glissez une tâche ici."
+        title="Aucune tâche"
+        variant="compact"
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Aucune tâche");
+    expect(container.querySelector("svg")).toBeNull();
+
+    rerender(<EmptyState description="Rien à afficher" title="Vide" />);
+    expect(
+      container.querySelector(
+        "svg[aria-hidden='true'], [aria-hidden='true'] svg",
+      ),
+    ).not.toBeNull();
+  });
+
   it("renders status progress bars with accessible percentages", () => {
     render(<StatusDistribution items={dashboardFixture.status_distribution} />);
 

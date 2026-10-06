@@ -345,11 +345,7 @@ export function TaskAttachmentsDialog({
           />
         ) : null}
         {notice ? (
-          <p
-            aria-live="polite"
-            className="text-sm text-emerald-600"
-            role="status"
-          >
+          <p aria-live="polite" className="text-success text-sm" role="status">
             {notice}
           </p>
         ) : null}

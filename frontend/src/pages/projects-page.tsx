@@ -7,6 +7,7 @@ import { DeleteDialog } from "@/components/delete-dialog";
 import { EntityPageHeader } from "@/components/entity-page-header";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
+import { Facet } from "@/components/ui/facet";
 import { Input } from "@/components/ui/input";
 import { WorkspaceSelector } from "@/components/workspace-selector";
 import { exportProjectTemplate } from "@/api/projects";
@@ -257,19 +258,9 @@ export function ProjectsPage() {
         title="Projets"
       />
 
-      <WorkspaceSelector
-        disabled={workspace.isPending}
-        onValueChange={(workspaceId) => {
-          workspace.selectWorkspace(workspaceId);
-          setPagination((current) => ({ ...current, pageIndex: 0 }));
-        }}
-        value={workspace.activeWorkspaceId}
-        workspaces={workspace.workspaces}
-      />
-
       {projectLimitReached ? (
         <p
-          className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
+          className="border-warning-border bg-warning-subtle text-warning flex items-center gap-2 rounded-md border px-4 py-3 text-sm font-medium"
           role="status"
         >
           <AlertTriangle aria-hidden="true" className="size-4 shrink-0" />
@@ -279,7 +270,7 @@ export function ProjectsPage() {
         </p>
       ) : null}
       {operationMessage ? (
-        <p className="text-sm text-emerald-700" role="status">
+        <p className="text-success text-sm font-medium" role="status">
           {operationMessage}
         </p>
       ) : null}
@@ -293,21 +284,33 @@ export function ProjectsPage() {
         </p>
       ) : null}
 
-      <div className="relative max-w-md">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          aria-label="Rechercher un projet"
-          className="pl-9"
-          onChange={(event) => {
-            setSearch(event.target.value);
+      <div className="bg-card rounded-card grid gap-2.5 border p-2.5 shadow-xs sm:grid-cols-[minmax(11rem,16rem)_minmax(0,28rem)]">
+        <WorkspaceSelector
+          compact
+          disabled={workspace.isPending}
+          onValueChange={(workspaceId) => {
+            workspace.selectWorkspace(workspaceId);
             setPagination((current) => ({ ...current, pageIndex: 0 }));
           }}
-          placeholder="Rechercher un projet…"
-          value={search}
+          value={workspace.activeWorkspaceId}
+          workspaces={workspace.workspaces}
         />
+        <div className="relative">
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          />
+          <Input
+            aria-label="Rechercher un projet"
+            className="pl-9"
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPagination((current) => ({ ...current, pageIndex: 0 }));
+            }}
+            placeholder="Rechercher un projet…"
+            value={search}
+          />
+        </div>
       </div>
 
       {projectsQuery.isError ||
@@ -367,6 +370,22 @@ export function ProjectsPage() {
           total={projectsQuery.data?.total ?? 0}
         />
       )}
+
+      {!projectsQuery.isPending &&
+      !search &&
+      (projectsQuery.data?.total ?? 0) > 0 &&
+      (projectsQuery.data?.total ?? 0) <= 3 ? (
+        <div className="rounded-card flex items-start gap-3 border border-dashed px-5 py-4">
+          <Facet className="mt-0.5 size-4" />
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium">Un portefeuille encore léger</p>
+            <p className="text-muted-foreground text-sm">
+              Importez un modèle, dupliquez un projet existant ou préparez un
+              plan avec TaskMiner AI pour structurer la suite.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <ProjectFormDialog
         error={selectedProject ? updateProject.error : createProject.error}

@@ -66,7 +66,7 @@ export const AuditTimeline = memo(function AuditTimeline({
 
   if (items.length === 0) {
     return (
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-card border">
         <EmptyState
           action={emptyAction}
           description="Les prochaines opérations auditables apparaîtront ici."
@@ -78,10 +78,10 @@ export const AuditTimeline = memo(function AuditTimeline({
   }
 
   return (
-    <div className="relative mx-auto max-w-5xl">
+    <div className="relative">
       <div
         aria-label="Journal d’audit virtualisé"
-        className="max-h-[680px] overflow-y-auto overscroll-contain pr-2"
+        className="rounded-card max-h-[680px] overflow-y-auto overscroll-contain pr-2"
         onScroll={(event) => {
           const viewport = event.currentTarget;
           setScrollTop(viewport.scrollTop);
@@ -134,7 +134,7 @@ export const AuditTimeline = memo(function AuditTimeline({
       </div>
       {scrollTop > ITEM_HEIGHT * 2 ? (
         <Button
-          className="absolute right-5 bottom-5 shadow-lg"
+          className="shadow-floating absolute right-5 bottom-5"
           onClick={() => {
             viewportRef.current?.scrollTo({ behavior: "smooth", top: 0 });
           }}

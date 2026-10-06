@@ -31,7 +31,7 @@ export const DashboardFilters = memo(function DashboardFilters({
   return (
     <section
       aria-label="Filtres globaux du dashboard"
-      className="bg-card grid gap-3 rounded-xl border p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-[auto_repeat(4,minmax(0,1fr))_auto] xl:items-end"
+      className="bg-card rounded-card grid gap-3 border p-4 shadow-xs sm:grid-cols-2 xl:grid-cols-[auto_repeat(4,minmax(0,1fr))_auto] xl:items-end"
     >
       <div className="text-muted-foreground flex items-center gap-2 self-center text-sm font-medium sm:col-span-2 xl:col-span-1">
         <Filter aria-hidden="true" className="size-4" />

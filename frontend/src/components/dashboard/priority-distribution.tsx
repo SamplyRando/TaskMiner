@@ -46,7 +46,7 @@ export const PriorityDistribution = memo(function PriorityDistribution({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Priorités</CardTitle>
+        <CardTitle className="text-base">Priorités</CardTitle>
         <CardDescription>
           Volume des tâches par niveau d’urgence.
         </CardDescription>
@@ -56,7 +56,7 @@ export const PriorityDistribution = memo(function PriorityDistribution({
           const config = priorityConfig[item.priority];
           return (
             <div
-              className="bg-muted/40 flex min-w-0 items-center justify-between gap-2 rounded-lg border p-3"
+              className="bg-surface-sunken flex min-w-0 items-center justify-between gap-2 rounded-md border px-3 py-2.5"
               key={item.priority}
             >
               <Badge
@@ -65,7 +65,7 @@ export const PriorityDistribution = memo(function PriorityDistribution({
               >
                 {config.label}
               </Badge>
-              <span className="text-xl font-bold tabular-nums">
+              <span className="text-xl font-semibold tabular-nums">
                 {item.count}
               </span>
             </div>

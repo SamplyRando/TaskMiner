@@ -42,7 +42,11 @@ export function getWorkspaceColumns({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Créé le" />
       ),
-      cell: ({ row }) => formatDateTime(row.original.created_at),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground whitespace-nowrap tabular-nums">
+          {formatDateTime(row.original.created_at)}
+        </span>
+      ),
     },
     {
       id: "actions",
@@ -50,12 +54,13 @@ export function getWorkspaceColumns({
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) =>
         row.original.owner_id === currentUserId ? (
-          <div className="flex justify-end gap-1">
+          <div className="flex justify-end gap-0.5">
             <Button
               aria-label={`Modifier ${row.original.name}`}
               onClick={() => {
                 onEdit(row.original);
               }}
+              className="text-muted-foreground hover:text-foreground size-8"
               size="icon"
               type="button"
               variant="ghost"
@@ -67,11 +72,12 @@ export function getWorkspaceColumns({
               onClick={() => {
                 onDelete(row.original);
               }}
+              className="text-muted-foreground hover:text-destructive size-8"
               size="icon"
               type="button"
               variant="ghost"
             >
-              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+              <Trash2 aria-hidden="true" className="size-4" />
             </Button>
           </div>
         ) : null,

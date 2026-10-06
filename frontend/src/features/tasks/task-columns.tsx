@@ -15,7 +15,9 @@ import {
   InlineTaskStatus,
   InlineTaskTitle,
 } from "@/features/tasks/task-inline-fields";
+import { isTaskOverdue } from "@/features/tasks/task-presentation";
 import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { getProjectStatuses, type Project } from "@/types/project";
 import type { Task, TaskUpdate } from "@/types/task";
 
@@ -67,8 +69,18 @@ export function getTaskColumns({
       accessorKey: "project_id",
       enableSorting: false,
       header: "Projet",
-      cell: ({ row }) =>
-        projectNames.get(row.original.project_id) ?? "Projet inconnu",
+      cell: ({ row }) => {
+        const name =
+          projectNames.get(row.original.project_id) ?? "Projet inconnu";
+        return (
+          <span
+            className="text-muted-foreground block max-w-44 truncate"
+            title={name}
+          >
+            {name}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -99,26 +111,42 @@ export function getTaskColumns({
       accessorKey: "due_date",
       enableSorting: false,
       header: "Échéance",
-      cell: ({ row }) => formatDateTime(row.original.due_date),
+      cell: ({ row }) => (
+        <span
+          className={cn(
+            "whitespace-nowrap tabular-nums",
+            isTaskOverdue(row.original)
+              ? "text-destructive font-medium"
+              : "text-muted-foreground",
+          )}
+        >
+          {formatDateTime(row.original.due_date)}
+        </span>
+      ),
     },
     {
       accessorKey: "created_at",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Créée le" />
       ),
-      cell: ({ row }) => formatDateTime(row.original.created_at),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground whitespace-nowrap tabular-nums">
+          {formatDateTime(row.original.created_at)}
+        </span>
+      ),
     },
     {
       id: "actions",
       enableSorting: false,
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
+        <div className="text-muted-foreground flex justify-end gap-0.5">
           <Button
             aria-label={`Commentaires de ${row.original.title}`}
             onClick={() => {
               onComments(row.original);
             }}
+            className="text-muted-foreground hover:text-foreground size-8"
             size="icon"
             title="Commentaires"
             type="button"
@@ -131,6 +159,7 @@ export function getTaskColumns({
             onClick={() => {
               onAttachments(row.original);
             }}
+            className="text-muted-foreground hover:text-foreground size-8"
             size="icon"
             title="Pièces jointes"
             type="button"
@@ -145,6 +174,7 @@ export function getTaskColumns({
                 onClick={() => {
                   onAssign(row.original);
                 }}
+                className="text-muted-foreground hover:text-foreground size-8"
                 size="icon"
                 type="button"
                 variant="ghost"
@@ -157,6 +187,7 @@ export function getTaskColumns({
                   onClick={() => {
                     onDuplicate(row.original);
                   }}
+                  className="text-muted-foreground hover:text-foreground size-8"
                   size="icon"
                   title="Dupliquer"
                   type="button"
@@ -170,6 +201,7 @@ export function getTaskColumns({
                 onClick={() => {
                   onEdit(row.original);
                 }}
+                className="text-muted-foreground hover:text-foreground size-8"
                 size="icon"
                 type="button"
                 variant="ghost"
@@ -181,14 +213,12 @@ export function getTaskColumns({
                 onClick={() => {
                   onDelete(row.original);
                 }}
+                className="text-muted-foreground hover:text-destructive size-8"
                 size="icon"
                 type="button"
                 variant="ghost"
               >
-                <Trash2
-                  aria-hidden="true"
-                  className="text-destructive size-4"
-                />
+                <Trash2 aria-hidden="true" className="size-4" />
               </Button>
             </>
           ) : null}

@@ -36,7 +36,7 @@ export function MainLayout() {
           setIsSidebarOpen(false);
         }}
       />
-      <div className="lg:pl-72">
+      <div className="lg:pl-64">
         <Topbar
           activeWorkspaceId={workspace.activeWorkspaceId}
           isWorkspacePending={workspace.isPending}

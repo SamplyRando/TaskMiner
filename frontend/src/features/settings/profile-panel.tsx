@@ -75,7 +75,7 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
               src={profile.avatar_url}
             />
           ) : (
-            <div className="bg-primary text-primary-foreground flex size-20 items-center justify-center rounded-full text-2xl font-bold shadow-sm sm:size-28 sm:text-3xl">
+            <div className="bg-primary-subtle text-primary ring-primary/20 flex size-20 items-center justify-center rounded-full text-2xl font-semibold ring-1 sm:size-28 sm:text-3xl">
               {initials}
             </div>
           )}
@@ -107,7 +107,7 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
               </span>
             </label>
           </div>
-          <label className="space-y-2 text-sm font-medium">
+          <label className="block space-y-2 text-sm font-medium">
             <span className="flex items-center gap-2">
               <Camera aria-hidden="true" className="size-4" /> URL de l’avatar
             </span>
@@ -122,7 +122,7 @@ export function ProfilePanel({ profile, onSuccess }: ProfilePanelProps) {
               </span>
             ) : null}
           </label>
-          <dl className="bg-muted/50 grid gap-3 rounded-lg p-3 text-sm sm:grid-cols-2 sm:p-4">
+          <dl className="bg-surface-sunken grid gap-3 rounded-md border p-3 text-sm sm:grid-cols-2 sm:p-4">
             <div>
               <dt className="text-muted-foreground">Compte créé</dt>
               <dd className="font-medium">

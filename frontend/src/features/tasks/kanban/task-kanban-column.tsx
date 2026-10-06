@@ -4,10 +4,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { TaskKanbanCard } from "@/features/tasks/kanban/task-kanban-card";
-import { getTaskStatusClass } from "@/features/tasks/task-presentation";
+import { getTaskStatusTone } from "@/features/tasks/task-presentation";
+import { toneDotClasses } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import type { Project, ProjectTaskStatus } from "@/types/project";
 import type { Task } from "@/types/task";
@@ -49,38 +49,38 @@ export function TaskKanbanColumn({
       ref={setNodeRef}
       aria-label={`${status.label}, ${String(tasks.length)} tâche${tasks.length > 1 ? "s" : ""}`}
       className={cn(
-        "bg-muted/45 flex min-h-[32rem] w-full min-w-0 flex-col rounded-2xl border p-3 transition-colors sm:w-80 sm:min-w-80",
-        isOver && "border-primary/50 bg-primary/5",
+        "bg-surface-sunken rounded-card flex min-h-[32rem] w-full min-w-0 flex-col border p-2 transition-colors duration-150 sm:w-76 sm:min-w-76",
+        isOver && "border-primary/40 bg-primary-subtle",
       )}
     >
-      <header className="mb-3 flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2">
+      <header className="mb-2 flex items-center justify-between gap-2 px-1.5 pt-0.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             aria-hidden="true"
             className={cn(
-              "size-2.5 rounded-full",
-              status.is_completed ? "bg-emerald-500" : "bg-violet-500",
+              "size-2 shrink-0 rounded-full",
+              toneDotClasses[
+                getTaskStatusTone(status.key, status.is_completed)
+              ],
             )}
           />
-          <h2 className="text-sm font-semibold">{status.label}</h2>
+          <h2 className="truncate text-sm font-semibold">{status.label}</h2>
         </div>
-        <Badge
-          className={getTaskStatusClass(status.key, status.is_completed)}
-          variant="outline"
-        >
+        <span className="text-muted-foreground bg-surface rounded-sm border px-1.5 text-xs leading-5 font-medium tabular-nums">
           {tasks.length}
-        </Badge>
+        </span>
       </header>
 
       <SortableContext
         items={tasks.map((task) => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex min-h-24 flex-1 flex-col gap-3">
+        <div className="flex min-h-24 flex-1 flex-col gap-2">
           {tasks.length === 0 ? (
             <EmptyState
               description="Glissez une tâche ici pour changer son statut."
               title="Aucune tâche"
+              variant="compact"
             />
           ) : (
             tasks.map((task) => (

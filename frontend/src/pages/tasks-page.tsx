@@ -315,20 +315,20 @@ export function TasksPage() {
         title="Tâches"
       />
 
-      <WorkspaceSelector
-        disabled={workspace.isPending}
-        onValueChange={(workspaceId) => {
-          workspace.selectWorkspace(workspaceId);
-          setProjectId("");
-          setStatus("");
-          resetPage();
-        }}
-        value={workspace.activeWorkspaceId}
-        workspaces={workspace.workspaces}
-      />
-
-      <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1fr)_repeat(3,minmax(10rem,0.35fr))]">
-        <div className="relative">
+      <div className="bg-card rounded-card grid gap-2.5 border p-2.5 shadow-xs sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(10rem,0.5fr)_minmax(12rem,0.8fr)_repeat(3,minmax(10rem,0.55fr))]">
+        <WorkspaceSelector
+          compact
+          disabled={workspace.isPending}
+          onValueChange={(workspaceId) => {
+            workspace.selectWorkspace(workspaceId);
+            setProjectId("");
+            setStatus("");
+            resetPage();
+          }}
+          value={workspace.activeWorkspaceId}
+          workspaces={workspace.workspaces}
+        />
+        <div className="relative lg:col-span-2 xl:col-span-1">
           <Search
             aria-hidden="true"
             className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2"
@@ -378,6 +378,7 @@ export function TasksPage() {
         </Select>
         <Select
           aria-label="Filtrer par priorité"
+          className="sm:col-span-2 lg:col-span-1"
           onChange={(event) => {
             setPriority(event.target.value as TaskPriority | "");
             resetPage();
@@ -416,7 +417,7 @@ export function TasksPage() {
           }}
         />
       ) : mode === "kanban" && !projectId ? (
-        <div className="bg-card rounded-2xl border py-12">
+        <div className="bg-card rounded-card border py-12">
           <EmptyState
             description="Sélectionnez un projet pour afficher son workflow personnalisé."
             title="Choisissez un projet pour le Kanban"
@@ -523,6 +524,7 @@ export function TasksPage() {
           manualSorting
           mobileLabels={{
             assigned_user: "Assignée à",
+            created_at: "Créée le",
             due_date: "Échéance",
             priority: "Priorité",
             project_id: "Projet",
