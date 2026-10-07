@@ -106,7 +106,7 @@ export function VerifyEmailPage() {
 
       {verificationState === "verified" ? (
         <div
-          className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800"
+          className="border-success-border bg-success-subtle text-success rounded-md border px-3 py-3 text-sm"
           role="status"
         >
           Votre adresse e-mail est vérifiée. Vous pouvez vous connecter.
@@ -126,7 +126,7 @@ export function VerifyEmailPage() {
           </p>
           {resendMessage ? (
             <div
-              className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+              className="border-success-border bg-success-subtle text-success rounded-md border px-3 py-2 text-sm"
               role="status"
             >
               {resendMessage}

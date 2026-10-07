@@ -22,4 +22,26 @@ describe("MarketingFooter", () => {
       screen.getByRole("link", { name: "Conditions d’utilisation" }),
     ).toHaveAttribute("href", "/terms");
   });
+
+  it("keeps a real contact and the consumer mediation, without fake offers", () => {
+    render(
+      <MemoryRouter>
+        <MarketingFooter />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "hello@taskminer.app" }),
+    ).toHaveAttribute("href", "mailto:hello@taskminer.app");
+    expect(
+      screen.getByRole("link", { name: "Médiation (CGU, art. 16)" }),
+    ).toHaveAttribute("href", "/terms");
+    expect(
+      screen.getByRole("link", { name: "Créer un compte" }),
+    ).toHaveAttribute("href", "/register");
+    expect(screen.queryByText(/demo|démo|enterprise/i)).toBeNull();
+    expect(
+      screen.getByText(`© ${String(new Date().getFullYear())} TaskMiner`),
+    ).toBeInTheDocument();
+  });
 });

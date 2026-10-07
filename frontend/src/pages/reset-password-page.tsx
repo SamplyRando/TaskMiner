@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { confirmPasswordReset } from "@/api/auth";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
 import { AccountActionCard } from "@/features/auth/components/account-action-card";
 import { FormField } from "@/features/auth/components/form-field";
@@ -55,20 +56,17 @@ export function ResetPasswordPage() {
     >
       {isComplete ? (
         <div
-          className="space-y-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800"
+          className="border-success-border bg-success-subtle text-success space-y-4 rounded-md border px-3 py-3 text-sm"
           role="status"
         >
           <p>Votre mot de passe a été réinitialisé.</p>
-          <Link
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-10 w-full items-center justify-center rounded-md px-4 py-2 font-medium shadow-xs"
-            to="/login"
-          >
+          <Link className={buttonVariants({ className: "w-full" })} to="/login">
             Se connecter
           </Link>
         </div>
       ) : !token ? (
         <div
-          className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border px-3 py-2 text-sm"
+          className="border-destructive-border bg-destructive-subtle text-destructive rounded-md border px-3 py-2 text-sm"
           role="alert"
         >
           Ce lien de réinitialisation est incomplet.

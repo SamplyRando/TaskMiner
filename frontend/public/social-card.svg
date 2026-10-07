@@ -1,23 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
   <defs>
-    <radialGradient id="bg" cx="72%" cy="14%" r="90%">
-      <stop stop-color="#21143f"/>
-      <stop offset="0.48" stop-color="#0c0913"/>
-      <stop offset="1" stop-color="#050408"/>
-    </radialGradient>
-    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#b79aff"/>
-      <stop offset="1" stop-color="#7245db"/>
+    <linearGradient id="plane" x1="0" y1="0" x2="0.4" y2="1">
+      <stop stop-color="#28213f"/>
+      <stop offset="0.65" stop-color="#28213f" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#28213f" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <path d="M0 520 1200 150M0 610 1200 240M160 0 0 50M430 0 0 130M700 0 0 215M970 0 0 298M1200 0 0 370" opacity=".08" stroke="#c4b5fd"/>
-  <circle cx="930" cy="95" r="280" fill="#7c3aed" opacity=".08"/>
-  <rect x="104" y="94" width="96" height="96" rx="28" fill="url(#mark)"/>
-  <path d="M130 124h48M154 124v42M139 139h31" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="8"/>
-  <path d="m166 153 6 6 14-18" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
-  <text x="228" y="159" fill="#fbfaff" font-family="Inter,system-ui,sans-serif" font-size="56" font-weight="750">TaskMiner</text>
-  <text x="104" y="355" fill="#fbfaff" font-family="Inter,system-ui,sans-serif" font-size="67" font-weight="720">From project context</text>
-  <text x="104" y="433" fill="#bba7f1" font-family="Inter,system-ui,sans-serif" font-size="67" font-weight="720">to prioritized work.</text>
-  <text x="106" y="510" fill="#aaa6b6" font-family="Inter,system-ui,sans-serif" font-size="27">AI-assisted project planning for focused teams.</text>
+  <rect width="1200" height="630" fill="#0e0e11"/>
+  <path d="M760 0H1200V630H640V120Z" fill="url(#plane)"/>
+  <path d="M640 120 760 0" stroke="#b4a1fc" stroke-opacity="0.35" stroke-width="2"/>
+  <path d="M612 92H686L612 166Z" fill="#b4a1fc" fill-opacity="0.55"/>
+  <rect x="96" y="88" width="72" height="72" rx="21" fill="#6d3bcd"/>
+  <path d="M115.8 110.5h32.4M132 110.5v27M121.9 120.4h19.8" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="5.85"/>
+  <path d="m141.9 131.2 3.6 3.6 7.2-9" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.05"/>
+  <text x="188" y="138" fill="#f7f7f8" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="40" font-weight="700" letter-spacing="-0.6">TaskMiner</text>
+  <text x="96" y="318" fill="#f7f7f8" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="68" font-weight="650" letter-spacing="-2.4">Transformez vos idées</text>
+  <text x="96" y="398" fill="#b4a1fc" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="68" font-weight="650" letter-spacing="-2.4">en projets qui avancent.</text>
+  <text x="98" y="468" fill="#a4a4ac" font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="26">Gestion de projet assistée par IA · L’IA propose, vous décidez.</text>
+  <g font-family="Inter Variable, Inter, system-ui, sans-serif" font-size="20" font-weight="600">
+    <rect x="96" y="522" width="86" height="40" rx="6" fill="#16161a" stroke="#3a3a42"/>
+    <text x="139" y="548" fill="#f7f7f8" text-anchor="middle">Brief</text>
+    <path d="M196 542h22m-7-7 7 7-7 7" fill="none" stroke="#b4a1fc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="232" y="522" width="128" height="40" rx="6" fill="#16161a" stroke="#3a3a42"/>
+    <text x="296" y="548" fill="#f7f7f8" text-anchor="middle">Plan relu</text>
+    <path d="M374 542h22m-7-7 7 7-7 7" fill="none" stroke="#b4a1fc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="410" y="522" width="132" height="40" rx="6" fill="#16161a" stroke="#3a3a42"/>
+    <text x="476" y="548" fill="#f7f7f8" text-anchor="middle">Exécution</text>
+    <path d="M556 542h22m-7-7 7 7-7 7" fill="none" stroke="#b4a1fc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="592" y="522" width="92" height="40" rx="6" fill="#16161a" stroke="#3a3a42"/>
+    <text x="638" y="548" fill="#f7f7f8" text-anchor="middle">Suivi</text>
+  </g>
 </svg>

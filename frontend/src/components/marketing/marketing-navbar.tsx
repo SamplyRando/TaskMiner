@@ -2,16 +2,22 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { BrandMark } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
+import {
+  marketingPrimaryCta,
+  marketingSecondaryCta,
+} from "@/components/marketing/marketing-ui";
 import { useActiveMarketingSection } from "@/components/marketing/use-active-marketing-section";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
-  { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#demo", label: "Demo" },
-  { href: "#faq", label: "FAQ" },
+  { href: "#fonctionnement", label: "Fonctionnement" },
+  { href: "#produit", label: "Produit" },
+  { href: "#tarifs", label: "Tarifs" },
 ] as const;
+
+const desktopLinkClass =
+  "text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=location]:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors";
 
 export function MarketingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,6 +28,7 @@ export function MarketingNavbar() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const firstMenuLinkRef = useRef<HTMLAnchorElement>(null);
 
+  // Scroll events are coalesced into a single visual update per frame.
   useEffect(() => {
     let scheduledFrame = 0;
     const updateScrolledState = () => {
@@ -45,6 +52,7 @@ export function MarketingNavbar() {
     };
   }, []);
 
+  // Mobile menu: scroll lock, initial focus, Escape and focus trap.
   useEffect(() => {
     if (!isMenuOpen) return;
 
@@ -54,7 +62,7 @@ export function MarketingNavbar() {
       firstMenuLinkRef.current?.focus();
     });
 
-    const closeOnEscape = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsMenuOpen(false);
         menuButtonRef.current?.focus();
@@ -62,11 +70,16 @@ export function MarketingNavbar() {
       }
 
       if (event.key === "Tab") {
-        const focusableElements = Array.from(
-          mobileMenuRef.current?.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ) ?? [],
-        );
+        // The close button stays in the cycle so the menu can always be
+        // dismissed from the keyboard, even without an Escape key.
+        const focusableElements = [
+          menuButtonRef.current,
+          ...Array.from(
+            mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            ) ?? [],
+          ),
+        ].filter((element): element is HTMLElement => element !== null);
         const firstElement = focusableElements[0];
         const lastElement = focusableElements.at(-1);
 
@@ -80,11 +93,20 @@ export function MarketingNavbar() {
       }
     };
 
-    document.addEventListener("keydown", closeOnEscape);
+    // The panel and its toggle disappear on large screens: close the menu
+    // there so the page never stays locked behind an invisible panel.
+    const desktopLayout = window.matchMedia("(min-width: 64rem)");
+    const closeOnDesktop = () => {
+      if (desktopLayout.matches) setIsMenuOpen(false);
+    };
+    desktopLayout.addEventListener("change", closeOnDesktop);
+
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+      desktopLayout.removeEventListener("change", closeOnDesktop);
     };
   }, [isMenuOpen]);
 
@@ -94,32 +116,31 @@ export function MarketingNavbar() {
 
   return (
     <header
-      className={cn("marketing-navbar", {
-        "marketing-navbar--open": isMenuOpen,
-        "marketing-navbar--scrolled": isScrolled,
-      })}
+      className={cn(
+        "marketing-navbar sticky top-0 z-40 border-b transition-[background-color,border-color] duration-150",
+        // No backdrop-filter while the menu is open: it would become the
+        // containing block of the fixed mobile panel and collapse it.
+        isMenuOpen
+          ? "border-border bg-background"
+          : isScrolled
+            ? "border-border bg-background/90 backdrop-blur-xl"
+            : "border-transparent",
+        isScrolled && "marketing-navbar--scrolled",
+      )}
     >
-      <nav aria-label="Marketing navigation" className="marketing-nav">
-        <Link
-          aria-label="TaskMiner home"
-          className="marketing-nav__brand"
-          onClick={closeMenu}
-          to="/"
-        >
-          <BrandMark className="marketing-nav__mark" />
-          <span>TaskMiner</span>
-        </Link>
+      <nav
+        aria-label="Navigation principale"
+        className="marketing-nav mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-5 sm:px-8"
+      >
+        <BrandLogo className="shrink-0" onClick={closeMenu} to="/" />
 
-        <div className="marketing-nav__links">
+        <div className="hidden items-center gap-1 lg:flex">
           {navigationItems.map((item) => (
             <a
               aria-current={
                 activeSection === item.href.slice(1) ? "location" : undefined
               }
-              className={cn({
-                "marketing-nav__link--active":
-                  activeSection === item.href.slice(1),
-              })}
+              className={desktopLinkClass}
               href={item.href}
               key={item.href}
             >
@@ -128,23 +149,23 @@ export function MarketingNavbar() {
           ))}
         </div>
 
-        <div className="marketing-nav__actions">
-          <Link className="marketing-nav__signin" to="/login">
-            Sign in
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
+          <Link className={desktopLinkClass} to="/login">
+            Se connecter
           </Link>
           <Link
-            className="marketing-button marketing-button--compact"
+            className={cn(marketingPrimaryCta, "h-9 px-4 text-sm")}
             to="/register"
           >
-            Start free
+            Commencer gratuitement
           </Link>
         </div>
 
         <button
           aria-controls="marketing-mobile-menu"
           aria-expanded={isMenuOpen}
-          aria-label={isMenuOpen ? "Close navigation" : "Open navigation"}
-          className="marketing-nav__menu-button"
+          aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          className="hover:bg-accent text-foreground ml-auto flex size-10 items-center justify-center rounded-md lg:hidden"
           onClick={() => {
             setIsMenuOpen((current) => !current);
           }}
@@ -161,23 +182,23 @@ export function MarketingNavbar() {
 
       <div
         aria-hidden={!isMenuOpen}
-        className={cn("marketing-mobile-menu", {
-          "marketing-mobile-menu--open": isMenuOpen,
-        })}
+        className={cn(
+          "bg-background fixed inset-x-0 top-16 bottom-0 z-30 overflow-y-auto border-t px-5 pt-4 pb-10 lg:hidden",
+          // Closed: removed from layout (no transition on visibility, which
+          // would keep the links unfocusable at the moment focus moves in).
+          !isMenuOpen && "hidden",
+        )}
         id="marketing-mobile-menu"
         inert={!isMenuOpen}
         ref={mobileMenuRef}
       >
-        <div className="marketing-mobile-menu__links">
+        <div className="flex flex-col">
           {navigationItems.map((item, index) => (
             <a
               aria-current={
                 activeSection === item.href.slice(1) ? "location" : undefined
               }
-              className={cn({
-                "marketing-nav__link--active":
-                  activeSection === item.href.slice(1),
-              })}
+              className="text-foreground hover:bg-accent flex h-12 items-center rounded-md px-3 text-lg font-medium"
               href={item.href}
               key={item.href}
               onClick={closeMenu}
@@ -187,16 +208,20 @@ export function MarketingNavbar() {
             </a>
           ))}
         </div>
-        <div className="marketing-mobile-menu__actions">
+        <div className="mt-6 grid gap-3 border-t pt-6">
           <Link
-            className="marketing-button marketing-button--secondary"
+            className={marketingSecondaryCta}
             onClick={closeMenu}
             to="/login"
           >
-            Sign in
+            Se connecter
           </Link>
-          <Link className="marketing-button" onClick={closeMenu} to="/register">
-            Start free
+          <Link
+            className={marketingPrimaryCta}
+            onClick={closeMenu}
+            to="/register"
+          >
+            Commencer gratuitement
           </Link>
         </div>
       </div>

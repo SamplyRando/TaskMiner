@@ -1,110 +1,105 @@
 import { Link } from "react-router-dom";
 
-import { BrandMark } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
+import { marketingContainer } from "@/components/marketing/marketing-ui";
+import { cn } from "@/lib/utils";
 
-const footerColumns = [
+type FooterLink = { href: string; label: string };
+
+const footerColumns: { links: FooterLink[]; title: string }[] = [
   {
     links: [
-      { href: "#features", label: "Features" },
-      { href: "#pricing", label: "Pricing" },
-      { href: "#demo", label: "Demo" },
+      { href: "#fonctionnement", label: "Fonctionnement" },
+      { href: "#produit", label: "Fonctionnalités" },
+      { href: "#tarifs", label: "Tarifs" },
+      { href: "#faq", label: "Questions fréquentes" },
     ],
-    title: "Product",
+    title: "Produit",
   },
   {
     links: [
-      { href: "/register", label: "Create account" },
-      { href: "/login", label: "Sign in" },
-      { href: "#faq", label: "FAQ" },
+      { href: "/register", label: "Créer un compte" },
+      { href: "/login", label: "Se connecter" },
     ],
-    title: "Get started",
+    title: "Compte",
   },
   {
     links: [
-      { href: "#how-it-works", label: "How it works" },
-      { href: "#product-proof", label: "Product proof" },
-      { href: "#demo", label: "AI planning demo" },
-    ],
-    title: "Explore",
-  },
-  {
-    links: [
-      {
-        href: "mailto:hello@taskminer.app?subject=TaskMiner%20demo",
-        label: "Book a demo",
-      },
-      {
-        href: "mailto:hello@taskminer.app?subject=TaskMiner%20support",
-        label: "Contact support",
-      },
-      {
-        href: "mailto:hello@taskminer.app?subject=TaskMiner%20Enterprise",
-        label: "Enterprise inquiry",
-      },
-      { href: "/privacy", label: "Confidentialité" },
       { href: "/legal", label: "Mentions légales" },
+      { href: "/privacy", label: "Confidentialité" },
       { href: "/terms", label: "Conditions d’utilisation" },
+      { href: "/terms", label: "Médiation (CGU, art. 16)" },
+    ],
+    title: "Informations légales",
+  },
+  {
+    links: [
+      { href: "mailto:hello@taskminer.app", label: "hello@taskminer.app" },
     ],
     title: "Contact",
   },
-] as const;
+];
+
+const linkClass =
+  "text-muted-foreground hover:text-foreground rounded-sm text-sm transition-colors";
 
 export function MarketingFooter() {
   return (
-    <footer className="marketing-footer">
-      <div className="marketing-section-shell">
-        <div className="marketing-footer__main">
-          <div
-            className="marketing-footer__brand-column marketing-motion-reveal marketing-motion-reveal--up"
-            data-marketing-reveal
-          >
-            <Link
-              aria-label="TaskMiner home"
-              className="marketing-footer__brand"
-              to="/"
-            >
-              <BrandMark />
-              <span>TaskMiner</span>
-            </Link>
-            <p>
-              AI-assisted project management that turns context into prioritized
-              work your team can review, assign, and deliver.
+    <footer className="border-t">
+      <div className={cn(marketingContainer, "py-14 sm:py-16")}>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <div className="max-w-xs">
+            <BrandLogo to="/" />
+            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+              Gestion de projet assistée par IA&nbsp;: du brief au plan, du plan
+              à l’exécution. L’IA propose, vous décidez.
             </p>
           </div>
 
           <nav
-            aria-label="Footer navigation"
-            className="marketing-footer__nav marketing-motion-reveal marketing-motion-reveal--up"
-            data-marketing-reveal
+            aria-label="Pied de page"
+            className="grid grid-cols-2 gap-8 sm:grid-cols-4"
           >
-            {footerColumns.map((column) => (
-              <div key={column.title}>
-                <h2>{column.title}</h2>
-                <ul>
-                  {column.links.map((link) => (
-                    <li key={link.label}>
-                      {link.href.startsWith("/") ? (
-                        <Link to={link.href}>{link.label}</Link>
-                      ) : (
-                        <a href={link.href}>{link.label}</a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {footerColumns.map((column) => {
+              const titleId = `marketing-footer-${column.title
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[^a-z]+/g, "-")}`;
+              return (
+                <div key={column.title}>
+                  <p
+                    className="text-foreground text-sm font-semibold"
+                    id={titleId}
+                  >
+                    {column.title}
+                  </p>
+                  <ul aria-labelledby={titleId} className="mt-4 space-y-2.5">
+                    {column.links.map((link) => (
+                      <li key={link.label}>
+                        {link.href.startsWith("/") ? (
+                          <Link className={linkClass} to={link.href}>
+                            {link.label}
+                          </Link>
+                        ) : (
+                          <a
+                            className={cn(linkClass, "break-all")}
+                            href={link.href}
+                          >
+                            {link.label}
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </nav>
         </div>
 
-        <div
-          className="marketing-footer__bottom marketing-motion-reveal marketing-motion-reveal--up"
-          data-marketing-reveal
-        >
-          <span>© 2026 TaskMiner</span>
-          <span>
-            <i aria-hidden="true" />
-            Built for focused work.
-          </span>
+        <div className="text-muted-foreground mt-12 flex flex-col gap-2 border-t pt-6 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} TaskMiner</p>
+          <p>Édité en France · Paiements gérés par Stripe</p>
         </div>
       </div>
     </footer>

@@ -38,7 +38,7 @@ describe("account lifecycle public routing", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { level: 3, name: heading }),
+      await screen.findByRole("heading", { level: 1, name: heading }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Connexion" }),

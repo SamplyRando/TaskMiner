@@ -1,67 +1,71 @@
-import { ArrowRight, CalendarDays } from "lucide-react";
-import type { CSSProperties } from "react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+
+import {
+  Eyebrow,
+  marketingContainer,
+  marketingH2,
+  marketingPrimaryCta,
+  marketingSecondaryCta,
+} from "@/components/marketing/marketing-ui";
+import { cn } from "@/lib/utils";
+
+const flow = ["Brief", "Plan relu", "Exécution", "Suivi"];
 
 export function FinalCta() {
   return (
     <section
       aria-labelledby="marketing-cta-title"
-      className="marketing-final-cta"
+      className="py-20 sm:py-24 lg:py-28"
     >
-      <div
-        aria-hidden="true"
-        className="marketing-final-cta__glow marketing-motion-reveal marketing-motion-reveal--scale"
-        data-marketing-reveal
-      />
-      <div className="marketing-section-shell marketing-final-cta__inner">
-        <span
-          className="marketing-final-cta__eyebrow marketing-motion-reveal marketing-motion-reveal--up"
-          data-marketing-reveal
-        >
-          Your next chapter
-        </span>
-        <h2
-          className="marketing-motion-reveal marketing-motion-reveal--up marketing-motion-reveal--blur"
-          data-marketing-reveal
-          id="marketing-cta-title"
-        >
-          Ready to stop managing work?
-        </h2>
-        <p
-          className="marketing-motion-reveal marketing-motion-reveal--up"
-          data-marketing-reveal
-          style={{ "--reveal-delay": "80ms" } as CSSProperties}
-        >
-          Create your account, open a workspace, and turn your first project
-          into prioritized work your team can act on.
-        </p>
-        <div
-          className="marketing-final-cta__actions marketing-motion-reveal marketing-motion-reveal--up"
-          data-marketing-reveal
-          style={{ "--reveal-delay": "150ms" } as CSSProperties}
-        >
-          <Link
-            className="marketing-button marketing-button--hero"
-            to="/register"
-          >
-            Start for free
-            <ArrowRight aria-hidden="true" />
-          </Link>
-          <a
-            className="marketing-button marketing-button--secondary marketing-button--hero"
-            href="mailto:hello@taskminer.app?subject=TaskMiner%20demo"
-          >
-            <CalendarDays aria-hidden="true" />
-            Book a demo
-          </a>
+      <div className={marketingContainer}>
+        <div className="bg-card rounded-dialog relative overflow-hidden border px-6 py-14 text-center shadow-xs sm:px-12 sm:py-20">
+          <div
+            aria-hidden="true"
+            className="mk-facet-plane mk-facet-plane--cta pointer-events-none absolute inset-0"
+          />
+          <div className="relative mx-auto max-w-2xl">
+            <Eyebrow className="justify-center">Prêt à démarrer</Eyebrow>
+            <h2 className={cn(marketingH2, "mt-4")} id="marketing-cta-title">
+              Votre prochain projet peut commencer par un plan clair.
+            </h2>
+            <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-lg leading-relaxed text-pretty">
+              Créez votre espace, décrivez votre premier objectif et laissez
+              TaskMiner AI préparer le plan. Vous gardez la main, votre équipe
+              avance.
+            </p>
+            <ol
+              aria-label="Les étapes avec TaskMiner"
+              className="text-muted-foreground mt-8 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm font-medium"
+            >
+              {flow.map((step, index) => (
+                <li className="inline-flex items-center gap-2" key={step}>
+                  <span className="bg-surface-sunken text-foreground rounded-sm border px-2 py-0.5">
+                    {step}
+                  </span>
+                  {index < flow.length - 1 ? (
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="text-brand size-3.5"
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link className={marketingPrimaryCta} to="/register">
+                Commencer gratuitement
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+              <Link className={marketingSecondaryCta} to="/login">
+                Se connecter
+              </Link>
+            </div>
+            <p className="text-muted-foreground mt-5 text-sm">
+              Plan Free sans limite de durée · Sans carte bancaire
+            </p>
+          </div>
         </div>
-        <span
-          className="marketing-final-cta__note marketing-motion-reveal marketing-motion-reveal--up"
-          data-marketing-reveal
-          style={{ "--reveal-delay": "210ms" } as CSSProperties}
-        >
-          Free plan · No credit card required
-        </span>
       </div>
     </section>
   );

@@ -10,6 +10,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MarketingNavbar } from "@/components/marketing/marketing-navbar";
+import { ACTIVE_SECTION_EVENT } from "@/components/marketing/use-active-marketing-section";
 
 describe("MarketingNavbar", () => {
   afterEach(() => {
@@ -28,7 +29,7 @@ describe("MarketingNavbar", () => {
       </MemoryRouter>,
     );
 
-    const menuButton = screen.getByRole("button", { name: "Open navigation" });
+    const menuButton = screen.getByRole("button", { name: "Ouvrir le menu" });
     const mobileMenu = document.getElementById("marketing-mobile-menu");
 
     expect(mobileMenu).toHaveAttribute("aria-hidden", "true");
@@ -37,18 +38,27 @@ describe("MarketingNavbar", () => {
 
     await waitFor(() => {
       expect(
-        screen.getAllByRole("link", { name: "Features" })[1],
+        screen.getAllByRole("link", { name: "Fonctionnement" })[1],
       ).toHaveFocus();
     });
     expect(document.body.style.overflow).toBe("hidden");
     expect(mobileMenu).toHaveAttribute("aria-hidden", "false");
 
+    // The close button belongs to the trap, so the menu can be dismissed
+    // from the keyboard without Escape.
+    const closeButton = screen.getByRole("button", { name: "Fermer le menu" });
+    await user.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(closeButton).toHaveFocus();
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(
-      screen.getAllByRole("link", { name: "Start free" })[1],
+      screen.getAllByRole("link", { name: "Commencer gratuitement" })[1],
     ).toHaveFocus();
     await user.tab();
-    expect(screen.getAllByRole("link", { name: "Features" })[1]).toHaveFocus();
+    expect(closeButton).toHaveFocus();
+    await user.tab();
+    expect(
+      screen.getAllByRole("link", { name: "Fonctionnement" })[1],
+    ).toHaveFocus();
 
     await user.keyboard("{Escape}");
 
@@ -94,5 +104,98 @@ describe("MarketingNavbar", () => {
       scheduledCallback?.(0);
     });
     expect(navbar).toHaveClass("marketing-navbar--scrolled");
+  });
+
+  it("links only to real anchors and public routes", () => {
+    render(
+      <MemoryRouter>
+        <MarketingNavbar />
+      </MemoryRouter>,
+    );
+
+    const [desktopHome] = screen.getAllByRole("link", {
+      name: "TaskMiner — Accueil",
+    });
+    expect(desktopHome).toHaveAttribute("href", "/");
+    for (const [name, href] of [
+      ["Fonctionnement", "#fonctionnement"],
+      ["Produit", "#produit"],
+      ["Tarifs", "#tarifs"],
+      ["Se connecter", "/login"],
+      ["Commencer gratuitement", "/register"],
+    ] as const) {
+      // hidden: true also covers the closed (inert) mobile menu.
+      for (const link of screen.getAllByRole("link", { hidden: true, name })) {
+        expect(link).toHaveAttribute("href", href);
+      }
+    }
+    expect(
+      screen.getByRole("navigation", { name: "Navigation principale" }),
+    ).toBeInTheDocument();
+  });
+
+  it("clears the current section when an anchor outside the navigation is reached", () => {
+    render(
+      <MemoryRouter>
+        <MarketingNavbar />
+      </MemoryRouter>,
+    );
+    const [tarifs] = screen.getAllByRole("link", { name: "Tarifs" });
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(ACTIVE_SECTION_EVENT, { detail: "tarifs" }),
+      );
+    });
+    expect(tarifs).toHaveAttribute("aria-current", "location");
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(ACTIVE_SECTION_EVENT, { detail: null }),
+      );
+    });
+    expect(tarifs).not.toHaveAttribute("aria-current");
+  });
+
+  it("closes the mobile menu when the desktop layout is reached", async () => {
+    let notifyChange: (() => void) | undefined;
+    let desktop = false;
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query) =>
+        ({
+          addEventListener: (_type: string, listener: () => void) => {
+            if (query === "(min-width: 64rem)") notifyChange = listener;
+          },
+          addListener: () => undefined,
+          dispatchEvent: () => false,
+          get matches() {
+            return query === "(min-width: 64rem)" && desktop;
+          },
+          media: query,
+          onchange: null,
+          removeEventListener: () => undefined,
+          removeListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <MarketingNavbar />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Ouvrir le menu" }));
+    expect(document.body.style.overflow).toBe("hidden");
+
+    desktop = true;
+    act(() => {
+      notifyChange?.();
+    });
+
+    expect(document.getElementById("marketing-mobile-menu")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(document.body.style.overflow).toBe("");
   });
 });

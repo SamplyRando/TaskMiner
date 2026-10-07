@@ -1,28 +1,45 @@
-import { AiDemoSection } from "@/components/marketing/ai-demo-section";
-import { FeaturesSection } from "@/components/marketing/features-section";
+import { useEffect } from "react";
+
+import { AdaptationSection } from "@/components/marketing/adaptation-section";
+import { CollaborationSection } from "@/components/marketing/collaboration-section";
+import { ControlSection } from "@/components/marketing/control-section";
+import { ExecutionSection } from "@/components/marketing/execution-section";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { FinalCta } from "@/components/marketing/final-cta";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { HowItWorks } from "@/components/marketing/how-it-works";
-import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingAnchorNavigation } from "@/components/marketing/marketing-anchor-navigation";
-import { MarketingMotionController } from "@/components/marketing/marketing-motion-controller";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { PricingSection } from "@/components/marketing/pricing-section";
-import { StatsSection } from "@/components/marketing/stats-section";
-import { TrustedTeams } from "@/components/marketing/trusted-teams";
+import { ProblemSection } from "@/components/marketing/problem-section";
+import { VisibilitySection } from "@/components/marketing/visibility-section";
 
+export const LANDING_TITLE = "TaskMiner — Gestion de projet assistée par IA";
+
+/**
+ * Public landing page. The narrative follows the product: a goal becomes a
+ * reviewed plan (TaskMiner AI), then work the team executes, follows and
+ * adapts — with the person always deciding what is applied.
+ */
 export function LandingPage() {
+  // The static index.html carries the same title for crawlers; this restores
+  // it after an in-app navigation from another public page.
+  useEffect(() => {
+    document.title = LANDING_TITLE;
+  }, []);
+
   return (
     <>
       <MarketingAnchorNavigation />
-      <MarketingMotionController />
-      <main id="marketing-content" tabIndex={-1}>
+      <main className="outline-none" id="marketing-content" tabIndex={-1}>
         <HeroSection />
-        <TrustedTeams />
-        <FeaturesSection />
+        <ProblemSection />
         <HowItWorks />
-        <AiDemoSection />
-        <StatsSection />
+        <ExecutionSection />
+        <AdaptationSection />
+        <VisibilitySection />
+        <CollaborationSection />
+        <ControlSection />
         <PricingSection />
         <FaqSection />
         <FinalCta />

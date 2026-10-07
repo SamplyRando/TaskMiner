@@ -1,24 +1,20 @@
 import { Outlet } from "react-router-dom";
 
 import { MarketingNavbar } from "@/components/marketing/marketing-navbar";
-import { useDocumentLanguage } from "@/hooks/use-document-language";
+import { SkipLink } from "@/components/skip-link";
+import { usePublicAppearance } from "@/hooks/use-public-appearance";
 import "@/styles/marketing.css";
 
 /**
- * Public shell reserved for marketing routes.
- * It intentionally stays independent from the authenticated application layout.
+ * Public shell reserved for marketing routes. It stays independent from the
+ * authenticated layout but shares its design system and theme engine.
  */
 export function MarketingLayout() {
-  // The landing page is still written in English (French translation is a
-  // later sprint); the rest of the app is French.
-  useDocumentLanguage("en");
+  usePublicAppearance();
 
   return (
-    <div className="marketing-shell">
-      <a className="marketing-skip-link" href="#marketing-content">
-        Skip to content
-      </a>
-      <div aria-hidden="true" className="marketing-backdrop" />
+    <div className="marketing-shell bg-background text-foreground min-h-screen">
+      <SkipLink targetId="marketing-content" />
       <MarketingNavbar />
       <Outlet />
     </div>

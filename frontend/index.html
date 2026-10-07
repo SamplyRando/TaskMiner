@@ -4,25 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="application-name" content="TaskMiner" />
     <meta name="apple-mobile-web-app-title" content="TaskMiner" />
-    <meta name="theme-color" content="#6d28d9" />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#fafafb"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#0e0e11"
+    />
+    <meta name="color-scheme" content="light dark" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index, follow" />
     <meta
       name="description"
-      content="Turn project context into organized tasks, priorities, and next actions with TaskMiner, an AI-assisted workspace for planning and team execution."
+      content="Gestion de projet assistée par IA : décrivez un objectif, validez le plan proposé par TaskMiner AI, puis exécutez-le en équipe, en liste ou en Kanban."
     />
     <link rel="canonical" href="https://www.taskminer.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TaskMiner" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="fr_FR" />
     <meta property="og:url" content="https://www.taskminer.app/" />
     <meta
       property="og:title"
-      content="TaskMiner — AI Project Management &amp; Task Planning"
+      content="TaskMiner — Gestion de projet assistée par IA"
     />
     <meta
       property="og:description"
-      content="Turn project context into organized tasks, priorities, and next actions in one AI-assisted team workspace."
+      content="Transformez vos idées en projets qui avancent. TaskMiner AI propose le plan, vous décidez, votre équipe l’exécute."
     />
     <meta
       property="og:image"
@@ -33,16 +43,16 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="TaskMiner — from project context to prioritized work"
+      content="TaskMiner — Transformez vos idées en projets qui avancent"
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="TaskMiner — AI Project Management &amp; Task Planning"
+      content="TaskMiner — Gestion de projet assistée par IA"
     />
     <meta
       name="twitter:description"
-      content="Turn project context into organized tasks, priorities, and next actions in one AI-assisted team workspace."
+      content="Transformez vos idées en projets qui avancent. TaskMiner AI propose le plan, vous décidez, votre équipe l’exécute."
     />
     <meta
       name="twitter:image"
@@ -50,12 +60,27 @@
     />
     <meta
       name="twitter:image:alt"
-      content="TaskMiner — from project context to prioritized work"
+      content="TaskMiner — Transformez vos idées en projets qui avancent"
     />
     <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <title>TaskMiner — AI Project Management &amp; Task Planning</title>
+    <title>TaskMiner — Gestion de projet assistée par IA</title>
+    <script>
+      // Public pages follow the system theme (see usePublicAppearance).
+      // Applying it before the first paint avoids a light flash; /app then
+      // applies the user's own preference once it is loaded.
+      try {
+        if (
+          !location.pathname.startsWith("/app") &&
+          matchMedia("(prefers-color-scheme: dark)").matches
+        ) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch {
+        /* Theme stays light. */
+      }
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -63,8 +88,32 @@
         "name": "TaskMiner",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
+        "inLanguage": "fr",
         "url": "https://www.taskminer.app/",
-        "description": "TaskMiner turns project context into organized tasks, priorities, and next actions for planning and team execution."
+        "description": "Gestion de projet assistée par IA : TaskMiner AI transforme un objectif en plan structuré que vous validez, puis votre équipe l’exécute et le suit en liste ou en Kanban.",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "description": "3 membres et 5 projets par workspace, 25 requêtes TaskMiner AI par mois."
+          },
+          {
+            "@type": "Offer",
+            "name": "Pro",
+            "price": "12",
+            "priceCurrency": "EUR",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "12",
+              "priceCurrency": "EUR",
+              "billingDuration": "P1M",
+              "unitText": "par mois et par workspace"
+            },
+            "description": "Par mois et par workspace : 15 membres, 50 projets et 500 requêtes TaskMiner AI par mois."
+          }
+        ]
       }
     </script>
   </head>

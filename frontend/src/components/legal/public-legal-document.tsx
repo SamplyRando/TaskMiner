@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { usePublicAppearance } from "@/hooks/use-public-appearance";
 
 type PublicLegalDocumentProps = {
   children: ReactNode;
@@ -54,6 +55,7 @@ export function PublicLegalDocument({
   updatedAt,
 }: PublicLegalDocumentProps) {
   useDocumentTitle(title);
+  usePublicAppearance();
 
   return (
     <div className="bg-background text-foreground min-h-screen">

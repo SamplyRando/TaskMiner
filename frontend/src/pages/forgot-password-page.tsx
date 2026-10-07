@@ -46,7 +46,7 @@ export function ForgotPasswordPage() {
     >
       {message ? (
         <div
-          className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          className="border-success-border bg-success-subtle text-success rounded-md border px-3 py-2 text-sm"
           role="status"
         >
           {message}

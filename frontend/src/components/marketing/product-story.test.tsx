@@ -2,12 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
+import { AdaptationSection } from "@/components/marketing/adaptation-section";
+import { ControlSection } from "@/components/marketing/control-section";
 import { HeroSection } from "@/components/marketing/hero-section";
-import { ProductPreview } from "@/components/marketing/product-preview";
+import { HeroVisual } from "@/components/marketing/hero-visual";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 
 describe("TaskMiner marketing product story", () => {
-  it("describes the review-before-apply workflow in the hero", () => {
+  it("states the promise, the human review and the next step in the hero", () => {
     render(
       <MemoryRouter>
         <HeroSection />
@@ -16,40 +18,77 @@ describe("TaskMiner marketing product story", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /Turn a project brief.*into reviewed work\./,
+        level: 1,
+        name: "Transformez vos idées en projets qui avancent.",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Edit the draft, choose what to keep, then apply it/),
+      screen.getByText(/Vous relisez et validez le plan/),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "See the workflow" }),
-    ).toHaveAttribute("href", "#demo");
+      screen.getByRole("link", { name: "Commencer gratuitement" }),
+    ).toHaveAttribute("href", "/register");
+    expect(
+      screen.getByRole("link", { name: "Voir comment ça marche" }),
+    ).toHaveAttribute("href", "#fonctionnement");
+    expect(
+      screen.getByText("Rien n’est créé sans votre validation"),
+    ).toBeInTheDocument();
   });
 
-  it("makes human review explicit in the product workflow", () => {
+  it("demonstrates the real product vocabulary in a decorative visual", () => {
+    const { container } = render(<HeroVisual />);
+    const visual = container.firstElementChild;
+
+    expect(visual).toHaveAttribute("aria-hidden", "true");
+    expect(visual?.textContent).toContain("Brief du projet");
+    expect(visual?.textContent).toContain("Revue humaine");
+    expect(visual?.textContent).toContain("Appliquer le plan");
+    expect(visual?.textContent).toContain("Analyse du brief");
+    expect(visual?.textContent).toContain("Kanban");
+  });
+
+  it("makes the review before application explicit", () => {
     render(<HowItWorks />);
 
+    for (const title of [
+      "Décrivez l’objectif",
+      "TaskMiner AI propose un plan",
+      "Vous gardez ce qui compte",
+      "TaskMiner crée le projet",
+    ]) {
+      expect(
+        screen.getByRole("heading", { level: 3, name: title }),
+      ).toBeInTheDocument();
+    }
     expect(
-      screen.getByRole("heading", { name: "Review the proposed plan" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Edit or discard the draft before it changes anything/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", {
-        name: "Apply and coordinate the work",
-      }),
+      screen.getByText("Un brouillon reste un brouillon."),
     ).toBeInTheDocument();
   });
 
-  it("keeps the product preview central without decorative floating cards", () => {
-    const { container } = render(<ProductPreview />);
+  it("carries the human control principle", () => {
+    render(<ControlSection />);
 
-    expect(container.querySelector(".marketing-preview__window")).toBeVisible();
-    expect(container.querySelector(".marketing-floating-widgets")).toBeNull();
     expect(
-      screen.getByText(/dashboard preview showing project metrics/i),
+      screen.getByRole("heading", {
+        level: 2,
+        name: "L’IA propose. Vous décidez.",
+      }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Un brouillon, jamais une action" }),
+    ).toBeInTheDocument();
+  });
+
+  it("only promises changes to existing tasks when a project evolves", () => {
+    const { container } = render(<AdaptationSection />);
+
+    expect(
+      screen.getByText(/propose des modifications de tâches existantes/),
+    ).toBeInTheDocument();
+    expect(container.textContent).toContain("Appliquer les modifications");
+    expect(container.textContent).not.toMatch(
+      /ajoute des tâches|supprime des tâches/i,
+    );
   });
 });

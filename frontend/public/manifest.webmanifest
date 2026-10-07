@@ -1,14 +1,14 @@
 {
   "name": "TaskMiner",
   "short_name": "TaskMiner",
-  "description": "AI-assisted project management for organized tasks, priorities, and team execution.",
-  "lang": "en-US",
+  "description": "Gestion de projet assistée par IA : du brief au plan, du plan à l’exécution.",
+  "lang": "fr",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#050408",
-  "theme_color": "#6d28d9",
+  "background_color": "#fafafb",
+  "theme_color": "#6d3bcd",
   "icons": [
     {
       "src": "/icon-192.svg",

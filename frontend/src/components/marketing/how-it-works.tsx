@@ -1,149 +1,185 @@
-import type { CSSProperties } from "react";
+import { Check } from "lucide-react";
+import type { ReactNode } from "react";
 
-import { SectionHeading } from "@/components/marketing/section-heading";
+import {
+  FacetNode,
+  marketingContainer,
+  MockCheck,
+  MockPriority,
+  SectionHeading,
+} from "@/components/marketing/marketing-ui";
+import { cn } from "@/lib/utils";
 
-const steps = [
+type Step = {
+  description: string;
+  highlight?: boolean;
+  label: string;
+  title: string;
+  visual: ReactNode;
+};
+
+const steps: Step[] = [
   {
     description:
-      "Describe the outcome, constraints, and useful context. TaskMiner keeps the brief attached to the workspace where the work belongs.",
-    eyebrow: "Provide the brief",
-    illustration: "workspace",
-    number: "01",
-    title: "Explain what needs to happen",
-  },
-  {
-    description:
-      "Inspect the suggested tasks, priorities, dependencies, milestones, and assignments. Edit or discard the draft before it changes anything.",
-    eyebrow: "Keep human control",
-    illustration: "ai",
-    number: "02",
-    title: "Review the proposed plan",
-  },
-  {
-    description:
-      "Apply only the approved work, then assign it, discuss it, and track progress from the same project workspace.",
-    eyebrow: "Move into delivery",
-    illustration: "team",
-    number: "03",
-    title: "Apply and coordinate the work",
-  },
-] as const;
-
-function WorkspaceIllustration() {
-  return (
-    <div
-      aria-hidden="true"
-      className="marketing-step-art marketing-step-art--workspace marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
-      data-marketing-reveal
-      style={{ "--reveal-delay": "110ms" } as CSSProperties}
-    >
-      <div className="marketing-step-window">
-        <span className="marketing-step-window__bar" />
-        <div>
-          <span />
-          <span />
-          <span />
-        </div>
+      "Le résultat attendu, l’échéance, les contraintes : quelques lignes suffisent. Le plan peut créer un projet ou enrichir un projet existant.",
+    label: "Brief",
+    title: "Décrivez l’objectif",
+    visual: (
+      <div className="space-y-2">
+        <p className="bg-surface text-foreground/85 rounded-md border px-2.5 py-2 text-[0.75rem] leading-snug">
+          Refondre le site e-commerce avant le 30 novembre, sans interrompre les
+          ventes…
+        </p>
+        <p className="text-muted-foreground text-[0.6875rem]">
+          Date cible (optionnelle) · Projet existant ou nouveau
+        </p>
       </div>
-      <span className="marketing-step-chip marketing-step-chip--one">
-        Product
-      </span>
-      <span className="marketing-step-chip marketing-step-chip--two">
-        Launch
-      </span>
-    </div>
-  );
-}
-
-function TeamIllustration() {
-  return (
-    <div
-      aria-hidden="true"
-      className="marketing-step-art marketing-step-art--team marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
-      data-marketing-reveal
-      style={{ "--reveal-delay": "110ms" } as CSSProperties}
-    >
-      <span className="marketing-team-line marketing-team-line--one" />
-      <span className="marketing-team-line marketing-team-line--two" />
-      <span className="marketing-team-line marketing-team-line--three" />
-      <span className="marketing-team-avatar marketing-team-avatar--lead">
-        AL
-      </span>
-      <span className="marketing-team-avatar marketing-team-avatar--one">
-        SK
-      </span>
-      <span className="marketing-team-avatar marketing-team-avatar--two">
-        MJ
-      </span>
-      <span className="marketing-team-avatar marketing-team-avatar--three">
-        NO
-      </span>
-      <span className="marketing-team-status">4 teammates connected</span>
-    </div>
-  );
-}
-
-function AiIllustration() {
-  return (
-    <div
-      aria-hidden="true"
-      className="marketing-step-art marketing-step-art--ai marketing-motion-reveal marketing-motion-reveal--scale marketing-motion-reveal--blur"
-      data-marketing-reveal
-      style={{ "--reveal-delay": "110ms" } as CSSProperties}
-    >
-      <span className="marketing-ai-orbit marketing-ai-orbit--outer" />
-      <span className="marketing-ai-orbit marketing-ai-orbit--inner" />
-      <span className="marketing-ai-core">AI</span>
-      <span className="marketing-ai-node marketing-ai-node--one">Plan</span>
-      <span className="marketing-ai-node marketing-ai-node--two">Focus</span>
-      <span className="marketing-ai-node marketing-ai-node--three">Ship</span>
-    </div>
-  );
-}
-
-function StepIllustration({
-  type,
-}: {
-  type: (typeof steps)[number]["illustration"];
-}) {
-  if (type === "workspace") return <WorkspaceIllustration />;
-  if (type === "team") return <TeamIllustration />;
-  return <AiIllustration />;
-}
+    ),
+  },
+  {
+    description:
+      "Tâches, priorités et échéances suggérées, avec des jalons et des dépendances indicatifs : le tout présenté comme un brouillon.",
+    label: "Brouillon structuré",
+    title: "TaskMiner AI propose un plan",
+    visual: (
+      <ul className="space-y-1.5">
+        {[
+          "Analyse du brief",
+          "Structuration du projet",
+          "Organisation des dépendances",
+          "Préparation du plan",
+        ].map((step) => (
+          <li
+            className="text-foreground/85 flex items-center gap-2 text-[0.75rem]"
+            key={step}
+          >
+            <Check
+              aria-hidden="true"
+              className="text-success size-3.5 shrink-0"
+              strokeWidth={2.5}
+            />
+            {step}
+          </li>
+        ))}
+      </ul>
+    ),
+  },
+  {
+    description:
+      "Incluez, modifiez ou écartez chaque tâche proposée. Le brouillon entier peut aussi être ignoré.",
+    highlight: true,
+    label: "Revue humaine",
+    title: "Vous gardez ce qui compte",
+    visual: (
+      <ul className="space-y-1.5">
+        <li className="bg-surface flex items-center gap-2 rounded-md border px-2 py-1.5">
+          <MockCheck checked small />
+          <span className="min-w-0 flex-1 truncate text-[0.75rem] font-medium">
+            Migrer le catalogue
+          </span>
+          <MockPriority priority="high" />
+        </li>
+        <li className="bg-surface flex items-center gap-2 rounded-md border px-2 py-1.5 opacity-60">
+          <MockCheck checked={false} small />
+          <span className="min-w-0 flex-1 truncate text-[0.75rem] font-medium line-through">
+            Refaire le blog
+          </span>
+          <MockPriority priority="low" />
+        </li>
+      </ul>
+    ),
+  },
+  {
+    description:
+      "Après votre confirmation seulement, le projet et ses tâches sont créés, avec les assignations que vous avez retenues.",
+    label: "Application",
+    title: "TaskMiner crée le projet",
+    visual: (
+      <div className="space-y-2">
+        <span className="bg-brand text-brand-foreground inline-flex h-7 items-center rounded-md px-2.5 text-[0.75rem] font-semibold">
+          Appliquer le plan
+        </span>
+        <p className="text-success flex items-center gap-1.5 text-[0.75rem] font-medium">
+          <Check aria-hidden="true" className="size-3.5" strokeWidth={2.5} />
+          Projet créé · 12 tâches
+        </p>
+      </div>
+    ),
+  },
+];
 
 export function HowItWorks() {
   return (
     <section
       aria-labelledby="marketing-how-title"
-      className="marketing-section marketing-how"
-      id="how-it-works"
+      className="bg-surface-sunken/50 border-y py-20 sm:py-24 lg:py-28"
+      id="fonctionnement"
     >
-      <div className="marketing-section-shell">
+      <div className={marketingContainer}>
         <SectionHeading
-          description="TaskMiner turns context into a draft your team can verify before it becomes real project work."
-          eyebrow="How it works"
-          reveal
-        >
-          <span id="marketing-how-title">From brief to workspace.</span>
-          <span>Nothing applies without review.</span>
-        </SectionHeading>
+          eyebrow="Fonctionnement"
+          id="marketing-how-title"
+          lead="TaskMiner AI propose, vous décidez. Rien n’est créé dans votre espace de travail avant votre confirmation."
+          title="Donnez le contexte. TaskMiner structure le travail."
+        />
 
-        <ol className="marketing-steps">
-          {steps.map((step) => (
-            <li className="marketing-step" key={step.number}>
-              <div
-                className="marketing-step__copy marketing-motion-reveal marketing-motion-reveal--up"
-                data-marketing-reveal
-              >
-                <span className="marketing-step__number">{step.number}</span>
-                <p>{step.eyebrow}</p>
-                <h3>{step.title}</h3>
-                <span>{step.description}</span>
+        <ol className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step, index) => (
+            <li
+              className={cn(
+                "bg-card rounded-card relative flex flex-col border p-5 shadow-xs",
+                step.highlight && "border-brand-border ring-brand/15 ring-4",
+              )}
+              key={step.label}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-sm border text-xs font-semibold tabular-nums",
+                    step.highlight
+                      ? "border-brand-border bg-brand-subtle text-brand"
+                      : "bg-surface-sunken text-muted-foreground",
+                  )}
+                >
+                  {index + 1}
+                </span>
+                <span
+                  className={cn(
+                    "text-xs font-semibold tracking-wide uppercase",
+                    step.highlight ? "text-brand" : "text-muted-foreground",
+                  )}
+                >
+                  {step.label}
+                </span>
               </div>
-              <StepIllustration type={step.illustration} />
+              <h3 className="mt-4 text-lg leading-snug font-semibold tracking-tight">
+                {step.title}
+              </h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                {step.description}
+              </p>
+              <div aria-hidden="true" className="mt-auto pt-5">
+                <div className="bg-surface-sunken rounded-md border p-3">
+                  {step.visual}
+                </div>
+              </div>
             </li>
           ))}
         </ol>
+
+        <p className="bg-card border-brand-border rounded-card mt-6 flex items-start gap-3 border px-5 py-4 text-sm leading-relaxed sm:items-center">
+          <FacetNode className="mt-0.5 sm:mt-0" />
+          <span>
+            <span className="font-semibold">
+              Un brouillon reste un brouillon.
+            </span>{" "}
+            <span className="text-muted-foreground">
+              Tant que vous n’avez pas cliqué sur «&nbsp;Appliquer le
+              plan&nbsp;», aucune tâche n’est créée et votre projet reste
+              inchangé.
+            </span>
+          </span>
+        </p>
       </div>
     </section>
   );

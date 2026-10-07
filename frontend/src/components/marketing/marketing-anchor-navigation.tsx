@@ -3,16 +3,12 @@ import { useLayoutEffect } from "react";
 import {
   ACTIVE_SECTION_EVENT,
   isNavigationSectionId,
-  navigationSectionIds,
+  marketingAnchorIds,
   type NavigationSectionId,
 } from "@/components/marketing/use-active-marketing-section";
 
 const ANCHOR_TARGET_SELECTOR = "[data-marketing-anchor-target]";
-const supportedAnchorIds = [
-  ...navigationSectionIds,
-  "how-it-works",
-  "product-proof",
-] as const;
+const supportedAnchorIds = marketingAnchorIds;
 type MarketingAnchorId = (typeof supportedAnchorIds)[number];
 
 function getHashSectionId(hash: string): MarketingAnchorId | null {
@@ -70,13 +66,11 @@ function positionHashTarget(
   window.scrollTo({ behavior, left: 0, top });
   if (moveFocus) target.focus({ preventScroll: true });
 
-  if (isNavigationSectionId(sectionId)) {
-    window.dispatchEvent(
-      new CustomEvent<NavigationSectionId>(ACTIVE_SECTION_EVENT, {
-        detail: sectionId,
-      }),
-    );
-  }
+  window.dispatchEvent(
+    new CustomEvent<NavigationSectionId | null>(ACTIVE_SECTION_EVENT, {
+      detail: isNavigationSectionId(sectionId) ? sectionId : null,
+    }),
+  );
 }
 
 export function MarketingAnchorNavigation() {

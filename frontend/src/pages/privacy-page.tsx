@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { usePublicAppearance } from "@/hooks/use-public-appearance";
 
 type PrivacySectionProps = {
   children: ReactNode;
@@ -24,6 +25,7 @@ function PrivacySection({ children, title }: PrivacySectionProps) {
 
 export function PrivacyPage() {
   useDocumentTitle("Politique de confidentialité");
+  usePublicAppearance();
 
   return (
     <div className="bg-background text-foreground min-h-screen">

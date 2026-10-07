@@ -16,15 +16,15 @@ function AnchorFixture() {
     >
       <MarketingAnchorNavigation />
       <nav className="marketing-nav" />
-      <a href="#features">Features</a>
-      <section id="features">
+      <a href="#fonctionnement">Fonctionnement</a>
+      <section id="fonctionnement">
         <h2 data-marketing-anchor-target tabIndex={-1}>
-          Everything your team needs.
+          Donnez le contexte.
         </h2>
       </section>
-      <section id="pricing">
+      <section id="tarifs">
         <h2 data-marketing-anchor-target tabIndex={-1}>
-          Start with the full product.
+          Des tarifs simples.
         </h2>
       </section>
     </div>
@@ -62,12 +62,14 @@ describe("MarketingAnchorNavigation", () => {
     const activeSectionListener = vi.fn();
     window.addEventListener(ACTIVE_SECTION_EVENT, activeSectionListener);
     render(<AnchorFixture />);
-    setMeasuredPositions(screen.getByRole("heading", { name: /everything/i }));
+    setMeasuredPositions(
+      screen.getByRole("heading", { name: /donnez le contexte/i }),
+    );
 
-    await user.click(screen.getByRole("link", { name: "Features" }));
+    await user.click(screen.getByRole("link", { name: "Fonctionnement" }));
 
     await waitFor(() => {
-      expect(window.location.hash).toBe("#features");
+      expect(window.location.hash).toBe("#fonctionnement");
       expect(scrollToMock).toHaveBeenLastCalledWith({
         behavior: "smooth",
         left: 0,
@@ -79,10 +81,10 @@ describe("MarketingAnchorNavigation", () => {
   });
 
   it("positions a direct hash load without animated scrolling", async () => {
-    window.history.replaceState(null, "", "/#pricing");
+    window.history.replaceState(null, "", "/#tarifs");
     render(<AnchorFixture />);
     setMeasuredPositions(
-      screen.getByRole("heading", { name: /start with the full product/i }),
+      screen.getByRole("heading", { name: /des tarifs simples/i }),
     );
 
     await waitFor(() => {
@@ -110,9 +112,11 @@ describe("MarketingAnchorNavigation", () => {
     );
     const user = userEvent.setup();
     render(<AnchorFixture />);
-    setMeasuredPositions(screen.getByRole("heading", { name: /everything/i }));
+    setMeasuredPositions(
+      screen.getByRole("heading", { name: /donnez le contexte/i }),
+    );
 
-    await user.click(screen.getByRole("link", { name: "Features" }));
+    await user.click(screen.getByRole("link", { name: "Fonctionnement" }));
 
     await waitFor(() => {
       expect(scrollToMock).toHaveBeenLastCalledWith({
@@ -126,9 +130,9 @@ describe("MarketingAnchorNavigation", () => {
   it("repositions the destination after browser history navigation", async () => {
     render(<AnchorFixture />);
     setMeasuredPositions(
-      screen.getByRole("heading", { name: /start with the full product/i }),
+      screen.getByRole("heading", { name: /des tarifs simples/i }),
     );
-    window.history.replaceState(null, "", "/#pricing");
+    window.history.replaceState(null, "", "/#tarifs");
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     await waitFor(() => {
@@ -141,10 +145,10 @@ describe("MarketingAnchorNavigation", () => {
   });
 
   it("keeps a visible hash destination aligned after a resize", async () => {
-    window.history.replaceState(null, "", "/#features");
+    window.history.replaceState(null, "", "/#fonctionnement");
     render(<AnchorFixture />);
-    const target = screen.getByRole("heading", { name: /everything/i });
-    const section = document.getElementById("features");
+    const target = screen.getByRole("heading", { name: /donnez le contexte/i });
+    const section = document.getElementById("fonctionnement");
     setMeasuredPositions(target);
     if (section) {
       section.getBoundingClientRect = () =>
