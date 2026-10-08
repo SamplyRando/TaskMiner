@@ -37,18 +37,12 @@ def upgrade() -> None:
             server_default=sa.text("false"),
             nullable=False,
         ),
-        sa.CheckConstraint(
-            "key <> ''", name="ck_project_task_statuses_key_not_empty"
-        ),
+        sa.CheckConstraint("key <> ''", name="ck_project_task_statuses_key_not_empty"),
         sa.CheckConstraint(
             "label <> ''", name="ck_project_task_statuses_label_not_empty"
         ),
-        sa.CheckConstraint(
-            "position >= 0", name="ck_project_task_statuses_position"
-        ),
-        sa.ForeignKeyConstraint(
-            ["project_id"], ["projects.id"], ondelete="CASCADE"
-        ),
+        sa.CheckConstraint("position >= 0", name="ck_project_task_statuses_position"),
+        sa.ForeignKeyConstraint(["project_id"], ["projects.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "project_id",
@@ -88,8 +82,7 @@ def upgrade() -> None:
 
     op.alter_column("tasks", "status", server_default=None)
     op.execute(
-        "ALTER TABLE tasks ALTER COLUMN status TYPE VARCHAR(64) "
-        "USING status::text"
+        "ALTER TABLE tasks ALTER COLUMN status TYPE VARCHAR(64) USING status::text"
     )
     op.alter_column(
         "tasks",
@@ -124,9 +117,7 @@ def downgrade() -> None:
         END $$;
         """
     )
-    task_status = postgresql.ENUM(
-        "todo", "in_progress", "done", name="task_status"
-    )
+    task_status = postgresql.ENUM("todo", "in_progress", "done", name="task_status")
     task_status.create(op.get_bind(), checkfirst=True)
     op.drop_constraint("fk_tasks_project_status", "tasks", type_="foreignkey")
     op.alter_column("tasks", "status", server_default=None)
