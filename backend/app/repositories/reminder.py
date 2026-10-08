@@ -89,7 +89,7 @@ class ReminderRepository:
                 lead_days=int(row[8]),
             )
             for row in rows
-            if row[7] <= now + timedelta(days=int(row[8]))
+            if row[7] is not None and row[7] <= now + timedelta(days=int(row[8]))
         ]
 
     def _project_candidates(self, now: datetime) -> list[ReminderCandidate]:
@@ -139,7 +139,7 @@ class ReminderRepository:
                 lead_days=int(row[7]),
             )
             for row in rows
-            if row[6] <= now + timedelta(days=int(row[7]))
+            if row[6] is not None and row[6] <= now + timedelta(days=int(row[7]))
         ]
 
     def get_or_create_delivery(
