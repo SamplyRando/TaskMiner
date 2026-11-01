@@ -2,9 +2,10 @@ import { Link } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { marketingContainer } from "@/components/marketing/marketing-ui";
+import { ConsentSettingsButton } from "@/features/consent/consent-settings-button";
 import { cn } from "@/lib/utils";
 
-type FooterLink = { href: string; label: string };
+type FooterLink = { href: string; label: string } | { label: string };
 
 const footerColumns: { links: FooterLink[]; title: string }[] = [
   {
@@ -29,6 +30,8 @@ const footerColumns: { links: FooterLink[]; title: string }[] = [
       { href: "/privacy", label: "Confidentialité" },
       { href: "/terms", label: "Conditions d’utilisation" },
       { href: "/terms", label: "Médiation (CGU, art. 16)" },
+      // No href: reopens the cookie choices instead of navigating.
+      { label: "Gestion des cookies" },
     ],
     title: "Informations légales",
   },
@@ -76,7 +79,11 @@ export function MarketingFooter() {
                   <ul aria-labelledby={titleId} className="mt-4 space-y-2.5">
                     {column.links.map((link) => (
                       <li key={link.label}>
-                        {link.href.startsWith("/") ? (
+                        {!("href" in link) ? (
+                          <ConsentSettingsButton className={linkClass}>
+                            {link.label}
+                          </ConsentSettingsButton>
+                        ) : link.href.startsWith("/") ? (
                           <Link className={linkClass} to={link.href}>
                             {link.label}
                           </Link>

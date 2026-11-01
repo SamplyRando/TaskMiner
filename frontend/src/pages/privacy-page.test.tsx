@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppRouter } from "@/routes/app-router";
+import { useConsentStore } from "@/store/consent-store";
 import { resetAuthStore } from "@/test/auth-fixtures";
 
 describe("PrivacyPage public route", () => {
@@ -68,6 +70,78 @@ describe("PrivacyPage public route", () => {
 
     await waitFor(() => {
       expect(document.title).toBe("Politique de confidentialité · TaskMiner");
+    });
+  });
+
+  describe("cookies section", () => {
+    const scrollIntoView = vi.fn();
+
+    beforeEach(() => {
+      Element.prototype.scrollIntoView = scrollIntoView;
+      useConsentStore.setState({ isPanelOpen: false });
+    });
+
+    afterEach(() => {
+      scrollIntoView.mockReset();
+      Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+    });
+
+    it("describes the Meta Pixel and lets the visitor change their choice", async () => {
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter initialEntries={["/privacy#cookies"]}>
+          <AppRouter />
+        </MemoryRouter>,
+      );
+
+      const heading = await screen.findByRole("heading", {
+        level: 2,
+        name: "8. Cookies et traceurs",
+      });
+      expect(scrollIntoView).toHaveBeenCalledOnce();
+      expect(scrollIntoView.mock.contexts[0]).toBe(heading.closest("section"));
+      expect(
+        screen.getByRole("heading", {
+          level: 2,
+          name: "13. Mise à jour de la politique",
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Dernière mise à jour : 1er novembre 2026/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /cookies _fbp et _fbc, d’une durée de vie de 90 jours/,
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/pendant 6 mois, après quoi il vous est/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Tant que vous n’avez pas accepté, le pixel Meta/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", {
+          name: "politique de confidentialité de Meta",
+        }),
+      ).toHaveAttribute("href", "https://www.facebook.com/privacy/policy/");
+      expect(
+        screen.getByRole("link", {
+          name: "avenant de Meta relatif aux responsables du traitement",
+        }),
+      ).toHaveAttribute(
+        "href",
+        "https://www.facebook.com/legal/controller_addendum",
+      );
+      expect(
+        screen.getByRole("button", { name: "Gestion des cookies" }),
+      ).toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: "Modifier mes choix" }),
+      );
+
+      expect(useConsentStore.getState().isPanelOpen).toBe(true);
     });
   });
 });

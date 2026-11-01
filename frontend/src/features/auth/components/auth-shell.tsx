@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { Facet } from "@/components/ui/facet";
+import { ConsentSettingsButton } from "@/features/consent/consent-settings-button";
 import { usePublicAppearance } from "@/hooks/use-public-appearance";
 
 const flow = [
@@ -42,6 +44,12 @@ export function AuthShell({ children, description, title }: AuthShellProps) {
             <div className="mt-8 space-y-6">{children}</div>
           </div>
         </div>
+        <footer className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <Link className="hover:text-foreground hover:underline" to="/privacy">
+            Confidentialité
+          </Link>
+          <ConsentSettingsButton className="hover:text-foreground hover:underline" />
+        </footer>
       </main>
 
       {/* The dark class scopes the dark Facette tokens to this panel. */}

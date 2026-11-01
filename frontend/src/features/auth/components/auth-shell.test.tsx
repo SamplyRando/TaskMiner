@@ -26,5 +26,11 @@ describe("AuthShell", () => {
       screen.getByRole("complementary", { name: "TaskMiner en bref" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("status")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Confidentialité" }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("button", { name: "Gestion des cookies" }),
+    ).toBeInTheDocument();
   });
 });

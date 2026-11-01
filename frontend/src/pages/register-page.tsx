@@ -11,6 +11,7 @@ import {
 } from "@/features/auth/redirect";
 import { useAuthStore } from "@/store/auth-store";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { metaPixel } from "@/lib/meta-pixel";
 
 export function RegisterPage() {
   useDocumentTitle("Inscription");
@@ -28,6 +29,8 @@ export function RegisterPage() {
         fullName: values.fullName,
         password: values.password,
       });
+      // Sent only once the backend has confirmed that the account exists.
+      metaPixel.track("CompleteRegistration");
       const destination = rememberAuthDestination(
         state?.from ?? getRememberedAuthDestination(),
       );
