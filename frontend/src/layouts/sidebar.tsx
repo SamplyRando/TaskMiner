@@ -16,6 +16,7 @@ import { NavLink } from "react-router-dom";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Facet } from "@/components/ui/facet";
+import { ConsentSettingsButton } from "@/features/consent/consent-settings-button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { preloadRoute } from "@/routes/route-preload";
@@ -220,8 +221,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {renderItem(settingsItem)}
           </div>
         </nav>
-        <div className="text-caption text-muted-foreground border-t px-5 py-3 font-normal">
-          <span className="font-medium">TaskMiner</span> · v0.1.0
+        <div className="text-caption text-muted-foreground flex items-center justify-between gap-3 border-t px-5 py-3 font-normal">
+          <span>
+            <span className="font-medium">TaskMiner</span> · v0.1.0
+          </span>
+          <ConsentSettingsButton className="hover:text-foreground rounded-sm hover:underline">
+            Cookies
+          </ConsentSettingsButton>
         </div>
       </aside>
     </>

@@ -18,6 +18,7 @@ import {
 } from "@/api/billing";
 import { getUserPreferences } from "@/api/settings";
 import { getWorkspaceSubscription } from "@/api/subscription";
+import { metaPixel } from "@/lib/meta-pixel";
 import { WorkspacePage } from "@/pages/workspace-page";
 import { useAuthStore } from "@/store/auth-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -44,6 +45,9 @@ vi.mock("@/api/billing", () => ({
 }));
 vi.mock("@/api/settings", () => ({ getUserPreferences: vi.fn() }));
 vi.mock("@/api/subscription", () => ({ getWorkspaceSubscription: vi.fn() }));
+vi.mock("@/lib/meta-pixel", () => ({
+  metaPixel: { track: vi.fn(), trackPageView: vi.fn(), update: vi.fn() },
+}));
 
 const mockedCreateWorkspace = vi.mocked(createWorkspace);
 const mockedDeleteWorkspace = vi.mocked(deleteWorkspace);
@@ -56,6 +60,7 @@ const mockedSubscription = vi.mocked(getWorkspaceSubscription);
 const mockedCheckout = vi.mocked(createBillingCheckout);
 const mockedPortal = vi.mocked(createBillingPortal);
 const mockedRedirect = vi.mocked(redirectToBillingUrl);
+const mockedTrack = vi.mocked(metaPixel.track);
 
 describe("WorkspacePage", () => {
   beforeEach(() => {
@@ -315,6 +320,7 @@ describe("WorkspacePage", () => {
     await waitFor(() => {
       expect(mockedCheckout).toHaveBeenCalledTimes(1);
     });
+    expect(mockedTrack).not.toHaveBeenCalled();
     expect(mockedCheckout).toHaveBeenCalledWith(
       {
         immediateServiceRequested: true,
@@ -330,6 +336,16 @@ describe("WorkspacePage", () => {
     });
     expect(mockedRedirect).toHaveBeenCalledWith(
       "https://checkout.stripe.com/c/pay/test",
+    );
+    // Reported once the Checkout Session exists, just before leaving for Stripe.
+    expect(mockedTrack.mock.calls).toEqual([
+      [
+        "InitiateCheckout",
+        { content_name: "TaskMiner Pro", currency: "EUR", value: 12 },
+      ],
+    ]);
+    expect(mockedTrack.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedRedirect.mock.invocationCallOrder[0] ?? 0,
     );
   });
 
@@ -363,6 +379,7 @@ describe("WorkspacePage", () => {
       ),
     ).toBeInTheDocument();
     expect(mockedRedirect).not.toHaveBeenCalled();
+    expect(mockedTrack).not.toHaveBeenCalled();
   });
 
   it("opens the Stripe customer portal for a Pro workspace", async () => {
@@ -385,6 +402,8 @@ describe("WorkspacePage", () => {
       "https://billing.stripe.com/p/test",
     );
     expect(mockedCheckout).not.toHaveBeenCalled();
+    // Managing an existing subscription is not a new checkout.
+    expect(mockedTrack).not.toHaveBeenCalled();
   });
 
   it("shows billing return feedback and removes the processed query", async () => {

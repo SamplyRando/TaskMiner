@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { ConsentSettingsButton } from "@/features/consent/consent-settings-button";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { usePublicAppearance } from "@/hooks/use-public-appearance";
 
@@ -120,6 +121,9 @@ export function PublicLegalDocument({
                 >
                   Conditions d’utilisation
                 </Link>
+              </li>
+              <li>
+                <ConsentSettingsButton className="hover:text-foreground hover:underline" />
               </li>
             </ul>
           </nav>

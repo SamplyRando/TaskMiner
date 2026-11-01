@@ -1,18 +1,21 @@
-import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, type ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { ConsentSettingsButton } from "@/features/consent/consent-settings-button";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { usePublicAppearance } from "@/hooks/use-public-appearance";
 
 type PrivacySectionProps = {
   children: ReactNode;
+  id?: string;
   title: string;
 };
 
-function PrivacySection({ children, title }: PrivacySectionProps) {
+function PrivacySection({ children, id, title }: PrivacySectionProps) {
   return (
-    <section className="space-y-3">
+    <section className="scroll-mt-24 space-y-3" id={id}>
       <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
         {title}
       </h2>
@@ -26,6 +29,15 @@ function PrivacySection({ children, title }: PrivacySectionProps) {
 export function PrivacyPage() {
   useDocumentTitle("Politique de confidentialité");
   usePublicAppearance();
+  const { hash } = useLocation();
+
+  // Direct links to a section, such as /privacy#cookies from the banner.
+  useEffect(() => {
+    if (!hash) return;
+    document
+      .getElementById(decodeURIComponent(hash.slice(1)))
+      ?.scrollIntoView();
+  }, [hash]);
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -58,7 +70,7 @@ export function PrivacyPage() {
               elles sont utilisées et comment exercer vos droits.
             </p>
             <p className="text-muted-foreground text-sm">
-              Dernière mise à jour : 11 septembre 2026
+              Dernière mise à jour : 1er novembre 2026
             </p>
           </header>
 
@@ -111,7 +123,12 @@ export function PrivacyPage() {
                 données d’abonnement : plan, statut, périodes et identifiants
                 techniques de facturation. Les données de carte sont traitées
                 dans l’interface Stripe et ne sont pas enregistrées par
-                TaskMiner.
+                TaskMiner ;
+              </li>
+              <li>
+                uniquement si vous l’acceptez, données de navigation et
+                identifiants publicitaires collectés par le pixel Meta (voir la
+                section 8).
               </li>
             </ul>
           </PrivacySection>
@@ -132,6 +149,10 @@ export function PrivacyPage() {
                 fiabilité du service ;
               </li>
               <li>
+                mesurer l’efficacité de nos publicités, uniquement avec votre
+                consentement (voir la section 8) ;
+              </li>
+              <li>
                 répondre aux demandes de support et d’exercice des droits.
               </li>
             </ul>
@@ -145,7 +166,7 @@ export function PrivacyPage() {
               d’obligations légales applicables, notamment en matière de
               facturation. Le consentement n’est utilisé que lorsqu’un
               traitement spécifique l’exige et peut alors être retiré à tout
-              moment.
+              moment. C’est le cas du pixel Meta (voir la section 8).
             </p>
           </PrivacySection>
 
@@ -161,6 +182,11 @@ export function PrivacyPage() {
               fichiers, Neon pour PostgreSQL, OpenAI pour les fonctions d’IA,
               Resend pour les e-mails transactionnels et Stripe pour le paiement
               et la gestion des abonnements.
+            </p>
+            <p>
+              Avec votre consentement uniquement, des données de navigation sont
+              également transmises à Meta Platforms Ireland Limited pour mesurer
+              l’efficacité de nos publicités (voir la section 8).
             </p>
             <p>
               Seules les données nécessaires au service concerné doivent être
@@ -199,7 +225,98 @@ export function PrivacyPage() {
             </p>
           </PrivacySection>
 
-          <PrivacySection title="8. Sécurité">
+          <PrivacySection id="cookies" title="8. Cookies et traceurs">
+            <p>
+              TaskMiner distingue les traceurs nécessaires au fonctionnement du
+              service, qui ne requièrent pas votre consentement, du pixel Meta,
+              utilisé à des fins publicitaires uniquement si vous l’acceptez.
+            </p>
+            <h3 className="text-foreground text-base font-semibold">
+              Traceurs nécessaires
+            </h3>
+            <ul className="list-disc space-y-2 pl-6">
+              <li>
+                stockage local de votre session de connexion, du workspace
+                actif, de vos préférences d’affichage et de la page à ouvrir
+                après la connexion ;
+              </li>
+              <li>
+                mémorisation de votre choix relatif au pixel Meta pendant 6
+                mois, après quoi il vous est de nouveau demandé.
+              </li>
+            </ul>
+            <h3 className="text-foreground text-base font-semibold">
+              Mesure d’audience
+            </h3>
+            <p>
+              TaskMiner utilise Vercel Web Analytics pour obtenir des
+              statistiques de fréquentation agrégées. Selon Vercel, ce service
+              ne dépose pas de cookie : les visites sont distinguées par une
+              empreinte calculée à partir de la requête et renouvelée chaque
+              jour.
+            </p>
+            <h3 className="text-foreground text-base font-semibold">
+              Pixel Meta, soumis à votre consentement
+            </h3>
+            <ul className="list-disc space-y-2 pl-6">
+              <li>
+                finalité : mesurer l’efficacité des publicités TaskMiner
+                diffusées sur Facebook et Instagram (pages consultées, création
+                de compte, démarrage d’un abonnement) et améliorer leur
+                diffusion ;
+              </li>
+              <li>
+                données : adresse IP, informations techniques sur le navigateur
+                et l’appareil, adresse de la page consultée et de la page
+                précédente, événements ci-dessus et identifiants publicitaires
+                conservés dans les cookies _fbp et _fbc, d’une durée de vie de
+                90 jours. Aucun nom, aucune adresse e-mail ni aucun contenu de
+                vos projets n’est transmis, et les pages ouvertes depuis un lien
+                de sécurité (vérification d’adresse, réinitialisation du mot de
+                passe, invitation) sont exclues ;
+              </li>
+              <li>
+                base légale : votre consentement (article 82 de la loi
+                Informatique et Libertés et article 6.1.a du RGPD) ;
+              </li>
+              <li>
+                destinataire : Meta Platforms Ireland Limited, responsable
+                conjoint avec TaskMiner de la collecte et de la transmission de
+                ces données, puis responsable des traitements qu’elle réalise
+                ensuite. L’essentiel de cet accord figure dans l’
+                <a
+                  className="text-primary rounded-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  href="https://www.facebook.com/legal/controller_addendum"
+                >
+                  avenant de Meta relatif aux responsables du traitement
+                </a>
+                . Meta peut transférer ces données vers les États-Unis et
+                indique que Meta Platforms, Inc. est certifiée au Data Privacy
+                Framework UE–États-Unis. Pour en savoir plus, consultez la{" "}
+                <a
+                  className="text-primary rounded-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  href="https://www.facebook.com/privacy/policy/"
+                >
+                  politique de confidentialité de Meta
+                </a>
+                .
+              </li>
+            </ul>
+            <p>
+              Tant que vous n’avez pas accepté, le pixel Meta n’est pas chargé
+              et aucune donnée n’est envoyée à Meta. Vous pouvez retirer votre
+              consentement à tout moment, aussi simplement que vous l’avez donné
+              : le pixel cesse alors tout envoi et ses cookies sont supprimés de
+              ce navigateur.
+            </p>
+            <ConsentSettingsButton
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Modifier mes choix
+            </ConsentSettingsButton>
+          </PrivacySection>
+
+          <PrivacySection title="9. Sécurité">
             <p>
               TaskMiner met en œuvre des mesures techniques destinées à protéger
               les données, notamment le hachage des mots de passe, le contrôle
@@ -210,7 +327,7 @@ export function PrivacyPage() {
             </p>
           </PrivacySection>
 
-          <PrivacySection title="9. Vos droits">
+          <PrivacySection title="10. Vos droits">
             <p>
               Selon la réglementation applicable, vous pouvez demander l’accès,
               la rectification, l’effacement, la limitation ou la portabilité de
@@ -226,7 +343,7 @@ export function PrivacyPage() {
             </p>
           </PrivacySection>
 
-          <PrivacySection title="10. Suppression du compte">
+          <PrivacySection title="11. Suppression du compte">
             <p>
               La suppression du compte peut être demandée depuis les paramètres
               TaskMiner. Elle révoque l’accès et déclenche l’anonymisation
@@ -237,7 +354,7 @@ export function PrivacyPage() {
             </p>
           </PrivacySection>
 
-          <PrivacySection title="11. Contact relatif aux données personnelles">
+          <PrivacySection title="12. Contact relatif aux données personnelles">
             <p>
               Pour exercer vos droits ou poser une question sur cette politique,
               écrivez à{" "}
@@ -252,7 +369,7 @@ export function PrivacyPage() {
             </p>
           </PrivacySection>
 
-          <PrivacySection title="12. Mise à jour de la politique">
+          <PrivacySection title="13. Mise à jour de la politique">
             <p>
               Cette politique peut évoluer pour refléter les changements du
               service, des fournisseurs ou des obligations applicables. La date
@@ -288,6 +405,9 @@ export function PrivacyPage() {
                 >
                   Conditions d’utilisation
                 </Link>
+              </li>
+              <li>
+                <ConsentSettingsButton className="hover:text-foreground hover:underline" />
               </li>
             </ul>
           </nav>

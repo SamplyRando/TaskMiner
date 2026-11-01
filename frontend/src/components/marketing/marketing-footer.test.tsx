@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { useConsentStore } from "@/store/consent-store";
 
 describe("MarketingFooter", () => {
   it("links to every public legal document", () => {
@@ -43,5 +45,21 @@ describe("MarketingFooter", () => {
     expect(
       screen.getByText(`© ${String(new Date().getFullYear())} TaskMiner`),
     ).toBeInTheDocument();
+  });
+
+  it("reopens the cookie choices from the legal links", async () => {
+    const user = userEvent.setup();
+    useConsentStore.setState({ isPanelOpen: false });
+    render(
+      <MemoryRouter>
+        <MarketingFooter />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Gestion des cookies" }),
+    );
+
+    expect(useConsentStore.getState().isPanelOpen).toBe(true);
   });
 });

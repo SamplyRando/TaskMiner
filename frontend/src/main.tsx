@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/react";
 
 import { AppProvider } from "@/components/providers/app-provider";
 import { AuthSessionManager } from "@/components/providers/auth-session-manager";
+import { ConsentBanner } from "@/features/consent/consent-banner";
+import { MetaPixelTracker } from "@/features/consent/meta-pixel-tracker";
 import { AppRouter } from "@/routes/app-router";
 import "@fontsource-variable/inter/wght.css";
 import "@/styles.css";
@@ -19,9 +21,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <AppProvider>
       <BrowserRouter>
+        <ConsentBanner />
         <AuthSessionManager>
           <AppRouter />
         </AuthSessionManager>
+        <MetaPixelTracker />
       </BrowserRouter>
       <Analytics />
     </AppProvider>

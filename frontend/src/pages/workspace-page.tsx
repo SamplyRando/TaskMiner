@@ -22,6 +22,7 @@ import {
 import { useAuthStore } from "@/store/auth-store";
 import { useWorkspaceSubscription } from "@/features/subscriptions/hooks";
 import { BillingCheckoutConsentDialog } from "@/features/subscriptions/billing-checkout-consent-dialog";
+import { planCatalog } from "@/features/subscriptions/plan-catalog";
 import { WorkspacePlanCard } from "@/features/subscriptions/workspace-plan-card";
 import { getPlanLimitMessage } from "@/features/subscriptions/errors";
 import {
@@ -36,6 +37,7 @@ import { getWorkspaceColumns } from "@/features/workspaces/workspace-columns";
 import { WorkspaceFormDialog } from "@/features/workspaces/workspace-form-dialog";
 import type { Workspace, WorkspaceInput } from "@/types/workspace";
 import { formatDate } from "@/lib/format";
+import { metaPixel } from "@/lib/meta-pixel";
 
 const initialPagination: PaginationState = { pageIndex: 0, pageSize: 20 };
 
@@ -202,6 +204,12 @@ export function WorkspacePage() {
         const redirect = await checkout.mutateAsync({
           immediateServiceRequested: true,
           workspaceId: activeWorkspace.id,
+        });
+        // The Checkout Session exists: the owner is really leaving for Stripe.
+        metaPixel.track("InitiateCheckout", {
+          content_name: "TaskMiner Pro",
+          currency: "EUR",
+          value: planCatalog.pro.monthlyPriceEur,
         });
         redirectToBillingUrl(redirect.checkout_url);
         setCheckoutConsentOpen(false);

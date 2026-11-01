@@ -4,8 +4,23 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { Sidebar } from "@/layouts/sidebar";
+import { useConsentStore } from "@/store/consent-store";
 
 describe("Sidebar TaskMiner AI navigation", () => {
+  it("keeps the cookie choices reachable from every app page", async () => {
+    const user = userEvent.setup();
+    useConsentStore.setState({ isPanelOpen: false });
+    render(
+      <MemoryRouter>
+        <Sidebar isOpen onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cookies" }));
+
+    expect(useConsentStore.getState().isPanelOpen).toBe(true);
+  });
+
   it("exposes the authenticated TaskMiner AI entry point", () => {
     render(
       <MemoryRouter>
