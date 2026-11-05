@@ -112,10 +112,11 @@ export function ConsentBanner() {
             id={descriptionId}
           >
             Avec votre accord, TaskMiner utilise le pixel Meta (Facebook,
-            Instagram) pour mesurer l’efficacité de ses publicités&nbsp;: pages
-            consultées, création de compte et démarrage d’un abonnement. Meta
-            peut aussi utiliser ces données pour ses propres finalités
-            publicitaires. Sans votre accord, rien n’est envoyé à Meta.
+            Instagram) et la balise LinkedIn Insight Tag pour mesurer
+            l’efficacité de ses publicités&nbsp;: pages consultées, création de
+            compte et démarrage d’un abonnement. Ces fournisseurs peuvent aussi
+            utiliser les données selon leurs propres finalités publicitaires.
+            Sans votre accord, aucun de ces traceurs n’est chargé.
           </p>
           {decision ? (
             <p className="mt-2 text-sm">

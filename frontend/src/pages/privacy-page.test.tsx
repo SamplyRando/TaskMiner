@@ -86,7 +86,7 @@ describe("PrivacyPage public route", () => {
       Reflect.deleteProperty(Element.prototype, "scrollIntoView");
     });
 
-    it("describes the Meta Pixel and lets the visitor change their choice", async () => {
+    it("describes the advertising tags and lets the visitor change their choice", async () => {
       const user = userEvent.setup();
       render(
         <MemoryRouter initialEntries={["/privacy#cookies"]}>
@@ -107,7 +107,7 @@ describe("PrivacyPage public route", () => {
         }),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Dernière mise à jour : 1er novembre 2026/),
+        screen.getByText(/Dernière mise à jour : 5 novembre 2026/),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
@@ -118,8 +118,23 @@ describe("PrivacyPage public route", () => {
         screen.getByText(/pendant 6 mois, après quoi il vous est/),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Tant que vous n’avez pas accepté, le pixel Meta/),
+        screen.getByRole("heading", {
+          name: "LinkedIn Insight Tag, soumis à votre consentement",
+        }),
       ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /la balise n’est jamais chargée sur les pages authentifiées/,
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", {
+          name: "politique de confidentialité",
+        }),
+      ).toHaveAttribute(
+        "href",
+        "https://www.linkedin.com/legal/privacy-policy",
+      );
       expect(
         screen.getByRole("link", {
           name: "politique de confidentialité de Meta",

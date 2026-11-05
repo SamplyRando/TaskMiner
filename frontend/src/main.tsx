@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AppProvider } from "@/components/providers/app-provider";
 import { AuthSessionManager } from "@/components/providers/auth-session-manager";
 import { ConsentBanner } from "@/features/consent/consent-banner";
+import { LinkedInInsightTracker } from "@/features/consent/linkedin-insight-tracker";
 import { MetaPixelTracker } from "@/features/consent/meta-pixel-tracker";
 import { AppRouter } from "@/routes/app-router";
 import "@fontsource-variable/inter/wght.css";
@@ -26,6 +27,7 @@ createRoot(rootElement).render(
           <AppRouter />
         </AuthSessionManager>
         <MetaPixelTracker />
+        <LinkedInInsightTracker />
       </BrowserRouter>
       <Analytics />
     </AppProvider>
