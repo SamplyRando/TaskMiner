@@ -32,7 +32,10 @@ describe("ConsentBanner", () => {
     renderBanner();
 
     expect(banner()).toBeInTheDocument();
-    expect(screen.getByText(/rien n’est envoyé à Meta/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/aucun de ces traceurs n’est chargé/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/LinkedIn Insight Tag/)).toBeInTheDocument();
     const refuse = screen.getByRole("button", { name: "Refuser" });
     const accept = screen.getByRole("button", { name: "Accepter" });
     expect(refuse.className).toBe(accept.className);
@@ -124,7 +127,7 @@ describe("ConsentBanner", () => {
         state: {
           decision: { advertising: false, decidedAt: new Date().toISOString() },
         },
-        version: 1,
+        version: 2,
       }),
     );
     await act(async () => {

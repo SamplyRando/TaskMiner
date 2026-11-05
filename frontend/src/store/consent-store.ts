@@ -9,7 +9,7 @@ export const CONSENT_VALIDITY_MONTHS = 6;
 const MAX_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
 
 export type ConsentDecision = {
-  /** Meta Pixel, used to measure TaskMiner's advertising campaigns. */
+  /** Meta and LinkedIn tags used to measure TaskMiner advertising campaigns. */
   advertising: boolean;
   decidedAt: string;
 };
@@ -77,12 +77,12 @@ export const useConsentStore = create<ConsentState>()(
         ...current,
         decision: readStoredDecision(persisted),
       }),
-      // Bumping the version (new purpose or new vendor) asks everyone again.
+      // LinkedIn is a new vendor: previous Meta-only consent is not reused.
       migrate: () => ({ decision: null }),
       name: CONSENT_STORAGE_KEY,
       partialize: ({ decision }) => ({ decision }),
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
     },
   ),
 );

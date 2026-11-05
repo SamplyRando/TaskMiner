@@ -70,7 +70,7 @@ export function PrivacyPage() {
               elles sont utilisées et comment exercer vos droits.
             </p>
             <p className="text-muted-foreground text-sm">
-              Dernière mise à jour : 1er novembre 2026
+              Dernière mise à jour : 5 novembre 2026
             </p>
           </header>
 
@@ -127,8 +127,8 @@ export function PrivacyPage() {
               </li>
               <li>
                 uniquement si vous l’acceptez, données de navigation et
-                identifiants publicitaires collectés par le pixel Meta (voir la
-                section 8).
+                identifiants publicitaires collectés par le pixel Meta et la
+                balise LinkedIn Insight Tag (voir la section 8).
               </li>
             </ul>
           </PrivacySection>
@@ -166,7 +166,8 @@ export function PrivacyPage() {
               d’obligations légales applicables, notamment en matière de
               facturation. Le consentement n’est utilisé que lorsqu’un
               traitement spécifique l’exige et peut alors être retiré à tout
-              moment. C’est le cas du pixel Meta (voir la section 8).
+              moment. C’est le cas des traceurs publicitaires Meta et LinkedIn
+              (voir la section 8).
             </p>
           </PrivacySection>
 
@@ -185,8 +186,9 @@ export function PrivacyPage() {
             </p>
             <p>
               Avec votre consentement uniquement, des données de navigation sont
-              également transmises à Meta Platforms Ireland Limited pour mesurer
-              l’efficacité de nos publicités (voir la section 8).
+              également transmises à Meta Platforms Ireland Limited et à
+              LinkedIn pour mesurer l’efficacité de nos publicités (voir la
+              section 8).
             </p>
             <p>
               Seules les données nécessaires au service concerné doivent être
@@ -228,8 +230,9 @@ export function PrivacyPage() {
           <PrivacySection id="cookies" title="8. Cookies et traceurs">
             <p>
               TaskMiner distingue les traceurs nécessaires au fonctionnement du
-              service, qui ne requièrent pas votre consentement, du pixel Meta,
-              utilisé à des fins publicitaires uniquement si vous l’acceptez.
+              service, qui ne requièrent pas votre consentement, des traceurs
+              publicitaires Meta et LinkedIn, utilisés uniquement si vous les
+              acceptez.
             </p>
             <h3 className="text-foreground text-base font-semibold">
               Traceurs nécessaires
@@ -241,8 +244,8 @@ export function PrivacyPage() {
                 après la connexion ;
               </li>
               <li>
-                mémorisation de votre choix relatif au pixel Meta pendant 6
-                mois, après quoi il vous est de nouveau demandé.
+                mémorisation de votre choix relatif aux traceurs publicitaires
+                pendant 6 mois, après quoi il vous est de nouveau demandé.
               </li>
             </ul>
             <h3 className="text-foreground text-base font-semibold">
@@ -302,12 +305,68 @@ export function PrivacyPage() {
                 .
               </li>
             </ul>
+            <h3 className="text-foreground text-base font-semibold">
+              LinkedIn Insight Tag, soumis à votre consentement
+            </h3>
+            <ul className="list-disc space-y-2 pl-6">
+              <li>
+                finalité : mesurer les visites issues des campagnes LinkedIn,
+                établir des statistiques agrégées, mesurer des conversions et
+                constituer des audiences publicitaires ;
+              </li>
+              <li>
+                données : adresse de la page et de la page précédente, adresse
+                IP, date et heure, caractéristiques du navigateur et de
+                l’appareil, ainsi que des identifiants publicitaires. TaskMiner
+                ne configure ni correspondance avancée ni transmission d’adresse
+                e-mail à LinkedIn ;
+              </li>
+              <li>
+                cookies accessibles sur le domaine TaskMiner : selon les
+                fonctions activées par LinkedIn, notamment li_fat_id (30 jours),
+                li_giant (7 jours), ln_or (1 jour), oribi_cookie_test (session)
+                et oribili_user_guid (1 an). LinkedIn peut également utiliser
+                ses propres cookies, décrits dans sa{" "}
+                <a
+                  className="text-primary rounded-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  href="https://www.linkedin.com/legal/cookie-policy"
+                >
+                  politique relative aux cookies
+                </a>
+                ;
+              </li>
+              <li>
+                protection des données sensibles : la balise n’est jamais
+                chargée sur les pages authentifiées, d’inscription, de
+                connexion, de vérification d’adresse, de mot de passe ou
+                d’invitation, ni sur une URL contenant un jeton de sécurité.
+                Aucun mot de passe, jeton ou contenu de projet n’est transmis ;
+              </li>
+              <li>
+                base légale : votre consentement (article 82 de la loi
+                Informatique et Libertés et article 6.1.a du RGPD). Pour en
+                savoir plus sur les traitements réalisés par LinkedIn, consultez
+                sa{" "}
+                <a
+                  className="text-primary rounded-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  href="https://www.linkedin.com/legal/privacy-policy"
+                >
+                  politique de confidentialité
+                </a>
+                .
+              </li>
+            </ul>
             <p>
-              Tant que vous n’avez pas accepté, le pixel Meta n’est pas chargé
-              et aucune donnée n’est envoyée à Meta. Vous pouvez retirer votre
-              consentement à tout moment, aussi simplement que vous l’avez donné
-              : le pixel cesse alors tout envoi et ses cookies sont supprimés de
-              ce navigateur.
+              Tant que vous n’avez pas accepté, les scripts Meta et LinkedIn ne
+              sont pas chargés et aucune donnée ne leur est envoyée par ces
+              traceurs. Vous pouvez retirer votre consentement à tout moment,
+              aussi simplement que vous l’avez donné : TaskMiner bloque alors
+              les nouveaux chargements et événements, retire les scripts
+              injectés et supprime les cookies publicitaires accessibles sur son
+              domaine. Les cookies déposés directement sur le domaine d’un
+              fournisseur ne peuvent être supprimés par TaskMiner ; un
+              rechargement de la page termine également le code tiers déjà
+              chargé en mémoire.
             </p>
             <ConsentSettingsButton
               className={buttonVariants({ variant: "outline" })}

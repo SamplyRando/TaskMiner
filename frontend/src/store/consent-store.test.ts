@@ -7,7 +7,7 @@ import {
   useConsentStore,
 } from "@/store/consent-store";
 
-const storeDecision = (decision: unknown, version = 1) => {
+const storeDecision = (decision: unknown, version = 2) => {
   localStorage.setItem(
     CONSENT_STORAGE_KEY,
     JSON.stringify({ state: { decision }, version }),
@@ -45,7 +45,7 @@ describe("consent store", () => {
     const stored = JSON.parse(
       localStorage.getItem(CONSENT_STORAGE_KEY) ?? "{}",
     ) as { state: unknown; version: number };
-    expect(stored.version).toBe(1);
+    expect(stored.version).toBe(2);
     expect(stored.state).toEqual({
       decision: { advertising: true, decidedAt: state.decision?.decidedAt },
     });
@@ -87,6 +87,14 @@ describe("consent store", () => {
 
   it("asks again when the stored choice belongs to an older version", async () => {
     storeDecision({ advertising: true, decidedAt: monthsAgo(1) }, 0);
+
+    await useConsentStore.persist.rehydrate();
+
+    expect(useConsentStore.getState().decision).toBeNull();
+  });
+
+  it("does not reuse consent collected before LinkedIn was added", async () => {
+    storeDecision({ advertising: true, decidedAt: monthsAgo(1) }, 1);
 
     await useConsentStore.persist.rehydrate();
 

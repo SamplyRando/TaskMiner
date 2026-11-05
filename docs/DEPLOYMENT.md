@@ -211,6 +211,7 @@ font échouer toute association ambiguë au lieu d'écraser un autre workspace.
 
 ```text
 VITE_API_URL=https://your-api.up.railway.app/api/v1
+VITE_LINKEDIN_PARTNER_ID=10035210
 ```
 
 5. Déployer, puis reporter l'URL finale dans `CORS_ORIGINS` sur Railway et
@@ -223,6 +224,10 @@ de sécurité statiques sans proxyfier l'API.
 
 `VITE_API_URL` est injectée pendant le build Vercel. Toute modification de cette
 variable nécessite un nouveau déploiement du frontend.
+
+`VITE_LINKEDIN_PARTNER_ID` est un identifiant public. La balise LinkedIn reste
+désactivée si cette variable est absente ou invalide ; elle n’est chargée sur
+les domaines TaskMiner de production qu’après consentement publicitaire.
 
 ## 4. Migrations Alembic
 
