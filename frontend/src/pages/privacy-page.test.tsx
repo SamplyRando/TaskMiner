@@ -107,7 +107,7 @@ describe("PrivacyPage public route", () => {
         }),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Dernière mise à jour : 5 novembre 2026/),
+        screen.getByText(/Dernière mise à jour : 6 novembre 2026/),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
@@ -126,6 +126,9 @@ describe("PrivacyPage public route", () => {
         screen.getByText(
           /la balise n’est jamais chargée sur les pages authentifiées/,
         ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/après confirmation de la création du compte/),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("link", {

@@ -11,6 +11,7 @@ import {
 } from "@/features/auth/redirect";
 import { useAuthStore } from "@/store/auth-store";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { linkedInInsightTag } from "@/lib/linkedin-insight";
 import { metaPixel } from "@/lib/meta-pixel";
 
 export function RegisterPage() {
@@ -24,13 +25,18 @@ export function RegisterPage() {
 
   const handleRegister = async (values: RegisterValues): Promise<void> => {
     try {
-      await registerAccount({
+      const user = await registerAccount({
         email: values.email,
         fullName: values.fullName,
         password: values.password,
       });
       // Sent only once the backend has confirmed that the account exists.
       metaPixel.track("CompleteRegistration");
+      await linkedInInsightTag.trackRegistrationConversion(user.id).catch(
+        () =>
+          // Analytics must never prevent the successful registration flow.
+          false,
+      );
       const destination = rememberAuthDestination(
         state?.from ?? getRememberedAuthDestination(),
       );
