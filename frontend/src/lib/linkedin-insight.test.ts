@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createLinkedInInsightTag,
   LINKEDIN_INSIGHT_SCRIPT_URL,
+  LINKEDIN_REGISTRATION_CONVERSION_ID,
 } from "@/lib/linkedin-insight";
 
 const PARTNER_ID = "10035210";
@@ -33,6 +34,7 @@ const setReferrer = (value: string) => {
 
 describe("LinkedIn Insight Tag", () => {
   beforeEach(() => {
+    sessionStorage.clear();
     visit("/");
   });
 
@@ -52,6 +54,7 @@ describe("LinkedIn Insight Tag", () => {
       document.cookie = `${name}=; max-age=0; path=/`;
     }
     setReferrer("");
+    sessionStorage.clear();
     visit("/");
   });
 
@@ -164,5 +167,89 @@ describe("LinkedIn Insight Tag", () => {
 
     expect(scripts()).toHaveLength(0);
     expect(linkedInWindow.lintrk).toBeUndefined();
+  });
+
+  it("tracks a confirmed registration after consent and tag loading, without account data", async () => {
+    const tag = createTag();
+    visit("/register");
+    tag.update(true);
+
+    const tracking = tag.trackRegistrationConversion("internal-user-id");
+
+    expect(scripts()).toHaveLength(1);
+    expect(linkedInWindow.lintrk?.q).toEqual([]);
+    scripts()[0]?.dispatchEvent(new Event("load"));
+
+    await expect(tracking).resolves.toBe(true);
+    expect(linkedInWindow.lintrk?.q).toEqual([
+      ["track", { conversion_id: LINKEDIN_REGISTRATION_CONVERSION_ID }],
+    ]);
+    expect(JSON.stringify(linkedInWindow.lintrk?.q)).not.toContain(
+      "internal-user-id",
+    );
+  });
+
+  it("does not track a registration when marketing consent is refused", async () => {
+    const tag = createTag();
+    visit("/register");
+    tag.update(false);
+
+    await expect(
+      tag.trackRegistrationConversion("internal-user-id"),
+    ).resolves.toBe(false);
+
+    expect(scripts()).toHaveLength(0);
+    expect(linkedInWindow.lintrk).toBeUndefined();
+  });
+
+  it("deduplicates concurrent and repeated registration conversions", async () => {
+    const tag = createTag();
+    visit("/register");
+    tag.update(true);
+
+    const first = tag.trackRegistrationConversion("internal-user-id");
+    const concurrent = tag.trackRegistrationConversion("internal-user-id");
+    scripts()[0]?.dispatchEvent(new Event("load"));
+
+    await expect(first).resolves.toBe(true);
+    await expect(concurrent).resolves.toBe(true);
+    await expect(
+      tag.trackRegistrationConversion("internal-user-id"),
+    ).resolves.toBe(false);
+    expect(linkedInWindow.lintrk?.q).toHaveLength(1);
+
+    const remountedTag = createTag();
+    remountedTag.update(true);
+    await expect(
+      remountedTag.trackRegistrationConversion("internal-user-id"),
+    ).resolves.toBe(false);
+    expect(scripts()).toHaveLength(0);
+  });
+
+  it("cancels a pending conversion when consent is withdrawn", async () => {
+    const tag = createTag();
+    visit("/register");
+    tag.update(true);
+    const tracking = tag.trackRegistrationConversion("internal-user-id");
+    const script = scripts()[0];
+
+    tag.update(false);
+    script?.dispatchEvent(new Event("load"));
+
+    await expect(tracking).resolves.toBe(false);
+    expect(linkedInWindow.lintrk?.q).toEqual([]);
+    expect(scripts()).toHaveLength(0);
+  });
+
+  it("does not track from a registration URL carrying a token", async () => {
+    const tag = createTag();
+    visit("/register?token=secret");
+    tag.update(true);
+
+    await expect(
+      tag.trackRegistrationConversion("internal-user-id"),
+    ).resolves.toBe(false);
+
+    expect(scripts()).toHaveLength(0);
   });
 });

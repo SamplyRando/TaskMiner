@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { registerUser } from "@/api/auth";
 import { ApiError } from "@/api/client";
+import { linkedInInsightTag } from "@/lib/linkedin-insight";
 import { metaPixel } from "@/lib/meta-pixel";
 import { RegisterPage } from "@/pages/register-page";
 import { fakeUser, resetAuthStore } from "@/test/auth-fixtures";
@@ -17,9 +18,18 @@ vi.mock("@/api/auth", () => ({
 vi.mock("@/lib/meta-pixel", () => ({
   metaPixel: { track: vi.fn(), trackPageView: vi.fn(), update: vi.fn() },
 }));
+vi.mock("@/lib/linkedin-insight", () => ({
+  linkedInInsightTag: {
+    trackRegistrationConversion: vi.fn(),
+    update: vi.fn(),
+  },
+}));
 
 const mockedRegisterUser = vi.mocked(registerUser);
 const mockedTrack = vi.mocked(metaPixel.track);
+const mockedLinkedInRegistration = vi.mocked(
+  linkedInInsightTag.trackRegistrationConversion,
+);
 
 const fillRegisterForm = async (): Promise<void> => {
   const user = userEvent.setup();
@@ -69,6 +79,7 @@ describe("RegisterPage", () => {
     vi.clearAllMocks();
     sessionStorage.clear();
     resetAuthStore();
+    mockedLinkedInRegistration.mockResolvedValue(true);
   });
 
   it("registers an account and opens the verification instructions", async () => {
@@ -87,7 +98,7 @@ describe("RegisterPage", () => {
     });
   });
 
-  it("reports the registration to Meta once the backend confirmed it, without personal data", async () => {
+  it("reports the registration only once the backend confirmed it", async () => {
     let confirmRegistration: ((user: typeof fakeUser) => void) | undefined;
     mockedRegisterUser.mockReturnValue(
       new Promise((resolve) => {
@@ -98,12 +109,15 @@ describe("RegisterPage", () => {
 
     await fillRegisterForm();
     expect(mockedTrack).not.toHaveBeenCalled();
+    expect(mockedLinkedInRegistration).not.toHaveBeenCalled();
     confirmRegistration?.(fakeUser);
 
     expect(
       await screen.findByText("Vérification — ada@example.com — /app"),
     ).toBeInTheDocument();
     expect(mockedTrack.mock.calls).toEqual([["CompleteRegistration"]]);
+    expect(mockedLinkedInRegistration).toHaveBeenCalledOnce();
+    expect(mockedLinkedInRegistration).toHaveBeenCalledWith(fakeUser.id);
   });
 
   it("shows non-blocking links to the terms and privacy policy", () => {
@@ -132,6 +146,27 @@ describe("RegisterPage", () => {
       await screen.findByText("An account with this email already exists."),
     ).toBeInTheDocument();
     expect(mockedTrack).not.toHaveBeenCalled();
+    expect(mockedLinkedInRegistration).not.toHaveBeenCalled();
+  });
+
+  it("does not report a conversion for a simple registration-page visit", () => {
+    renderRegisterPage();
+
+    expect(mockedLinkedInRegistration).not.toHaveBeenCalled();
+  });
+
+  it("keeps registration successful if LinkedIn tracking fails", async () => {
+    mockedRegisterUser.mockResolvedValue(fakeUser);
+    mockedLinkedInRegistration.mockRejectedValue(
+      new Error("LinkedIn unavailable"),
+    );
+    renderRegisterPage();
+
+    await fillRegisterForm();
+
+    expect(
+      await screen.findByText("Vérification — ada@example.com — /app"),
+    ).toBeInTheDocument();
   });
 
   it("preserves the invitation destination through registration", async () => {

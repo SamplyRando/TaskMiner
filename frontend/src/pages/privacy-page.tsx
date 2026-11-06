@@ -70,7 +70,7 @@ export function PrivacyPage() {
               elles sont utilisées et comment exercer vos droits.
             </p>
             <p className="text-muted-foreground text-sm">
-              Dernière mise à jour : 5 novembre 2026
+              Dernière mise à jour : 6 novembre 2026
             </p>
           </header>
 
@@ -337,10 +337,13 @@ export function PrivacyPage() {
               </li>
               <li>
                 protection des données sensibles : la balise n’est jamais
-                chargée sur les pages authentifiées, d’inscription, de
-                connexion, de vérification d’adresse, de mot de passe ou
-                d’invitation, ni sur une URL contenant un jeton de sécurité.
-                Aucun mot de passe, jeton ou contenu de projet n’est transmis ;
+                chargée sur les pages authentifiées, de connexion, de
+                vérification d’adresse, de mot de passe ou d’invitation, ni sur
+                une URL contenant un jeton de sécurité. Sur la page
+                d’inscription, elle ne peut être chargée qu’après confirmation
+                de la création du compte par le serveur, afin d’enregistrer la
+                conversion. Aucun nom, e-mail, identifiant de compte, mot de
+                passe, jeton ou contenu de projet n’est transmis ;
               </li>
               <li>
                 base légale : votre consentement (article 82 de la loi
