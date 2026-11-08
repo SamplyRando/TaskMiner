@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { loginUser, registerUser } from "@/api/auth";
+import { authenticateWithGoogle, loginUser, registerUser } from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { useAuthStore } from "@/store/auth-store";
 import {
@@ -10,12 +10,14 @@ import {
 } from "@/test/auth-fixtures";
 
 vi.mock("@/api/auth", () => ({
+  authenticateWithGoogle: vi.fn(),
   loginUser: vi.fn(),
   registerUser: vi.fn(),
 }));
 
 const mockedLoginUser = vi.mocked(loginUser);
 const mockedRegisterUser = vi.mocked(registerUser);
+const mockedGoogleLogin = vi.mocked(authenticateWithGoogle);
 
 describe("useAuthStore", () => {
   beforeEach(() => {
@@ -67,6 +69,30 @@ describe("useAuthStore", () => {
 
     expect(useAuthStore.getState().error).toBe("Invalid email or password.");
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+
+  it("stores the normal TaskMiner session returned after Google verification", async () => {
+    const accessToken = createFakeAccessToken();
+    mockedGoogleLogin.mockResolvedValue({
+      access_token: accessToken,
+      token_type: "bearer",
+      user: fakeUser,
+      is_new_user: true,
+    });
+
+    const result = await useAuthStore.getState().loginWithGoogle({
+      attemptId: "attempt-id",
+      nonce: "server-nonce",
+      credential: "google-id-token",
+    });
+
+    expect(result.is_new_user).toBe(true);
+    expect(useAuthStore.getState()).toMatchObject({
+      accessToken,
+      currentUser: fakeUser,
+      isAuthenticated: true,
+      tokenType: "bearer",
+    });
   });
 
   it("hydrates a persisted session", async () => {

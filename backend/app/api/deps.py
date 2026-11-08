@@ -15,6 +15,7 @@ from app.ai.factory import get_ai_provider
 from app.ai.provider import AIProvider, AIProviderConfigurationError
 from app.ai.service import AIService
 from app.ai.usage_service import AIUsageService
+from app.auth.google import GoogleCredentialVerifier, GoogleIDTokenVerifier
 from app.billing.factory import get_billing_provider
 from app.billing.provider import (
     BillingConfigurationError,
@@ -36,6 +37,7 @@ from app.repositories.audit import AuditRepository
 from app.repositories.billing import BillingRepository
 from app.repositories.attachment import AttachmentRepository
 from app.repositories.comment import CommentRepository
+from app.repositories.external_auth import ExternalAuthRepository
 from app.repositories.dashboard import DashboardRepository
 from app.repositories.notification import NotificationRepository
 from app.repositories.project import ProjectRepository
@@ -55,6 +57,7 @@ from app.services.account_lifecycle import AccountLifecycleService
 from app.services.activity import ActivityService
 from app.services.audit import AuditService
 from app.services.comment import CommentService
+from app.services.external_auth import GoogleAuthService
 from app.services.dashboard import DashboardService
 from app.services.notification import NotificationService
 from app.services.permission import PermissionService
@@ -431,6 +434,42 @@ def get_account_lifecycle_service(
 AccountLifecycleServiceDep = Annotated[
     AccountLifecycleService,
     Depends(get_account_lifecycle_service),
+]
+
+
+def get_google_credential_verifier() -> GoogleCredentialVerifier:
+    if settings.google_client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "google_auth_not_configured",
+                "message": "Google authentication is not configured.",
+            },
+        )
+    return GoogleIDTokenVerifier(settings.google_client_id)
+
+
+GoogleCredentialVerifierDep = Annotated[
+    GoogleCredentialVerifier,
+    Depends(get_google_credential_verifier),
+]
+
+
+def get_google_auth_service(
+    session: SessionDep,
+    verifier: GoogleCredentialVerifierDep,
+) -> GoogleAuthService:
+    return GoogleAuthService(
+        ExternalAuthRepository(session),
+        verifier,
+        secret_key=settings.secret_key,
+        attempt_lifetime=timedelta(minutes=settings.google_auth_attempt_expire_minutes),
+    )
+
+
+GoogleAuthServiceDep = Annotated[
+    GoogleAuthService,
+    Depends(get_google_auth_service),
 ]
 
 

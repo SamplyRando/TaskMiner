@@ -61,6 +61,10 @@ Docker actuel.
 | `ALGORITHM` | `HS256` |
 | `CORS_ORIGINS` | URL Vercel de production, sans `/` final |
 | `CORS_ORIGIN_REGEX` | Optionnel, previews Vercel du projet |
+| `GOOGLE_CLIENT_ID` | Identifiant public du client Web OAuth Google, identique à la valeur Vercel |
+| `TASKMINER_GOOGLE_AUTH_ATTEMPT_EXPIRE_MINUTES` | `10` minutes par défaut pour le nonce à usage unique |
+| `TASKMINER_GOOGLE_AUTH_RATE_LIMIT_REQUESTS` | `20` requêtes Google par IP/tentative et fenêtre |
+| `TASKMINER_GOOGLE_AUTH_RATE_LIMIT_WINDOW_SECONDS` | `300` secondes |
 | `STORAGE_PATH` | `/app/storage` avec un volume Railway |
 | `TASKMINER_ATTACHMENT_WORKSPACE_QUOTA_BYTES` | `1073741824` (1 Gio par workspace) |
 | `TASKMINER_ATTACHMENT_UPLOAD_RATE_LIMIT_REQUESTS` | `20` uploads par utilisateur/workspace |
@@ -106,6 +110,43 @@ comme vérifiés à leur date de création. Les nouveaux comptes doivent vérifi
 leur adresse avant connexion ; les liens de vérification expirent après 24
 heures et ceux de réinitialisation après 30 minutes avec les valeurs par défaut
 ci-dessus.
+
+### Authentification Google
+
+TaskMiner utilise Google Identity Services en mode bouton Web avec retour
+JavaScript. Google remet un ID token au navigateur, qui est immédiatement
+envoyé au backend : seul le backend vérifie sa signature, son audience, son
+émetteur, son expiration et le nonce à usage unique. Le jeton Google n’est ni
+persisté ni placé dans une URL. Après vérification, le backend émet le JWT
+TaskMiner habituel ; il n’existe pas de deuxième système de session.
+
+1. Dans Google Cloud Console, configurer l’écran de consentement OAuth avec le
+   domaine autorisé `taskminer.app`, la politique de confidentialité et les
+   coordonnées réelles du service.
+2. Créer un identifiant OAuth de type **Application Web**.
+3. Ajouter exactement les origines JavaScript nécessaires :
+   `https://taskminer.app`, `https://www.taskminer.app` et, pour le
+   développement local seulement, `http://localhost:3000`.
+4. Ce flux n’utilise aucune URI de redirection OAuth : le bouton GIS appelle le
+   callback JavaScript sur la page courante. Ne pas ajouter une URL contenant
+   un jeton ou une route TaskMiner sensible comme URI de redirection.
+5. Copier le même identifiant public dans `GOOGLE_CLIENT_ID` sur Railway et
+   `VITE_GOOGLE_CLIENT_ID` sur Vercel. Aucun client secret Google n’est requis
+   par ce flux et aucun secret ne doit être ajouté au frontend.
+6. Appliquer la migration Alembic avant d’activer le bouton en production. Elle
+   ajoute les identités externes et les tentatives hachées, sans modifier les
+   comptes existants.
+
+Un utilisateur Google inconnu crée un compte dont l’adresse est considérée
+vérifiée seulement si Google la déclare vérifiée. Un sujet Google déjà lié
+retrouve le même utilisateur TaskMiner et donc les mêmes workspaces,
+permissions et abonnements. Si l’adresse appartient déjà à un compte
+e-mail/mot de passe, TaskMiner refuse toute fusion automatique : l’utilisateur
+doit d’abord se connecter normalement puis lier Google dans **Paramètres >
+Sécurité** avec le compte Google portant la même adresse.
+
+Références de configuration : [bouton Google Identity Services](https://developers.google.com/identity/gsi/web/guides/display-button)
+et [validation serveur des ID tokens](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
 
 Pour autoriser plusieurs domaines, les séparer par des virgules :
 
@@ -211,6 +252,7 @@ font échouer toute association ambiguë au lieu d'écraser un autre workspace.
 
 ```text
 VITE_API_URL=https://your-api.up.railway.app/api/v1
+VITE_GOOGLE_CLIENT_ID=replace-with-the-public-google-web-client-id
 VITE_LINKEDIN_PARTNER_ID=10035210
 ```
 
@@ -224,6 +266,12 @@ de sécurité statiques sans proxyfier l'API.
 
 `VITE_API_URL` est injectée pendant le build Vercel. Toute modification de cette
 variable nécessite un nouveau déploiement du frontend.
+
+`VITE_GOOGLE_CLIENT_ID` est public et doit être strictement identique à
+`GOOGLE_CLIENT_ID` sur Railway. Son absence masque le bouton Google. Après
+configuration, vérifier les deux origines de production, le parcours mobile,
+la liaison d’un compte existant et le refus d’un ID token destiné à un autre
+client avant d’ouvrir le flux au public.
 
 `VITE_LINKEDIN_PARTNER_ID` est un identifiant public. La balise LinkedIn reste
 désactivée si cette variable est absente ou invalide ; elle n’est chargée sur

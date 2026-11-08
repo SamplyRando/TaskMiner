@@ -30,6 +30,31 @@ export type TokenResponse = {
   token_type: "bearer";
 };
 
+export type GoogleAuthAttempt = {
+  attempt_id: string;
+  nonce: string;
+  expires_at: string;
+};
+
+export type GoogleCredentialData = {
+  attemptId: string;
+  nonce: string;
+  credential: string;
+};
+
+export type GoogleAuthResponse = TokenResponse & {
+  user: UserProfile;
+  is_new_user: boolean;
+};
+
+export type GoogleLinkStatus = {
+  linked: boolean;
+};
+
+export type GoogleLinkResponse = GoogleLinkStatus & {
+  message: string;
+};
+
 export type AccountActionResponse = {
   message: string;
   already_completed: boolean;

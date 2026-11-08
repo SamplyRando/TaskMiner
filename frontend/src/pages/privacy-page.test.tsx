@@ -107,7 +107,10 @@ describe("PrivacyPage public route", () => {
         }),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Dernière mise à jour : 6 novembre 2026/),
+        screen.getByText(/Dernière mise à jour : 8 novembre 2026/),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/identifiant stable transmis par Google/),
       ).toBeInTheDocument();
       expect(
         screen.getByText(

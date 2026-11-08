@@ -8,6 +8,7 @@ from app.models.audit_log import AuditLog
 from app.models.attachment import Attachment
 from app.models.billing_checkout_consent import BillingCheckoutConsent
 from app.models.comment import Comment, CommentMention
+from app.models.external_auth import ExternalAuthAttempt, ExternalAuthIdentity
 from app.models.notification import (
     Notification,
     NotificationEntityType,
@@ -40,6 +41,8 @@ __all__ = [
     "BillingCheckoutConsent",
     "Comment",
     "CommentMention",
+    "ExternalAuthAttempt",
+    "ExternalAuthIdentity",
     "Notification",
     "NotificationEntityType",
     "NotificationType",

@@ -1,12 +1,23 @@
 import { apiClient } from "@/api/client";
 import type {
   AccountActionResponse,
+  GoogleAuthAttempt,
+  GoogleAuthResponse,
+  GoogleCredentialData,
+  GoogleLinkResponse,
+  GoogleLinkStatus,
   LoginCredentials,
   PasswordResetData,
   RegisterData,
   TokenResponse,
   UserProfile,
 } from "@/types/auth";
+
+const googleCredentialPayload = (data: GoogleCredentialData) => ({
+  attempt_id: data.attemptId,
+  nonce: data.nonce,
+  credential: data.credential,
+});
 
 export const registerUser = async (
   data: RegisterData,
@@ -28,6 +39,45 @@ export const loginUser = async (
     credentials,
   );
 
+  return response.data;
+};
+
+export const createGoogleAuthAttempt = async (): Promise<GoogleAuthAttempt> => {
+  const response = await apiClient.post<GoogleAuthAttempt>(
+    "/auth/google/attempt",
+  );
+  return response.data;
+};
+
+export const authenticateWithGoogle = async (
+  data: GoogleCredentialData,
+): Promise<GoogleAuthResponse> => {
+  const response = await apiClient.post<GoogleAuthResponse>(
+    "/auth/google",
+    googleCredentialPayload(data),
+  );
+  return response.data;
+};
+
+export const getGoogleLinkStatus = async (): Promise<GoogleLinkStatus> => {
+  const response = await apiClient.get<GoogleLinkStatus>("/auth/google/link");
+  return response.data;
+};
+
+export const createGoogleLinkAttempt = async (): Promise<GoogleAuthAttempt> => {
+  const response = await apiClient.post<GoogleAuthAttempt>(
+    "/auth/google/link/attempt",
+  );
+  return response.data;
+};
+
+export const linkGoogleAccount = async (
+  data: GoogleCredentialData,
+): Promise<GoogleLinkResponse> => {
+  const response = await apiClient.post<GoogleLinkResponse>(
+    "/auth/google/link",
+    googleCredentialPayload(data),
+  );
   return response.data;
 };
 
