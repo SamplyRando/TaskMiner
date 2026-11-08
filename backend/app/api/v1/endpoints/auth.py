@@ -3,13 +3,23 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from app.api.deps import (
     AccountLifecycleServiceDep,
     AuthRateLimitServiceDep,
+    CurrentUserDep,
+    GoogleAuthServiceDep,
+    RequestRateLimitServiceDep,
     UserServiceDep,
 )
+from app.auth.google import GoogleCredentialInvalidError
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.auth import (
     AccountActionResponse,
     AccountEmailRequest,
     AccountTokenRequest,
+    GoogleAuthAttemptResponse,
+    GoogleAuthResponse,
+    GoogleCredentialRequest,
+    GoogleLinkResponse,
+    GoogleLinkStatusResponse,
     LoginRequest,
     PasswordResetConfirmRequest,
     TokenResponse,
@@ -28,7 +38,18 @@ from app.services.user import (
 from app.services.request_rate_limit import (
     AuthRateLimitAction,
     AuthRateLimitService,
+    RateLimitScope,
     RequestRateLimitExceededError,
+    RequestRateLimitService,
+    resolve_client_address,
+)
+from app.services.external_auth import (
+    ExternalAuthAttemptExpiredError,
+    ExternalAuthAttemptInvalidError,
+    GoogleAccountLinkMismatchError,
+    GoogleAccountLinkRequiredError,
+    GoogleAccountUnavailableError,
+    GoogleIdentityAlreadyLinkedError,
 )
 
 
@@ -101,6 +122,175 @@ def login_user(
         ) from exc
 
     return TokenResponse(access_token=access_token)
+
+
+@router.post("/google/attempt", response_model=GoogleAuthAttemptResponse)
+def create_google_auth_attempt(
+    request: Request,
+    rate_limiter: RequestRateLimitServiceDep,
+    service: GoogleAuthServiceDep,
+) -> GoogleAuthAttemptResponse:
+    _require_allowed_google_origin(request)
+    _enforce_google_rate_limit(request, rate_limiter, action="attempt")
+    result = service.issue_attempt(purpose="authenticate")
+    return GoogleAuthAttemptResponse(
+        attempt_id=result.attempt_id,
+        nonce=result.nonce,
+        expires_at=result.expires_at,
+    )
+
+
+@router.post("/google", response_model=GoogleAuthResponse)
+def authenticate_with_google(
+    request: Request,
+    data: GoogleCredentialRequest,
+    rate_limiter: RequestRateLimitServiceDep,
+    service: GoogleAuthServiceDep,
+) -> GoogleAuthResponse:
+    _require_allowed_google_origin(request)
+    _enforce_google_rate_limit(
+        request,
+        rate_limiter,
+        action="exchange",
+        attempt_id=str(data.attempt_id),
+    )
+    try:
+        result = service.authenticate(
+            attempt_id=data.attempt_id,
+            nonce=data.nonce,
+            credential=data.credential,
+        )
+    except GoogleCredentialInvalidError as exc:
+        raise _google_error(
+            status.HTTP_401_UNAUTHORIZED,
+            "google_credential_invalid",
+            "La réponse Google est invalide ou a expiré.",
+        ) from exc
+    except ExternalAuthAttemptExpiredError as exc:
+        raise _google_error(
+            status.HTTP_400_BAD_REQUEST,
+            "google_auth_attempt_expired",
+            "La tentative de connexion Google a expiré. Réessayez.",
+        ) from exc
+    except ExternalAuthAttemptInvalidError as exc:
+        raise _google_error(
+            status.HTTP_400_BAD_REQUEST,
+            "google_auth_attempt_invalid",
+            "La tentative de connexion Google n’est plus valide. Réessayez.",
+        ) from exc
+    except GoogleAccountLinkRequiredError as exc:
+        raise _google_error(
+            status.HTTP_409_CONFLICT,
+            "google_account_link_required",
+            (
+                "Un compte TaskMiner existe déjà avec cette adresse. "
+                "Connectez-vous avec votre mot de passe, puis liez Google "
+                "depuis Paramètres > Sécurité."
+            ),
+        ) from exc
+    except GoogleAccountUnavailableError as exc:
+        raise _google_error(
+            status.HTTP_403_FORBIDDEN,
+            "google_account_unavailable",
+            "Ce compte TaskMiner n’est pas disponible.",
+        ) from exc
+    return GoogleAuthResponse(
+        access_token=result.access_token,
+        user=UserRead.model_validate(result.user),
+        is_new_user=result.is_new_user,
+    )
+
+
+@router.get("/google/link", response_model=GoogleLinkStatusResponse)
+def get_google_link_status(
+    current_user: CurrentUserDep,
+    service: GoogleAuthServiceDep,
+) -> GoogleLinkStatusResponse:
+    return GoogleLinkStatusResponse(linked=service.is_linked(current_user))
+
+
+@router.post("/google/link/attempt", response_model=GoogleAuthAttemptResponse)
+def create_google_link_attempt(
+    request: Request,
+    current_user: CurrentUserDep,
+    rate_limiter: RequestRateLimitServiceDep,
+    service: GoogleAuthServiceDep,
+) -> GoogleAuthAttemptResponse:
+    _require_allowed_google_origin(request)
+    _enforce_google_rate_limit(
+        request,
+        rate_limiter,
+        action="link_attempt",
+        attempt_id=str(current_user.id),
+    )
+    result = service.issue_attempt(purpose="link", user=current_user)
+    return GoogleAuthAttemptResponse(
+        attempt_id=result.attempt_id,
+        nonce=result.nonce,
+        expires_at=result.expires_at,
+    )
+
+
+@router.post("/google/link", response_model=GoogleLinkResponse)
+def link_google_account(
+    request: Request,
+    data: GoogleCredentialRequest,
+    current_user: CurrentUserDep,
+    rate_limiter: RequestRateLimitServiceDep,
+    service: GoogleAuthServiceDep,
+) -> GoogleLinkResponse:
+    _require_allowed_google_origin(request)
+    _enforce_google_rate_limit(
+        request,
+        rate_limiter,
+        action="link",
+        attempt_id=str(current_user.id),
+    )
+    try:
+        result = service.link(
+            current_user,
+            attempt_id=data.attempt_id,
+            nonce=data.nonce,
+            credential=data.credential,
+        )
+    except GoogleCredentialInvalidError as exc:
+        raise _google_error(
+            status.HTTP_401_UNAUTHORIZED,
+            "google_credential_invalid",
+            "La réponse Google est invalide ou a expiré.",
+        ) from exc
+    except ExternalAuthAttemptExpiredError as exc:
+        raise _google_error(
+            status.HTTP_400_BAD_REQUEST,
+            "google_auth_attempt_expired",
+            "La tentative de liaison Google a expiré. Réessayez.",
+        ) from exc
+    except ExternalAuthAttemptInvalidError as exc:
+        raise _google_error(
+            status.HTTP_400_BAD_REQUEST,
+            "google_auth_attempt_invalid",
+            "La tentative de liaison Google n’est plus valide. Réessayez.",
+        ) from exc
+    except GoogleAccountLinkMismatchError as exc:
+        raise _google_error(
+            status.HTTP_409_CONFLICT,
+            "google_account_email_mismatch",
+            "Utilisez le compte Google qui porte la même adresse e-mail.",
+        ) from exc
+    except GoogleIdentityAlreadyLinkedError as exc:
+        raise _google_error(
+            status.HTTP_409_CONFLICT,
+            "google_identity_already_linked",
+            "Ce compte Google est déjà lié à un compte TaskMiner.",
+        ) from exc
+    return GoogleLinkResponse(
+        linked=result.linked,
+        message=(
+            "Google est déjà lié à votre compte."
+            if result.already_linked
+            else "Google a été lié à votre compte TaskMiner."
+        ),
+    )
 
 
 @router.post(
@@ -246,4 +436,48 @@ def _rate_limit_response(error: RequestRateLimitExceededError) -> HTTPException:
             "message": "Too many authentication attempts. Please try again later.",
         },
         headers={"Retry-After": str(error.retry_after_seconds)},
+    )
+
+
+def _require_allowed_google_origin(request: Request) -> None:
+    origin = request.headers.get("Origin", "").rstrip("/")
+    if not origin or origin not in settings.cors_origin_list:
+        raise _google_error(
+            status.HTTP_403_FORBIDDEN,
+            "google_auth_origin_not_allowed",
+            "Cette origine n’est pas autorisée pour la connexion Google.",
+        )
+
+
+def _enforce_google_rate_limit(
+    request: Request,
+    rate_limiter: RequestRateLimitService,
+    *,
+    action: str,
+    attempt_id: str | None = None,
+) -> None:
+    address = resolve_client_address(
+        request.client.host if request.client is not None else None,
+        request.headers.get("X-Forwarded-For"),
+        real_ip=request.headers.get("X-Real-IP"),
+        trusted_proxy_hops=settings.trusted_proxy_hops,
+    )
+    scopes = [RateLimitScope("ip", address)]
+    if attempt_id is not None:
+        scopes.append(RateLimitScope("attempt", attempt_id))
+    try:
+        rate_limiter.enforce(
+            action=f"auth_google_{action}",
+            scopes=scopes,
+            limit=settings.google_auth_rate_limit_requests,
+            window_seconds=settings.google_auth_rate_limit_window_seconds,
+        )
+    except RequestRateLimitExceededError as exc:
+        raise _rate_limit_response(exc) from exc
+
+
+def _google_error(status_code: int, code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail={"code": code, "message": message},
     )

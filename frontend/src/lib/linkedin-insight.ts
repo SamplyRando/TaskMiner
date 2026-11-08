@@ -212,7 +212,7 @@ const waitForTagLoad = (script: HTMLScriptElement): Promise<boolean> => {
 const isRegistrationConversionPage = (): boolean => {
   const current = new URL(window.location.href);
   if (
-    current.pathname !== "/register" ||
+    !["/login", "/register"].includes(current.pathname) ||
     hasSensitiveQuery(current) ||
     hasSensitiveHash(current)
   ) {

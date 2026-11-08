@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import Literal, Self
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -10,6 +12,7 @@ from pydantic import (
 )
 
 from app.schemas.user import validate_password_strength
+from app.schemas.user import UserRead
 
 
 class LoginRequest(BaseModel):
@@ -22,6 +25,37 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: Literal["bearer"] = "bearer"
+
+
+class GoogleAuthAttemptResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    attempt_id: UUID
+    nonce: str
+    expires_at: datetime
+
+
+class GoogleCredentialRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    attempt_id: UUID
+    nonce: str = Field(min_length=32, max_length=256)
+    credential: str = Field(min_length=32, max_length=10_000)
+
+
+class GoogleAuthResponse(TokenResponse):
+    user: UserRead
+    is_new_user: bool
+
+
+class GoogleLinkStatusResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    linked: bool
+
+
+class GoogleLinkResponse(GoogleLinkStatusResponse):
+    message: str
 
 
 class AccountEmailRequest(BaseModel):

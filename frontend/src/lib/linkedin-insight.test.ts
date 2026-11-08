@@ -189,6 +189,23 @@ describe("LinkedIn Insight Tag", () => {
     );
   });
 
+  it("tracks a backend-confirmed Google registration completed from login", async () => {
+    const tag = createTag();
+    visit("/login");
+    tag.update(true);
+
+    const tracking = tag.trackRegistrationConversion("google-user-id");
+    scripts()[0]?.dispatchEvent(new Event("load"));
+
+    await expect(tracking).resolves.toBe(true);
+    expect(linkedInWindow.lintrk?.q).toEqual([
+      ["track", { conversion_id: LINKEDIN_REGISTRATION_CONVERSION_ID }],
+    ]);
+    expect(JSON.stringify(linkedInWindow.lintrk?.q)).not.toContain(
+      "google-user-id",
+    );
+  });
+
   it("does not track a registration when marketing consent is refused", async () => {
     const tag = createTag();
     visit("/register");
@@ -196,6 +213,19 @@ describe("LinkedIn Insight Tag", () => {
 
     await expect(
       tag.trackRegistrationConversion("internal-user-id"),
+    ).resolves.toBe(false);
+
+    expect(scripts()).toHaveLength(0);
+    expect(linkedInWindow.lintrk).toBeUndefined();
+  });
+
+  it("does not track a Google registration from login without consent", async () => {
+    const tag = createTag();
+    visit("/login");
+    tag.update(false);
+
+    await expect(
+      tag.trackRegistrationConversion("google-user-id"),
     ).resolves.toBe(false);
 
     expect(scripts()).toHaveLength(0);

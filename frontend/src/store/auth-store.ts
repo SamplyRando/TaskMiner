@@ -1,11 +1,17 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { loginUser, registerUser } from "@/api/auth";
+import { authenticateWithGoogle, loginUser, registerUser } from "@/api/auth";
 import { ApiError, configureApiAuth } from "@/api/client";
 import { publishUnauthorized } from "@/lib/auth-events";
 import { decodeAccessToken, isAccessTokenExpired } from "@/lib/jwt";
-import type { LoginCredentials, RegisterData, UserProfile } from "@/types/auth";
+import type {
+  GoogleAuthResponse,
+  GoogleCredentialData,
+  LoginCredentials,
+  RegisterData,
+  UserProfile,
+} from "@/types/auth";
 
 const AUTH_STORAGE_KEY = "taskminer-auth";
 
@@ -21,6 +27,7 @@ type AuthState = {
   error: string | null;
   register: (data: RegisterData) => Promise<UserProfile>;
   login: (credentials: LoginCredentials) => Promise<void>;
+  loginWithGoogle: (data: GoogleCredentialData) => Promise<GoogleAuthResponse>;
   hydrate: () => Promise<void>;
   logout: () => void;
   setCurrentUser: (user: UserProfile) => void;
@@ -122,6 +129,30 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: unknown) {
           set({ error: getErrorMessage(error) });
           throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      loginWithGoogle: async (data) => {
+        set({ error: null, isLoading: true });
+        try {
+          const result = await authenticateWithGoogle(data);
+          const payload = decodeAccessToken(result.access_token);
+          if (
+            isAccessTokenExpired(result.access_token) ||
+            payload.sub !== result.user.id
+          ) {
+            throw new ApiError("Le jeton reçu est invalide.");
+          }
+          set({
+            accessToken: result.access_token,
+            tokenType: result.token_type,
+            refreshToken: null,
+            currentUser: result.user,
+            pendingUser: null,
+            isAuthenticated: true,
+          });
+          return result;
         } finally {
           set({ isLoading: false });
         }

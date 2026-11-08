@@ -70,7 +70,7 @@ export function PrivacyPage() {
               elles sont utilisées et comment exercer vos droits.
             </p>
             <p className="text-muted-foreground text-sm">
-              Dernière mise à jour : 6 novembre 2026
+              Dernière mise à jour : 8 novembre 2026
             </p>
           </header>
 
@@ -98,7 +98,9 @@ export function PrivacyPage() {
             <ul className="list-disc space-y-2 pl-6">
               <li>
                 données de compte : nom complet, adresse e-mail et mot de passe
-                conservé sous forme hachée ;
+                conservé sous forme hachée. Si vous utilisez Google, TaskMiner
+                traite également l’identifiant stable transmis par Google pour
+                retrouver votre compte, sans enregistrer le jeton Google ;
               </li>
               <li>
                 données d’utilisation et de sécurité : identifiants techniques,
@@ -181,8 +183,9 @@ export function PrivacyPage() {
               Le code et la documentation du service attestent l’utilisation de
               Vercel pour le frontend, Railway pour le backend et le stockage de
               fichiers, Neon pour PostgreSQL, OpenAI pour les fonctions d’IA,
-              Resend pour les e-mails transactionnels et Stripe pour le paiement
-              et la gestion des abonnements.
+              Resend pour les e-mails transactionnels, Stripe pour le paiement
+              et la gestion des abonnements, et Google uniquement lorsque vous
+              choisissez cette méthode de connexion.
             </p>
             <p>
               Avec votre consentement uniquement, des données de navigation sont
@@ -246,6 +249,12 @@ export function PrivacyPage() {
               <li>
                 mémorisation de votre choix relatif aux traceurs publicitaires
                 pendant 6 mois, après quoi il vous est de nouveau demandé.
+              </li>
+              <li>
+                lorsque vous choisissez « Continuer avec Google », composants et
+                données techniques strictement nécessaires à cette
+                authentification ; ce fournisseur de connexion est indépendant
+                du consentement aux traceurs publicitaires.
               </li>
             </ul>
             <h3 className="text-foreground text-base font-semibold">

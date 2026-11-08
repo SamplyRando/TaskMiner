@@ -2,10 +2,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { AuthShell } from "@/features/auth/components/auth-shell";
 import { RegisterForm } from "@/features/auth/components/register-form";
+import { GoogleAuthButton } from "@/features/auth/components/google-auth-button";
 import type { RegisterValues } from "@/features/auth/schemas";
 import {
   authStateWithDestination,
+  clearRememberedAuthDestination,
   getRememberedAuthDestination,
+  getSafeAuthDestination,
   rememberAuthDestination,
   type AuthLocationState,
 } from "@/features/auth/redirect";
@@ -13,6 +16,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { linkedInInsightTag } from "@/lib/linkedin-insight";
 import { metaPixel } from "@/lib/meta-pixel";
+import type { GoogleAuthResponse } from "@/types/auth";
 
 export function RegisterPage() {
   useDocumentTitle("Inscription");
@@ -52,11 +56,33 @@ export function RegisterPage() {
     }
   };
 
+  const handleGoogleSuccess = async (
+    result: GoogleAuthResponse,
+  ): Promise<void> => {
+    if (result.is_new_user) {
+      metaPixel.track("CompleteRegistration");
+      await linkedInInsightTag
+        .trackRegistrationConversion(result.user.id)
+        .catch(() => false);
+    }
+    const destination = getSafeAuthDestination(
+      state?.from ?? getRememberedAuthDestination(),
+    );
+    clearRememberedAuthDestination();
+    void navigate(destination, { replace: true });
+  };
+
   return (
     <AuthShell
       description="Préparez votre premier espace de travail."
       title="Créer un compte"
     >
+      <GoogleAuthButton mode="authenticate" onSuccess={handleGoogleSuccess} />
+      <div className="flex items-center gap-3" aria-hidden="true">
+        <span className="bg-border h-px flex-1" />
+        <span className="text-muted-foreground text-xs uppercase">ou</span>
+        <span className="bg-border h-px flex-1" />
+      </div>
       <RegisterForm
         isLoading={isLoading}
         onSubmit={handleRegister}

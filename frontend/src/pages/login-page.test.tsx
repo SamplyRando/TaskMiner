@@ -10,6 +10,8 @@ import {
   requestEmailVerification,
 } from "@/api/auth";
 import { ApiError } from "@/api/client";
+import { linkedInInsightTag } from "@/lib/linkedin-insight";
+import { metaPixel } from "@/lib/meta-pixel";
 import { LoginPage } from "@/pages/login-page";
 import { RegisterPage } from "@/pages/register-page";
 import { VerifyEmailPage } from "@/pages/verify-email-page";
@@ -20,17 +22,72 @@ import {
   resetAuthStore,
 } from "@/test/auth-fixtures";
 
+const googleButtonMock = vi.hoisted(() => ({ isNewUser: true }));
+
 vi.mock("@/api/auth", () => ({
   confirmEmailVerification: vi.fn(),
   loginUser: vi.fn(),
   registerUser: vi.fn(),
   requestEmailVerification: vi.fn(),
 }));
+vi.mock("@/features/auth/components/google-auth-button", () => ({
+  GoogleAuthButton: ({
+    onSuccess,
+  }: {
+    onSuccess: (result: {
+      access_token: string;
+      token_type: "bearer";
+      user: {
+        id: string;
+        email: string;
+        full_name: string;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+      };
+      is_new_user: boolean;
+    }) => Promise<void> | void;
+  }) => (
+    <button
+      onClick={() =>
+        void onSuccess({
+          access_token: "taskminer-jwt",
+          token_type: "bearer",
+          user: {
+            id: "google-user-id",
+            email: "google@example.com",
+            full_name: "Google User",
+            is_active: true,
+            created_at: "2026-11-08T10:00:00Z",
+            updated_at: "2026-11-08T10:00:00Z",
+          },
+          is_new_user: googleButtonMock.isNewUser,
+        })
+      }
+      type="button"
+    >
+      Continuer avec Google
+    </button>
+  ),
+}));
+vi.mock("@/lib/meta-pixel", () => ({
+  metaPixel: { track: vi.fn(), trackPageView: vi.fn(), update: vi.fn() },
+}));
+vi.mock("@/lib/linkedin-insight", () => ({
+  linkedInInsightTag: {
+    trackRegistrationConversion: vi.fn().mockResolvedValue(true),
+    update: vi.fn(),
+  },
+}));
 
 const mockedConfirmEmailVerification = vi.mocked(confirmEmailVerification);
 const mockedLoginUser = vi.mocked(loginUser);
 const mockedRegisterUser = vi.mocked(registerUser);
 const mockedRequestEmailVerification = vi.mocked(requestEmailVerification);
+const mockedMetaRegistration = vi.mocked(metaPixel.track);
+const mockedLinkedInRegistration = vi.mocked(
+  linkedInInsightTag.trackRegistrationConversion,
+);
 
 const fillLoginForm = async (): Promise<void> => {
   const user = userEvent.setup();
@@ -74,6 +131,7 @@ describe("LoginPage", () => {
     vi.clearAllMocks();
     sessionStorage.clear();
     resetAuthStore();
+    googleButtonMock.isNewUser = true;
     mockedConfirmEmailVerification.mockResolvedValue({
       already_completed: false,
       message: "Votre adresse e-mail est vérifiée.",
@@ -102,6 +160,33 @@ describe("LoginPage", () => {
       isAuthenticated: true,
     });
     expect(localStorage.getItem("taskminer-auth")).toContain(accessToken);
+  });
+
+  it("reports a confirmed new Google account and keeps the destination", async () => {
+    renderLoginPage("/app/invitations?token=GOOGLE#accept");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Continuer avec Google" }),
+    );
+
+    expect(
+      await screen.findByText("/app/invitations?token=GOOGLE#accept"),
+    ).toBeInTheDocument();
+    expect(mockedMetaRegistration).toHaveBeenCalledWith("CompleteRegistration");
+    expect(mockedLinkedInRegistration).toHaveBeenCalledWith("google-user-id");
+  });
+
+  it("does not report a conversion for an existing Google account", async () => {
+    googleButtonMock.isNewUser = false;
+    renderLoginPage();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Continuer avec Google" }),
+    );
+
+    expect(await screen.findByText("Espace authentifié")).toBeInTheDocument();
+    expect(mockedMetaRegistration).not.toHaveBeenCalled();
+    expect(mockedLinkedInRegistration).not.toHaveBeenCalled();
   });
 
   it("displays invalid credentials returned by the backend", async () => {

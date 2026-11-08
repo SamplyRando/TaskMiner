@@ -53,6 +53,27 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="CORS_ORIGIN_REGEX",
     )
+    google_client_id: str | None = Field(
+        default=None,
+        validation_alias="GOOGLE_CLIENT_ID",
+        description="Public OAuth web client id accepted by Google sign-in.",
+    )
+    google_auth_attempt_expire_minutes: int = Field(
+        default=10,
+        gt=0,
+        le=30,
+        validation_alias="TASKMINER_GOOGLE_AUTH_ATTEMPT_EXPIRE_MINUTES",
+    )
+    google_auth_rate_limit_requests: int = Field(
+        default=20,
+        gt=0,
+        validation_alias="TASKMINER_GOOGLE_AUTH_RATE_LIMIT_REQUESTS",
+    )
+    google_auth_rate_limit_window_seconds: int = Field(
+        default=300,
+        gt=0,
+        validation_alias="TASKMINER_GOOGLE_AUTH_RATE_LIMIT_WINDOW_SECONDS",
+    )
     ai_provider: Literal["mock", "openai"] = Field(
         default="mock",
         validation_alias="TASKMINER_AI_PROVIDER",
@@ -243,6 +264,14 @@ class Settings(BaseSettings):
         if "\n" in self.email_from or "\r" in self.email_from:
             raise ValueError("TASKMINER_EMAIL_FROM must not contain line breaks.")
         return self
+
+    @field_validator("google_client_id")
+    @classmethod
+    def normalize_google_client_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
 
     @property
     def cors_origin_list(self) -> list[str]:

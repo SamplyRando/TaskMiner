@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  authenticateWithGoogle,
   confirmEmailVerification,
   confirmPasswordReset,
+  createGoogleAuthAttempt,
+  createGoogleLinkAttempt,
+  getGoogleLinkStatus,
+  linkGoogleAccount,
   requestEmailVerification,
   requestPasswordReset,
 } from "@/api/auth";
@@ -71,5 +76,39 @@ describe("account lifecycle API", () => {
         token: "opaque-token",
       },
     );
+  });
+
+  it("uses one-time Google attempts for authentication and linking", async () => {
+    const post = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValue({ data: response });
+    const get = vi.spyOn(apiClient, "get").mockResolvedValue({
+      data: { linked: false },
+    });
+    const credential = {
+      attemptId: "attempt-id",
+      nonce: "one-time-nonce",
+      credential: "google-id-token",
+    };
+
+    await createGoogleAuthAttempt();
+    await authenticateWithGoogle(credential);
+    await getGoogleLinkStatus();
+    await createGoogleLinkAttempt();
+    await linkGoogleAccount(credential);
+
+    expect(post).toHaveBeenNthCalledWith(1, "/auth/google/attempt");
+    expect(post).toHaveBeenNthCalledWith(2, "/auth/google", {
+      attempt_id: "attempt-id",
+      nonce: "one-time-nonce",
+      credential: "google-id-token",
+    });
+    expect(get).toHaveBeenCalledWith("/auth/google/link");
+    expect(post).toHaveBeenNthCalledWith(3, "/auth/google/link/attempt");
+    expect(post).toHaveBeenNthCalledWith(4, "/auth/google/link", {
+      attempt_id: "attempt-id",
+      nonce: "one-time-nonce",
+      credential: "google-id-token",
+    });
   });
 });
